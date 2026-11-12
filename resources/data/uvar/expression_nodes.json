@@ -1,0 +1,26 @@
+{
+ "format": 1,
+ "nodes": {
+  "AbsNode": {"inputs": 1, "parameters": {}},
+  "CalculateNode": {"inputs": 2, "parameters": {"Operation": "U32"}},
+  "CallbackNode": {"inputs": 0, "parameters": {"CallbackID": "S32", "CallbackFunctionID": "U32", "CallbackGuid": "Guid"}},
+  "ClampNode": {"inputs": 1, "parameters": {"Min": "F32", "Max": "F32"}},
+  "CompareNode": {"inputs": 2, "parameters": {"Operation": "U32"}},
+  "LerpNode": {"inputs": 3, "parameters": {}},
+  "LogicNode": {"inputs": 2, "parameters": {"Operation": "U32"}},
+  "MultiLogicNode": {"inputs": 8, "parameters": {"Count": "S32", "Operation": "U32"}},
+  "NotNode": {"inputs": 1, "parameters": {}},
+  "RoundingNode": {"inputs": 1, "parameters": {"Operation": "U32"}},
+  "ValueNode": {"inputs": 0, "parameters": {"Value": "F32"}},
+  "VariableReferenceNode": {"inputs": 0, "parameters": {"VariableID": "Guid"}}
+ },
+ "operations": {
+  "CalculateNode": ["Add", "Sub", "Mul", "Div", "Mod", "Pow", "Min", "Max"],
+  "CompareNode": ["Eq", "Neq", "Ge", "Le", "Gt", "Lt"],
+  "LogicNode": ["And", "Or"],
+  "MultiLogicNode": ["And", "Or"],
+  "RoundingNode": ["RoundHalfUp", "Ceil", "Floor"]
+ },
+ "callback_functions": {"BehaviorTree": 0, "MotionFsm": 468890093},
+ "motion_fsm_queries": ["Frame", "EndFrame", "EndFrameOrNextEndFrame"]
+}

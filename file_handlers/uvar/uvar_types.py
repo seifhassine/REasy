@@ -6,14 +6,28 @@ from typing import Optional, Type
 
 UVAR_MAGIC = 0x72617675  # 'uvar'
 
-class NodeValueType(IntEnum):
+class ParamType(IntEnum):
     Unknown = 0
-    UInt32Maybe = 6
-    Int32 = 7
-    Single = 8
-    Guid = 18
-    SetVariable = 1
-    GetVariable = 2
+    Bool = 1
+    U8 = 2
+    S8 = 3
+    U16 = 4
+    S16 = 5
+    S32 = 6
+    U32 = 7
+    S64 = 8
+    U64 = 9
+    F32 = 10
+    F64 = 11
+    Str8 = 12
+    Str16 = 13
+    Address = 14
+    Object = 15
+    Vec2 = 16
+    Vec3 = 17
+    Vec4 = 18
+    Matrix = 19
+    Guid = 20
 
 class TypeKind(IntEnum):
     Unknown = 0
@@ -41,22 +55,16 @@ class TypeKind(IntEnum):
     Num = 22
 
 class UvarFlags(IntFlag):
-    IsVec3 = 0x40  # Array type
+    IsConst = 0x20
+    HasRange = 0x40
+    HasTreeRange = 0x80
 
 @dataclass
 class NodeConnection:
-    src_node: int = 0
-    src_port: int = 0
-    dst_node: int = 0
-    dst_port: int = 0
-    
-    def pack(self) -> bytes:
-        return struct.pack("<IIII", self.src_node, self.src_port, self.dst_node, self.dst_port)
-    
-    @classmethod
-    def unpack(cls, data: bytes, offset: int = 0) -> 'NodeConnection':
-        values = struct.unpack_from("<IIII", data, offset)
-        return cls(*values)
+    input_node: int = 0
+    input_pin: int = 0
+    output_node: int = 0
+    output_pin: int = 0
 
 @dataclass
 class Vec3:
@@ -73,63 +81,15 @@ class Vec3:
         return cls(*values)
 
 @dataclass
-class Int3:
-    x: int
-    y: int
-    z: int
-    
-    def pack(self) -> bytes:
-        return struct.pack("<iii", self.x, self.y, self.z)
-    
-    @classmethod
-    def unpack(cls, data: bytes, offset: int = 0) -> 'Int3':
-        values = struct.unpack_from("<iii", data, offset)
-        return cls(*values)
-
-@dataclass
-class Uint3:
-    x: int
-    y: int
-    z: int
-    
-    def pack(self) -> bytes:
-        return struct.pack("<III", self.x, self.y, self.z)
-    
-    @classmethod
-    def unpack(cls, data: bytes, offset: int = 0) -> 'Uint3':
-        values = struct.unpack_from("<III", data, offset)
-        return cls(*values)
-
-@dataclass
-class Position:
-    x: float
-    y: float
-    z: float
-    
-    def pack(self) -> bytes:
-        return struct.pack("<ddd", self.x, self.y, self.z)
-    
-    @classmethod
-    def unpack(cls, data: bytes, offset: int = 0) -> 'Position':
-        values = struct.unpack_from("<ddd", data, offset)
-        return cls(*values)
+class ValueRange:
+    value: float
+    min: float
+    max: float
 
 def get_python_type(type_kind: TypeKind, flags: int) -> Optional[Type]:
-    if flags & UvarFlags.IsVec3:
-        type_map = {
-            TypeKind.Int8: list,    
-            TypeKind.Uint8: list,   
-            TypeKind.Int16: list,   
-            TypeKind.Uint16: list,  
-            TypeKind.Int32: Int3,   
-            TypeKind.Uint32: Uint3, 
-            TypeKind.Int64: list,   
-            TypeKind.Uint64: list,   
-            TypeKind.Single: Vec3,   
-            TypeKind.Double: Position,  
-        }
-        return type_map.get(type_kind)
-    
+    if flags & UvarFlags.HasRange:
+        return ValueRange
+
     type_map = {
         TypeKind.Enum: int,
         TypeKind.Boolean: bool,

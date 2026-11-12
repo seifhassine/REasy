@@ -48,8 +48,7 @@ def uvar_variables(data: bytes | None) -> dict[bytes, tuple[str, object]]:
         for variable in held.variables:
             if variable.guid is not None:
                 value = variable.value
-                found.setdefault(variable.guid.bytes, (variable.name, (
-                    value[0] if isinstance(value, list) else value.x) if variable.is_vec3 else value))
+                found.setdefault(variable.guid.bytes, (variable.name, value.value if variable.has_range else value))
     return found
 
 

@@ -33,8 +33,9 @@ def merged(families: dict, name: str, deep: tuple[str, ...]) -> dict:
 
 
 def game_enums(enums: dict[str, str], game: str) -> dict[str, dict[int, str]]:
-    namespace = min((name.rpartition(".")[0] for name in enums.values()), key=len) + "."
-    definitions = game_enum_definitions(game, namespace=namespace)
+    parts = [name.split(".")[:-1] for name in enums.values()]
+    shared = next((index for index, group in enumerate(zip(*parts)) if len(set(group)) > 1), min(map(len, parts)))
+    definitions = game_enum_definitions(game, namespace="".join(f"{part}." for part in parts[0][:shared]))
     return {enum: {member["value"]: member["name"] for member in definitions.get(name, ())}
             for enum, name in enums.items()}
 
@@ -150,3 +151,175 @@ def _field(item) -> dict:
         return item
     at, kind, name = item
     return {"at": at, "type": kind, "name": name}
+
+
+class StreamCodec:
+    def __init__(self, name: str, steps: list, error: type[Exception] = ValueError, records: dict | None = None):
+        self.name, self.error = name, error
+        self._steps = _stream_steps(steps, records or {})
+        self.fields = _stream_fields(self._steps, False)
+        self.blanks = _stream_blanks(self._steps)
+        self.limits = _stream_limits(self._steps)
+
+    def read(self, data, offset: int) -> tuple[dict, int]:
+        record = {}
+        try:
+            return record, self._read(self._steps, data, offset, record, None)
+        except struct.error:
+            raise self.error(f"{self.name} at 0x{offset:X} leaves the data") from None
+
+    def layout(self, record: dict) -> list[str | tuple[str, ...]]:
+        return list(_layout(self._steps, record))
+
+    def write(self, record: dict) -> bytes:
+        out = []
+        try:
+            self._write(self._steps, record, out, None)
+        except (struct.error, KeyError, TypeError) as exc:
+            raise self.error(f"{self.name}: {exc}") from None
+        return b"".join(out)
+
+    def _read(self, steps, data, at, record, count):
+        for step in steps:
+            kind = step[0]
+            if kind == "value":
+                _, name, code, size = step
+                if count is None:
+                    record[name] = struct.unpack_from("<" + code, data, at)[0]
+                    at += size
+                else:
+                    record[name] = list(struct.unpack_from(f"<{count}{code}", data, at))
+                    at += count * size
+            elif kind == "lists":
+                _, name, code, size = step
+                items = record[name] = []
+                for _ in range(count):
+                    length = struct.unpack_from("<I", data, at)[0]
+                    items.append(list(struct.unpack_from(f"<{length}{code}", data, at + 4)))
+                    at += 4 + length * size
+            elif kind in ("group", "items"):
+                length = struct.unpack_from("<" + step[1], data, at)[0]
+                if length < 0:
+                    raise self.error(f"{self.name} at 0x{at:X}: negative count {length}")
+                at += step[2]
+                if kind == "group":
+                    at = self._read(step[3], data, at, record, length)
+                    continue
+                items = record[step[4]] = []
+                for _ in range(length):
+                    items.append(item := {})
+                    at = self._read(step[3], data, at, item, None)
+            elif _holds(step[1], record):
+                at = self._read(step[2], data, at, record, count)
+        return at
+
+    def _write(self, steps, record, out, count):
+        for step in steps:
+            kind = step[0]
+            if kind in ("value", "lists"):
+                value = record[step[1]]
+                if count is None:
+                    out.append(struct.pack("<" + step[2], value))
+                    continue
+                if len(value) != count:
+                    raise self.error(f"{self.name}.{step[1]} has {len(value)} items, not {count}")
+                if kind == "value":
+                    out.append(struct.pack(f"<{count}{step[2]}", *value))
+                else:
+                    out.extend(struct.pack(f"<I{len(item)}{step[2]}", len(item), *item) for item in value)
+            elif kind == "group":
+                length = self._length(step[3], record)
+                out.append(struct.pack("<" + step[1], length))
+                self._write(step[3], record, out, length)
+            elif kind == "items":
+                out.append(struct.pack("<" + step[1], len(record[step[4]])))
+                for item in record[step[4]]:
+                    self._write(step[3], item, out, None)
+            elif _holds(step[1], record):
+                self._write(step[2], record, out, count)
+
+    def _length(self, steps, record) -> int | None:
+        for step in steps:
+            if step[0] in ("value", "lists"):
+                return len(record[step[1]])
+            if step[0] == "if" and _holds(step[1], record) and (length := self._length(step[2], record)) is not None:
+                return length
+        return None
+
+
+_TESTS = {"&": lambda value, mask: bool(value & mask), "!&": lambda value, mask: not value & mask,
+          "<": lambda value, limit: value < limit}
+
+
+def _holds(tests, record) -> bool:
+    return all(test(record[field], operand) for field, test, operand in tests)
+
+
+def _stream_fields(steps, counted: bool) -> dict[str, str]:
+    fields = {}
+    for step in steps:
+        if step[0] in ("value", "lists"):
+            fields[step[1]] = "list" if counted or step[0] == "lists" else "value"
+        elif step[0] == "group":
+            fields.update(_stream_fields(step[3], True))
+        elif step[0] == "items":
+            fields[step[4]] = "list"
+        else:
+            fields.update(_stream_fields(step[2], counted))
+    return fields
+
+
+def _stream_limits(steps) -> dict[str, tuple[int, int]]:
+    codes = {_FORMATS[kind]: limits for kind, limits in _INTEGERS.items()}
+    limits = {}
+    for step in steps:
+        if step[0] in ("value", "lists"):
+            if step[2] in codes:
+                limits[step[1]] = codes[step[2]]
+        elif step[0] != "items":
+            limits.update(_stream_limits(step[3] if step[0] == "group" else step[2]))
+    return limits
+
+
+def _layout(steps, record: dict):
+    for step in steps:
+        if step[0] in ("value", "lists", "items"):
+            yield step[4] if step[0] == "items" else step[1]
+        elif step[0] == "group":
+            yield tuple(_layout(step[3], record))
+        elif _holds(step[1], record):
+            yield from _layout(step[2], record)
+
+
+def _stream_blanks(steps, item: bool = False) -> dict:
+    blanks = {}
+    for step in steps:
+        if step[0] in ("value", "lists"):
+            blanks[step[1]] = [] if step[0] == "lists" else 0.0 if step[2] == "f" else 0
+        elif step[0] == "items":
+            blanks[step[4]] = _stream_blanks(step[3], True)
+        elif step[0] == "group" and item:
+            blanks.update({name: [] for name in _stream_fields(step[3], True)})
+        else:
+            blanks.update(_stream_blanks(step[3] if step[0] == "group" else step[2], item))
+    return blanks
+
+
+def _stream_steps(steps, records: dict) -> tuple:
+    out = []
+    for step in steps:
+        if isinstance(step, list):
+            kind, name = step
+            code = _FORMATS[kind.removesuffix("[]")]
+            out.append(("lists" if kind.endswith("[]") else "value", name, code, struct.calcsize("<" + code)))
+        elif "record" in step:
+            out.extend(_stream_steps(records[step["record"]], records))
+        elif "count" in step:
+            code = _FORMATS[step["count"]]
+            nested = _stream_steps(records[step["of"]] if isinstance(step["of"], str) else step["of"], records)
+            out.append(("items" if "items" in step else "group", code, struct.calcsize("<" + code), nested,
+                        step.get("items")))
+        else:
+            out.append(("if", tuple((field, _TESTS[op], operand) for field, op, operand in step["if"]),
+                        _stream_steps(step["then"], records)))
+    return tuple(out)

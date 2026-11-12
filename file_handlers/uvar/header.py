@@ -55,10 +55,7 @@ class HeaderStruct(BaseModel):
         if self.version < 3:
             handler.write('<Q', self.ukn)
             
-        if self.name:
-            self.uvar_hash = murmur3_hash(self.name.encode('utf-16le'))
-        else:
-            self.uvar_hash = murmur3_hash(b'')
+        self.uvar_hash = 0 if self.name is None else murmur3_hash(self.name.encode('utf-16le'))
         handler.write('<I', self.uvar_hash)
         handler.write('<h', self.variable_count)
         handler.write('<h', self.embed_count)
@@ -83,12 +80,14 @@ class HashData(BaseModel):
         self.guid_map: List[int] = []
         self.name_hashes: List[int] = []
         self.name_hash_map: List[int] = []
+        self.has_name_hashes = True
         
     def do_read(self, handler: FileHandler) -> bool:
         self.guids_offset = handler.read('<Q')
         self.maps_offset = handler.read('<Q')
         self.hash_offset = handler.read('<Q')
         self.hash_map_offset = handler.read('<Q')
+        self.has_name_hashes = self.hash_offset > 0
         
         if self.count == 0:
             return True
@@ -128,27 +127,23 @@ class HashData(BaseModel):
         count = len(self.guids)
         self.guids_offset = handler.tell + 32
         self.maps_offset = self.guids_offset + count * 16
-        self.hash_offset = self.maps_offset + count * 4
-        self.hash_map_offset = self.hash_offset + count * 4
+        self.hash_offset = self.maps_offset + count * 4 if self.has_name_hashes else 0
+        self.hash_map_offset = self.hash_offset + count * 4 if self.has_name_hashes else 0
         
         handler.write('<Q', self.guids_offset)
         handler.write('<Q', self.maps_offset)
         handler.write('<Q', self.hash_offset)
         handler.write('<Q', self.hash_map_offset)
         
-        handler.seek(self.guids_offset)
         for guid in self.guids:
             handler.write_guid(guid)
             
-        handler.seek(self.maps_offset)
         for idx in self.guid_map:
             handler.write('<I', idx)
             
-        handler.seek(self.hash_offset)
         for hash_val in self.name_hashes:
             handler.write('<I', hash_val)
             
-        handler.seek(self.hash_map_offset)
         for idx in self.name_hash_map:
             handler.write('<I', idx)
             
@@ -166,10 +161,10 @@ class HashData(BaseModel):
             
         indexed_vars = list(enumerate(variables))
         
-        sorted_by_hash = sorted(indexed_vars, key=lambda x: x[1].name_hash)
-        for idx, var in sorted_by_hash:
-            self.name_hashes.append(var.name_hash)
-            self.name_hash_map.append(idx)
+        if self.has_name_hashes:
+            for idx, var in sorted(indexed_vars, key=lambda x: x[1].name_hash):
+                self.name_hashes.append(var.name_hash)
+                self.name_hash_map.append(idx)
             
         sorted_by_guid = sorted(indexed_vars, key=lambda x: x[1].guid.bytes_le)
         for idx, var in sorted_by_guid:

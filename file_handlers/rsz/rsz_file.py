@@ -12,7 +12,9 @@ from file_handlers.rsz.rsz_data_types import (
 lazy from file_handlers.rsz.pfb_16.pfb_structure import (
     Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata, parse_pfb16_resources, Pfb16ResourceInfo,
 )
-lazy from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
+lazy from file_handlers.rsz.scn_19.scn_19_structure import (
+    Scn19Header, build_scn_19, build_scn19_rsz_section, parse_scn19_rsz_userdata,
+)
 lazy from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
 lazy from file_handlers.rsz.rsz_build_utils import (
     calculate_wstring_offsets,
@@ -631,6 +633,7 @@ class RszFile:
         self.is_usr = False
         self.is_pfb = False
         self.is_pfb16 = False
+        self.has_embedded_rsz = False
         
         self._path_lower = (self.filepath or "").lower()
         self._is_16 = self._path_lower.endswith((".16", ".16.x64", ".16.stm"))
@@ -865,10 +868,10 @@ class RszFile:
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
             self._current_offset = rsz_base_offset + self.rsz_header.userdata_offset
-            if self._is_19 or (self._is_18 and self.is_scn):
-                self._parse_scn19_rsz_userdata(data, skip_data)
+            if self._is_19 or (self._is_18 and self.is_scn) or (self.is_headless and self.rsz_header.version == 8):
+                self._parse_scn19_rsz_userdata(data, skip_data, rsz_base_offset)
             elif self._is_16:
-                self._current_offset = parse_pfb16_rsz_userdata(self, data, skip_data)
+                self._current_offset = parse_pfb16_rsz_userdata(self, data, skip_data, rsz_base_offset)
             else:
                 self._parse_standard_rsz_userdata(data, rsz_base_offset)
         
@@ -1028,10 +1031,10 @@ class RszFile:
         finally:
             self._registry_validation_enabled = previous
         
-    def _parse_scn19_rsz_userdata(self, data, skip_data = False):
+    def _parse_scn19_rsz_userdata(self, data, skip_data, rsz_base_offset):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
         self.has_embedded_rsz = True
-        self._current_offset = parse_scn19_rsz_userdata(self, data, skip_data)
+        self._current_offset = parse_scn19_rsz_userdata(self, data, skip_data, rsz_base_offset)
 
     def get_rsz_userdata_string(self, rui):
         return self._rsz_userdata_str_map.get(rui, "")
@@ -2173,7 +2176,10 @@ class RszFile:
             self.rsz_header.userdata_count = len(self.rsz_userdata_infos)
 
         out = bytearray()
-        self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
+        if self.has_embedded_rsz:
+            build_scn19_rsz_section(self, out, 0)
+        else:
+            self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
         return out.take_bytes()
 
     def build_validated(self, special_align_enabled=False) -> bytes:

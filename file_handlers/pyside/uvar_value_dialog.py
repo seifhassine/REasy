@@ -11,7 +11,7 @@ lazy from PySide6.QtGui import QDoubleValidator, QIntValidator
 import uuid
 
 lazy from utils.number_format import format_float_sequence, format_full_float
-lazy from file_handlers.uvar import TypeKind, UvarFlags, Vec3, Int3, Uint3
+lazy from file_handlers.uvar import TypeKind, UvarFlags, ValueRange, Vec3
 lazy from file_handlers.pyside.value_widgets import AxisLineEdit
 lazy from ui.editor_widgets import styled_label
 
@@ -65,19 +65,11 @@ class UvarValueEditDialog(QDialog):
         layout.setContentsMargins(0, 4, 0, 4)
         layout.setSpacing(6)
         
-        # Check if this is a vector type based on flags
-        is_vec3_flag = bool(self.var_flags & UvarFlags.IsVec3) if self.var_flags else False
-        
-        # Format current value for display
         current_str = self._format_current_value(current_value)
-        
-        # Handle special case: vector type based on flags
-        if is_vec3_flag and var_type in (TypeKind.Single, TypeKind.Int32, TypeKind.Uint32, 
-                                          TypeKind.Int8, TypeKind.Int16, TypeKind.Uint8, TypeKind.Uint16):
-            self._create_flagged_vector_input(
-                layout, var_type, current_value, TypeKind
-            )
-            
+
+        if self.var_flags & UvarFlags.HasRange:
+            self._create_range_input(layout, var_type, current_value, TypeKind)
+
         elif var_type == TypeKind.Boolean:
             # Checkbox for boolean
             self.input = QCheckBox(self.tr("Value"))
@@ -184,25 +176,19 @@ class UvarValueEditDialog(QDialog):
             validator=validator,
         )
 
-    def _create_flagged_vector_input(
+    def _create_range_input(
         self,
         layout,
         var_type,
         current_value,
         type_kind,
     ):
-        if hasattr(current_value, 'x'):
-            values = [current_value.x, current_value.y, current_value.z]
-        elif isinstance(current_value, (list, tuple)) and len(current_value) >= 3:
-            values = list(current_value[:3])
-        else:
-            values = [0, 0, 0]
-
         self.inputs = []
-        for component, value in zip(('X', 'Y', 'Z'), values):
-            layout.addWidget(QLabel(f"{component}:"))
-            input_field = AxisLineEdit(component.lower())
-            if var_type == type_kind.Single:
+        for label, value in zip((self.tr("Value:"), self.tr("Min:"), self.tr("Max:")),
+                                (current_value.value, current_value.min, current_value.max)):
+            layout.addWidget(QLabel(label))
+            input_field = QLineEdit()
+            if var_type in (type_kind.Single, type_kind.Double):
                 input_field.setValidator(QDoubleValidator())
                 input_field.setText(format_full_float(value, 8))
             else:
@@ -279,16 +265,10 @@ class UvarValueEditDialog(QDialog):
         if not self.input:
             return None
             
-        # Check if this is a vector type based on flags
-        is_vec3_flag = bool(self.var_flags & UvarFlags.IsVec3) if self.var_flags else False
-            
         try:
-            # Handle special case: vector type based on flags
-            if is_vec3_flag and self.var_type in (TypeKind.Single, TypeKind.Int32, TypeKind.Uint32,
-                                                  TypeKind.Int8, TypeKind.Int16, TypeKind.Uint8, TypeKind.Uint16):
-                return self._get_flagged_vector_value(
-                    TypeKind, Vec3, Int3, Uint3
-                )
+            if self.var_flags & UvarFlags.HasRange:
+                converter = float if self.var_type in (TypeKind.Single, TypeKind.Double) else int
+                return ValueRange(*(converter(field.text() or 0) for field in self.inputs))
             if self.var_type == TypeKind.Boolean:
                 return self.input.isChecked()
                 
@@ -341,22 +321,3 @@ class UvarValueEditDialog(QDialog):
             for text in (input_field.text() for input_field in self.inputs)
         ]
 
-    def _get_flagged_vector_value(
-        self,
-        type_kind,
-        vec3_type,
-        int3_type,
-        uint3_type,
-    ):
-        converter = float if self.var_type == type_kind.Single else int
-        default = 0.0 if converter is float else 0
-        values = [
-            converter(text) if text else default
-            for text in (input_field.text() for input_field in self.inputs)
-        ]
-        vector_factory = {
-            type_kind.Single: vec3_type,
-            type_kind.Int32: int3_type,
-            type_kind.Uint32: uint3_type,
-        }.get(self.var_type)
-        return vector_factory(*values) if vector_factory else values

@@ -2,9 +2,8 @@ from typing import Optional, Any, Type
 import uuid
 
 from .base_model import BaseModel, FileHandler
-from .uvar_types import TypeKind, UvarFlags, Vec3, Int3, Uint3, Position, get_python_type
+from .uvar_types import TypeKind, UvarFlags, ValueRange, Vec3, get_python_type
 lazy from .uvar_expression import UvarExpression
-lazy from utils.hash_util import murmur3_hash
 
 TYPE_FORMATS = {
     TypeKind.Boolean: '<B',
@@ -18,35 +17,6 @@ TYPE_FORMATS = {
     TypeKind.Uint64: '<Q',
     TypeKind.Single: '<f',
     TypeKind.Double: '<d',
-}
-
-def _read_three(handler: FileHandler, fmt: str):
-    return [handler.read(fmt) for _ in range(3)]
-
-VEC3_READERS = {
-    TypeKind.Int8:       lambda h: _read_three(h, '<b'),
-    TypeKind.Uint8:      lambda h: _read_three(h, '<B'),
-    TypeKind.Int16:      lambda h: _read_three(h, '<h'),
-    TypeKind.Uint16:     lambda h: _read_three(h, '<H'),
-    TypeKind.Int32:      lambda h: Int3(*h.read('<iii')),
-    TypeKind.Uint32:     lambda h: Uint3(*h.read('<III')),
-    TypeKind.Int64:      lambda h: _read_three(h, '<q'),
-    TypeKind.Uint64:     lambda h: _read_three(h, '<Q'),
-    TypeKind.Single:     lambda h: Vec3(*h.read('<fff')),
-    TypeKind.Double:     lambda h: Position(*h.read('<ddd')),
-}
-
-VEC3_WRITERS = {
-    TypeKind.Int8:       lambda h, v: [h.write('<b', x) for x in v],
-    TypeKind.Uint8:      lambda h, v: [h.write('<B', x) for x in v],
-    TypeKind.Int16:      lambda h, v: [h.write('<h', x) for x in v],
-    TypeKind.Uint16:     lambda h, v: [h.write('<H', x) for x in v],
-    TypeKind.Int32:      lambda h, v: h.write_bytes(v.pack()),
-    TypeKind.Uint32:     lambda h, v: h.write_bytes(v.pack()),
-    TypeKind.Int64:      lambda h, v: [h.write('<q', x) for x in v],
-    TypeKind.Uint64:     lambda h, v: [h.write('<Q', x) for x in v],
-    TypeKind.Single:     lambda h, v: h.write_bytes(v.pack()),
-    TypeKind.Double:     lambda h, v: h.write_bytes(v.pack()),
 }
 
 def _read_offset_ascii(handler: FileHandler) -> str:
@@ -86,14 +56,6 @@ NONVEC_WRITERS = {
 }
 
 _UNSET = sentinel("_UNSET")
-_INTEGER_VEC3_LIST_TYPES = {
-    TypeKind.Int8,
-    TypeKind.Uint8,
-    TypeKind.Int16,
-    TypeKind.Uint16,
-    TypeKind.Int64,
-    TypeKind.Uint64,
-}
 _DEFAULT_VALUE_FACTORIES = {
     str: str,
     bool: bool,
@@ -101,15 +63,13 @@ _DEFAULT_VALUE_FACTORIES = {
     float: float,
     uuid.UUID: lambda: uuid.UUID(int=0),
     Vec3: lambda: Vec3(0.0, 0.0, 0.0),
-    Int3: lambda: Int3(0, 0, 0),
-    Uint3: lambda: Uint3(0, 0, 0),
-    Position: lambda: Position(0.0, 0.0, 0.0),
 }
 
 
-def _create_default_value(var_type: Type, type_kind: TypeKind, is_vec3: bool):
-    if is_vec3 and var_type is list:
-        return [0, 0, 0] if type_kind in _INTEGER_VEC3_LIST_TYPES else []
+def _create_default_value(var_type: Type, type_kind: TypeKind):
+    if var_type is ValueRange:
+        zero = 0.0 if type_kind in (TypeKind.Single, TypeKind.Double) else 0
+        return ValueRange(zero, zero, zero)
     if var_type is tuple:
         tuple_size = {TypeKind.Vec2: 2, TypeKind.Vec4: 4}.get(type_kind)
         return (0.0,) * tuple_size if tuple_size else _UNSET
@@ -118,18 +78,6 @@ def _create_default_value(var_type: Type, type_kind: TypeKind, is_vec3: bool):
 
     factory = _DEFAULT_VALUE_FACTORIES.get(var_type)
     return factory() if factory else None
-
-
-def _write_vec3_value(
-    handler: FileHandler,
-    type_kind: TypeKind,
-    name: str,
-    value: Any,
-):
-    writer = VEC3_WRITERS.get(type_kind)
-    if writer is None:
-        raise Exception(f"Unhandled vec3 variable type {name} = {type_kind}")
-    writer(handler, value)
 
 
 def _write_nonvec_value(
@@ -171,9 +119,9 @@ class Variable(BaseModel):
         self._original_value_offset: Optional[int] = None
         
     @property
-    def is_vec3(self) -> bool:
-        return (self.flags & UvarFlags.IsVec3) != 0
-        
+    def has_range(self) -> bool:
+        return bool(self.flags & UvarFlags.HasRange)
+
     @property
     def value_type(self) -> Optional[Type]:
         return get_python_type(self.type, self.flags)
@@ -184,7 +132,7 @@ class Variable(BaseModel):
             self.value = None
             return
 
-        default_value = _create_default_value(var_type, self.type, self.is_vec3)
+        default_value = _create_default_value(var_type, self.type)
         if default_value is not _UNSET:
             self.value = default_value
             
@@ -231,14 +179,8 @@ class Variable(BaseModel):
         return True
             
     def read_value(self, handler: FileHandler):
-        if self.is_vec3:
-            if hasattr(self, '_interleaved_data_size') and self._interleaved_data_size > 0:
-                target_relative_pos = handler.position + self._interleaved_data_size
-                handler.seek_relative(target_relative_pos)
-            reader = VEC3_READERS.get(self.type)
-            if reader is None:
-                raise Exception(f"Unhandled vec3 variable type {self.name} = {self.type}")
-            self.value = reader(handler)
+        if self.has_range:
+            self.value = ValueRange(*handler.read("<" + TYPE_FORMATS[self.type][1] * 3))
             return
         reader = NONVEC_READERS.get(self.type)
         if reader is not None:
@@ -253,10 +195,6 @@ class Variable(BaseModel):
  
     def do_write(self, handler: FileHandler) -> bool:
         self.start_offset = handler.tell
-        if self.name:
-            self.name_hash = murmur3_hash(self.name.encode('utf-16le'))
-        else:
-            self.name_hash = murmur3_hash(b'')
         handler.write_guid(self.guid)
         handler.write('<Q', 0)  # name_offset
         handler.write('<Q', 0)  # value_offset
@@ -269,19 +207,20 @@ class Variable(BaseModel):
     def write_value(self, handler: FileHandler, value_offset_override: Optional[int] = None):
         if self.value is None:
             return
+        handler.align_write(4)
         declared_offset = value_offset_override if value_offset_override is not None else handler.tell
         handler.write_at(self.start_offset + 24, '<Q', declared_offset)
         self.value_offset = declared_offset
-        if self.is_vec3:
-            _write_vec3_value(handler, self.type, self.name, self.value)
+        if self.has_range:
+            handler.write("<" + TYPE_FORMATS[self.type][1] * 3, self.value.value, self.value.min, self.value.max)
         else:
             _write_nonvec_value(handler, self.type, self.name, self.value)
-        handler.align_write(4)
 
     def write_expression(self, handler: FileHandler):
         if self.expression is None:
             return
             
+        handler.align_write(16)
         handler.write_at(self.start_offset + 32, '<Q', handler.tell)
         self.expression_offset = handler.tell
         

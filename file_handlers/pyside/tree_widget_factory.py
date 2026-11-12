@@ -81,7 +81,7 @@ class TreeWidgetFactory:
         "Int4ColorData": Int4ColorInput,
         "F64Data": F64Input, 
         "SizeData": SizeInput,
-        "PointData": Vec3Input,
+        "PointData": Vec2Input,
     }
 
     @staticmethod

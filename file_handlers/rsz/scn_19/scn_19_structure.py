@@ -730,9 +730,8 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         )
         out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
 
-def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
+def parse_scn19_rsz_userdata(rsz_file, data, skip_data, rsz_base_offset):
     rsz_file.rsz_userdata_infos = []
-    rsz_base_offset = rsz_file.header.data_offset
     current_offset = rsz_file._current_offset
     
     for i in range(rsz_file.rsz_header.userdata_count):

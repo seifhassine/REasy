@@ -420,6 +420,7 @@ class GuidInput(BaseValueWidget):
 
         self.line_edit.apply_text(text)
         self._data.guid_str = text
+        self._data.raw_bytes = uuid.UUID(text).bytes_le
         self.valueChanged.emit(text)
         self.mark_modified()
         set_invalid(self.line_edit, False)
@@ -515,6 +516,7 @@ class GuidInput(BaseValueWidget):
 
         if is_valid:
             self._data.guid_str = formatted
+            self._data.raw_bytes = uuid.UUID(formatted).bytes_le
             self.valueChanged.emit(formatted)
             self.mark_modified()
             set_invalid(self.line_edit, False)
@@ -1235,7 +1237,7 @@ class HexBytesInput(BaseValueWidget):
             
             original_text = self.text_field.text()
             
-            text_no_spaces = ''.join(c for c in text if c in '0123456789abcdef')
+            text_no_spaces = ''.join(c for c in text.lower() if c in '0123456789abcdef')
             
             if text_no_spaces:
                 if len(text_no_spaces) % 2 != 0:
@@ -1281,7 +1283,7 @@ class OverwriteHexLineEdit(QLineEdit):
 
     def keyPressEvent(self, event):
         text = event.text()
-        if text and text.upper() in "0123456789abcdef":
+        if text and text.lower() in "0123456789abcdef":
             pos = self.cursorPosition()
             full_text = self.text()
             
@@ -1924,7 +1926,7 @@ class _EnumComboBox(QComboBox):
 
 
 class EnumInput(BaseValueWidget):
-    valueChanged = Signal(int)
+    valueChanged = Signal(object)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1997,6 +1999,9 @@ class EnumInput(BaseValueWidget):
             
         try:
             value = int(text)
+            bounds = INTEGER_BOUNDS.get(type(self._data).__name__)
+            if bounds and not bounds[0] <= value <= bounds[1]:
+                raise ValueError("Out of range")
             old_value = self._data.value
             
             if old_value != value:
@@ -2050,7 +2055,7 @@ class _FlagComboBox(QComboBox):
 
 
 class FlagEnumInput(BaseValueWidget):
-    valueChanged = Signal(int)
+    valueChanged = Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -2259,10 +2264,8 @@ class ColorInput(BaseValueWidget):
             values, valid = self._validated_channel_values()
             self._set_channel_values(values)
             self._update_color_button()
-
-            if valid:
-                self.valueChanged.emit(tuple(values))
-                self.mark_modified()
+            self.valueChanged.emit(tuple(values))
+            self.mark_modified()
         except ValueError:
             pass
 

@@ -136,10 +136,7 @@ class UVarFile(BaseModel):
                 self.embedded_uvars.append(embed_file)
 
     def _read_hash_data(self, handler: FileHandler):
-        if (
-            self.header.variable_count <= 0
-            or self.header.hash_info_offset <= 0
-        ):
+        if self.header.hash_info_offset <= 0:
             return
 
         handler.seek_relative(self.header.hash_info_offset)
@@ -163,6 +160,7 @@ class UVarFile(BaseModel):
     ):
         original_base = variable.value_offset
         if original_base not in group_start_by_base:
+            handler.align_write(4)
             group_start_by_base[original_base] = handler.tell
         if variable.type == TypeKind.Trigger:
             handler.write_at(
@@ -234,11 +232,11 @@ class UVarFile(BaseModel):
                 current_data_end_offset = handler.tell
 
     def _write_variables(self, handler: FileHandler):
+        handler.write_at(self.header.start_offset + 16, '<Q', handler.tell)
+        self.header.data_offset = handler.tell
         if not self.variables:
             return
 
-        handler.write_at(self.header.start_offset + 16, '<Q', handler.tell)
-        self.header.data_offset = handler.tell
         for variable in self.variables:
             variable.write(handler)
 
@@ -250,18 +248,20 @@ class UVarFile(BaseModel):
                 )
 
         self._write_variable_values(handler, base_counts)
-        handler.align_write(16)
         for variable in self.variables:
             variable.write_expression(handler)
 
     def _write_strings(self, handler: FileHandler):
-        handler.write_at(self.header.start_offset + 8, '<Q', handler.tell)
-        self.header.strings_offset = handler.tell
-        handler.write_wstring(self.header.name or "")
+        if self.header.name is not None:
+            handler.align_write(16)
+            handler.write_at(self.header.start_offset + 8, '<Q', handler.tell)
+            self.header.strings_offset = handler.tell
+            handler.write_wstring(self.header.name)
 
+        name_offsets = {}
         for variable in self.variables:
-            handler.write_at(variable.start_offset + 16, '<Q', handler.tell)
-            handler.write_wstring(variable.name or "")
+            handler.write_at(variable.start_offset + 16, '<Q', name_offsets.setdefault(variable.name, handler.tell))
+            handler.write_wstring(variable.name)
 
     def _write_embedded_uvars(self, handler: FileHandler):
         if not self.embedded_uvars:
@@ -309,7 +309,7 @@ class UVarFile(BaseModel):
         if not self.header.write(handler):
             raise ValueError("Failed to write header")
             
-        handler.align_write(16)
+        handler.write_bytes(bytes(16 - handler.position % 16 if self.header.version < 3 else -handler.position % 16))
 
         self._write_variables(handler)
         self._write_strings(handler)
@@ -329,7 +329,7 @@ class UVarFile(BaseModel):
         
     def update_strings(self):
         for var in self.variables:
-            var.name_hash = murmur3_hash((var.name or "").encode('utf-16le'))
+            var.name_hash = murmur3_hash((var.name or "").encode('utf-16le')) if self.hash_data.has_name_hashes else 0
             
         for embed in self.embedded_uvars:
             embed.update_strings()

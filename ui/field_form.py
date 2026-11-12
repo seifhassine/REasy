@@ -139,6 +139,7 @@ class FieldForm(QWidget):
             widget = QPushButton(str(field.get()))
             set_style_role(widget, compact=True)
             widget.clicked.connect(lambda: field.set(None))
+            self._updaters.append(lambda: widget.setText(str(field.get())))
             return widget
         if field.kind == "row":
             return self._row(field)

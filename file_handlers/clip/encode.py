@@ -23,6 +23,11 @@ def write_motclip(timeline: Timeline, offset: int) -> bytes:
     return _Encoder(timeline).write(offset)
 
 
+def write_embedded_timeline(timeline: Timeline, offset: int, first_unique_id: int) -> bytes:
+    _validated(timeline)
+    return _Encoder(timeline, first_unique_id).write(offset)
+
+
 def _validated(timeline: Timeline) -> None:
     from .validation import validate
 
@@ -47,8 +52,9 @@ class _Pool:
 
 
 class _Encoder:
-    def __init__(self, timeline: Timeline):
+    def __init__(self, timeline: Timeline, first_unique_id: int = 0):
         self.timeline = timeline
+        self.first_unique_id = first_unique_id
         self.version = timeline.version
         self.rules = rules_for(timeline.version, timeline.kind)
         dedupe = self.rules.string_dedupe
@@ -98,7 +104,7 @@ class _Encoder:
         for table, nodes in tables.items():
             if table in placement:
                 blobs[table] = b"".join(
-                    node_ref.encode({"node": placement["nodes"] + self.node_index[id(node)] * node_size})
+                    node_ref.encode({"node": placement["nodes"] + offset + self.node_index[id(node)] * node_size})
                     for node in nodes)
         header = {"magic": int.from_bytes(MAGIC, "little"), "version": self.version,
                   "total_frame": self.timeline.total_frame, "header_guid": self.timeline.header_guid}
@@ -256,7 +262,7 @@ class _Encoder:
         return {"name": node.name, "name_c8": node.name, "node_type": node.node_type, "begin_frame": node.begin_frame,
                 "end_frame": node.end_frame, "guid": node.guid, "node_id": node.node_id, "tag": node.tag,
                 "editor_id": node.editor_id, "type_hash": node.type_hash,
-                "unique_id": index if node.unique_id is None else node.unique_id,
+                "unique_id": self.first_unique_id + index if node.unique_id is None else node.unique_id,
                 "extra_mask": self._extra_mask(node), "name_hash": name_hash, "unicode_hash": unicode_hash,
                 "child_count": len(node.children),
                 "child_index": self.node_index[id(node.children[0])] if node.children else 0,

@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "enums": {
+  "NodeAttribute": "via.behaviortree.TreeNodeData.NodeAttribute",
+  "EndType": "via.motion.detail.MotionFsm2TransitionData.EndType",
+  "StartType": "via.motion.detail.MotionFsm2TransitionData.StartType",
+  "InterpolationMode": "via.motion.InterpolationMode",
+  "InterpolationCurve": "via.motion.InterpolationCurve"
+ },
+ "field_enums": {"end_type": "EndType", "start_type": "StartType", "interpolation_mode": "InterpolationMode",
+                 "interpolation_curve": "InterpolationCurve", "cont_on_layer_interp_curve": "InterpolationCurve"},
+ "hfsm": {
+  "16": {"layout": "hfsm16", "games": ["RE7 RT", "DMC5"]}
+ },
+ "trees": {
+  "30": {"layout": "tree30", "games": ["RE2", "DMC5"]},
+  "34": {"layout": "tree34", "games": ["RE3"]},
+  "40": {"layout": "tree34", "games": ["RE2 RT", "RE3 RT", "RE8"]},
+  "41": {"layout": "tree34", "games": ["RE4", "SF6", "MH Wilds"]},
+  "42": {"layout": "tree42", "games": ["RE9", "PRAGMATA", "Onimusha WotS", "DD2"]}
+ },
+ "files": {
+  "fsm": {"16": {"hfsm": 16}},
+  "motfsm": {"17": {"hfsm": 16, "layout": "mfsm17"}},
+  "bhvt": {"30": {"tree": 30}, "34": {"tree": 34}, "40": {"tree": 40}, "41": {"tree": 41}},
+  "fsmv2": {"30": {"tree": 30}, "34": {"tree": 34}, "40": {"tree": 40}, "41": {"tree": 41}, "42": {"tree": 42}},
+  "motfsm2": {
+   "30": {"tree": 30, "layout": "mfs30"},
+   "31": {"tree": 30, "layout": "mfs31"},
+   "36": {"tree": 34, "layout": "mfs36"},
+   "42": {"tree": 40, "layout": "mfs36"},
+   "43": {"tree": 41, "layout": "mfs36"},
+   "45": {"tree": 42, "layout": "mfs45"}
+  },
+  "tmlfsm2": {
+   "41053002": {"tree": 41, "layout": "tfs", "timeline": 53},
+   "41054003": {"tree": 41, "layout": "tfs", "timeline": 54},
+   "41085004": {"tree": 41, "layout": "tfs", "timeline": 85},
+   "42089004": {"tree": 42, "layout": "tfs", "timeline": 89},
+   "42090004": {"tree": 42, "layout": "tfs", "timeline": 90},
+   "42091004": {"tree": 42, "layout": "tfs", "timeline": 91}
+  }
+ }
+}

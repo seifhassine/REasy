@@ -31,7 +31,7 @@ def validate(timeline: Timeline) -> list[Issue]:
 
 
 def _f32(value) -> bool:
-    if type(value) is not float or not math.isfinite(value):
+    if type(value) is not float:
         return False
     try:
         _FLOAT.pack(value)
@@ -51,7 +51,7 @@ class _Validator:
         timeline, rules = self.timeline, self.rules
         if not _f32(timeline.total_frame) and not (timeline.kind is ResourceKind.MOT_CLIP
                                                    and timeline.total_frame == -math.inf):
-            self._add(timeline, "The total frame is not a finite 32-bit float")
+            self._add(timeline, "The total frame is not a 32-bit float")
         if timeline.header_guid != bytes(16) and "header_guid" not in rules.header.names:
             self._add(timeline, "This version stores no header GUID")
         clip_roots = rules.clip_roots
@@ -71,7 +71,7 @@ class _Validator:
                     self._add(clip, "In this version a clip holds no nodes")
                 for name in ("frame_in", "frame_out", "source_in", "source_out"):
                     if not _f32(getattr(clip, name)):
-                        self._add(clip, f"{name} is not a finite 32-bit float")
+                        self._add(clip, f"{name} is not a 32-bit float")
         held = [node for track in timeline.tracks for node in track.roots]
         if timeline.kind is ResourceKind.MOT_CLIP:
             held = list(timeline.roots)
@@ -110,7 +110,7 @@ class _Validator:
                     and self._fits("sequence_node", "child_count", len(info.children))):
                 self._add(info, "More ranges or children than the node's count fields hold")
             if not all(_f32(value) for pair in info.ranges for value in pair):
-                self._add(info, "A range bound is not a finite 32-bit float")
+                self._add(info, "A range bound is not a 32-bit float")
             stack += info.children
 
     def _add(self, target, message: str, error: bool = True) -> None:
@@ -166,7 +166,7 @@ class _Validator:
         if not (self._fits("node", "editor_id", node.editor_id) and self._fits("node", "type_hash", node.type_hash)):
             self._add(node, "IDs must fit 32 bits")
         if not (_f32(node.begin_frame) and _f32(node.end_frame)):
-            self._add(node, "Frames must be finite 32-bit floats")
+            self._add(node, "Frames must be 32-bit floats")
         for prop in node.properties:
             self._property(prop, None)
 
@@ -187,7 +187,7 @@ class _Validator:
                                          or property_type(parent.type).children != "elements"):
             self._add(prop, "Only array elements have an array index")
         if not (_f32(prop.begin_frame) and _f32(prop.end_frame)):
-            self._add(prop, "Frames must be finite 32-bit floats")
+            self._add(prop, "Frames must be 32-bit floats")
         keyed = info is not None and info.owns_keys(self.version)
         count = len(prop.keys) if keyed else len(prop.children)
         if not self._fits("property", "key_count", count):
@@ -215,14 +215,14 @@ class _Validator:
         for point in prop.speed_points:
             self._control(point, "speed_point", point.interpolation, point.control)
             if not (_f32(point.frame) and _f32(point.rate)):
-                self._add(point, "Speed point frame and rate must be finite 32-bit floats")
+                self._add(point, "Speed point frame and rate must be 32-bit floats")
             if not self._fits("speed_point", "interpolation", point.interpolation):
                 self._add(point, "The interpolation does not fit")
 
     def _key(self, key: Key, info, record: str) -> None:
         fields = self.records[record].names
         if not _f32(key.frame) or not _f32(key.rate):
-            self._add(key, "Key frame and rate must be finite 32-bit floats")
+            self._add(key, "Key frame and rate must be 32-bit floats")
         if problem := value_problem(info.value, key.value):
             self._add(key, f"The value {problem}")
         self._stored(record, key, "rate", key.rate, 0.0)
@@ -246,4 +246,4 @@ class _Validator:
             return
         width = control_width(table)
         if not (isinstance(control, tuple) and len(control) == width and all(_f32(value) for value in control)):
-            self._add(item, f"{info.name} needs {width} finite 32-bit control values")
+            self._add(item, f"{info.name} needs {width} 32-bit control values")

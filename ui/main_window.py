@@ -1402,11 +1402,13 @@ class REasyEditorApp(QMainWindow):
             "",
             "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.cfil* *.rcol* *.fol* *.uvs* *.motbank* *.mcambank* "
             "*.clip* *.tml* *.ucurve* *.mot.* *.motlist* *.mottree* *.motpack* *.jcns* *.gui* *.gcf* *.ift* *.oft* "
+            "*.bhvt* *.fsmv2* *.fsm.* *.motfsm* *.tmlfsm2* "
             "*.tex* *.dds *.mesh* *.stmesh* *.sdftex* *.mdf2* *.mmtr* *.sdf* *.vsdf* *.csdf* *.bnk* *.pck* *.sbnk* "
             "*.spck* *.wel* *.wcc* *.wcp* *.wcst* *.wgs* *.wss* *.wcsw* *.wcss* *.wcsa* *.wcsf* *.mov*);;"
             "SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;"
             "CFIL Files (*.cfil*);;RCOL Files (*.rcol*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;"
             "Motion Files (*.mot.* *.motlist* *.mottree* *.motpack*);;Joint Constraint Files (*.jcns*);;"
+            "Behavior Tree and FSM Files (*.bhvt* *.fsmv2* *.fsm.* *.motfsm* *.tmlfsm2*);;"
             "Texture Files (*.tex*);;DDS Files (*.dds);;Mesh Files (*.mesh* *.stmesh*);;"
             "Material Definition Files (*.mdf2*);;Master Material Files (*.mmtr*);;"
             "Sound Files (*.bnk* *.pck* *.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;"

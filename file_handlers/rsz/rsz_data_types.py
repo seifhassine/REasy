@@ -454,9 +454,9 @@ class AABBData(_DataValue):
         return cls(min_vals[0], min_vals[1], min_vals[2], max_vals[0], max_vals[1], max_vals[2], ctx.original_type)
 
 class CapsuleData(_DataValue):
-    def __init__(self, start: Vec3Data = Vec3Data(0,0,0, ""), end: Vec3Data = Vec3Data(0,0,0, ""), radius: float = 0, orig_type: str = ""):
-        self.start = start
-        self.end = end
+    def __init__(self, start: Vec3Data = None, end: Vec3Data = None, radius: float = 0, orig_type: str = ""):
+        self.start = Vec3Data(0, 0, 0, "") if start is None else start
+        self.end = Vec3Data(0, 0, 0, "") if end is None else end
         self.radius = radius
         self.orig_type = orig_type
 
@@ -471,11 +471,11 @@ class CapsuleData(_DataValue):
         return cls(start_vec, end_vec, radius, ctx.original_type)
 
 class AreaData(_DataValue):
-    def __init__(self, p0: Float2Data = Float2Data(0,0, ""), p1: Float2Data = Float2Data(0,0, ""), p2: Float2Data = Float2Data(0,0, ""), p3: Float2Data = Float2Data(0,0, ""), height: float = 0, bottom: float = 0, orig_type: str = ""):
-        self.p0 = p0
-        self.p1 = p1
-        self.p2 = p2
-        self.p3 = p3
+    def __init__(self, p0: Float2Data = None, p1: Float2Data = None, p2: Float2Data = None, p3: Float2Data = None, height: float = 0, bottom: float = 0, orig_type: str = ""):
+        self.p0 = Float2Data(0, 0, "") if p0 is None else p0
+        self.p1 = Float2Data(0, 0, "") if p1 is None else p1
+        self.p2 = Float2Data(0, 0, "") if p2 is None else p2
+        self.p3 = Float2Data(0, 0, "") if p3 is None else p3
         self.height = height
         self.bottom = bottom
         self.orig_type = orig_type
@@ -496,11 +496,11 @@ class AreaData(_DataValue):
         return cls(p0, p1, p2, p3, height, bottom, ctx.original_type)
 
 class AreaDataOld(_DataValue):
-    def __init__(self, p0: Vec2Data = Vec2Data(0,0, ""), p1: Vec2Data = Vec2Data(0,0, ""), p2: Vec2Data = Vec2Data(0,0, ""), p3: Vec2Data = Vec2Data(0,0, ""), height: float = 0, bottom: float = 0, orig_type: str = ""):
-        self.p0 = p0
-        self.p1 = p1
-        self.p2 = p2
-        self.p3 = p3
+    def __init__(self, p0: Vec2Data = None, p1: Vec2Data = None, p2: Vec2Data = None, p3: Vec2Data = None, height: float = 0, bottom: float = 0, orig_type: str = ""):
+        self.p0 = Vec2Data(0, 0, "") if p0 is None else p0
+        self.p1 = Vec2Data(0, 0, "") if p1 is None else p1
+        self.p2 = Vec2Data(0, 0, "") if p2 is None else p2
+        self.p3 = Vec2Data(0, 0, "") if p3 is None else p3
         self.height = height
         self.bottom = bottom
         self.orig_type = orig_type
@@ -521,9 +521,9 @@ class AreaDataOld(_DataValue):
         return cls(p0, p1, p2, p3, height, bottom, ctx.original_type)
 
 class ConeData(_DataValue):
-    def __init__(self, position: Vec3Data = Vec3Data(0,0,0, ""), direction: Vec3Data = Vec3Data(0,0,0, ""), angle: float = 0, distance: float = 0, orig_type: str = ""):
-        self.position = position
-        self.direction = direction
+    def __init__(self, position: Vec3Data = None, direction: Vec3Data = None, angle: float = 0, distance: float = 0, orig_type: str = ""):
+        self.position = Vec3Data(0, 0, 0, "") if position is None else position
+        self.direction = Vec3Data(0, 0, 0, "") if direction is None else direction
         self.angle = angle
         self.distance = distance
         self.orig_type = orig_type
@@ -539,9 +539,9 @@ class ConeData(_DataValue):
         return cls(position, direction, direction_vals[3], position_vals[3], ctx.original_type)
 
 class LineSegmentData(_DataValue):
-    def __init__(self, start: Vec3Data = Vec3Data(0,0,0, ""), end: Vec3Data = Vec3Data(0,0,0, ""), orig_type: str = ""):
-        self.start = start
-        self.end = end
+    def __init__(self, start: Vec3Data = None, end: Vec3Data = None, orig_type: str = ""):
+        self.start = Vec3Data(0, 0, 0, "") if start is None else start
+        self.end = Vec3Data(0, 0, 0, "") if end is None else end
         self.orig_type = orig_type
 
     @classmethod
@@ -636,8 +636,8 @@ class SizeData(_DataValue):
         return cls(values[0], values[1], ctx.original_type)
 
 class SphereData(_DataValue):
-    def __init__(self, center: Vec3Data = Vec3Data(0,0,0, ""), radius: float = 0, orig_type: str = ""):
-        self.center = center
+    def __init__(self, center: Vec3Data = None, radius: float = 0, orig_type: str = ""):
+        self.center = Vec3Data(0, 0, 0, "") if center is None else center
         self.radius = radius
         self.orig_type = orig_type
 
@@ -648,8 +648,8 @@ class SphereData(_DataValue):
         return cls(center, values[3], ctx.original_type)
 
 class CylinderData(_DataValue):
-    def __init__(self, center: Vec3Data = Vec3Data(0,0,0, ""), radius: float = 0, height: float = 0, orig_type: str = ""):
-        self.center = center
+    def __init__(self, center: Vec3Data = None, radius: float = 0, height: float = 0, orig_type: str = ""):
+        self.center = Vec3Data(0, 0, 0, "") if center is None else center
         self.radius = radius
         self.height = height
         self.orig_type = orig_type

@@ -14,13 +14,15 @@ lazy from ui.editor_widgets import icon_action
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors
 lazy from file_handlers.uvar import (
-    UVarFile, Variable, TypeKind, UVAR_MAGIC
+    UVarFile, Variable, TypeKind, UVAR_MAGIC, UvarFlags
 )
 lazy from utils.number_format import format_float_sequence, format_full_float
 lazy from file_handlers.pyside.uvar_value_dialog import UvarValueEditDialog
 lazy from file_handlers.uvar.uvar_expression import UvarExpression
 lazy from file_handlers.uvar.uvar_node import UvarNode
-lazy from file_handlers.uvar.uvar_types import NodeValueType, NodeConnection
+lazy from file_handlers.uvar.expression_nodes import expression_parameter_names
+lazy from file_handlers.uvar.node_parameter import FORMATS
+lazy from file_handlers.uvar.uvar_types import NodeConnection, ParamType
 lazy from file_handlers.uvar.node_parameter import NodeParameter
 
 
@@ -465,7 +467,7 @@ class UvarHandler(BaseFileHandler):
         _set_label(type_item, "tag", self.tr(_TYPE_LABEL))
         type_text = f"{var.type.name}"
         if var.flags:
-            type_text += f" [flags: 0x{var.flags:02x}]"
+            type_text += f" [{UvarFlags(var.flags).name}]"
         type_item.setText(1, type_text)
         type_item.setForeground(1, QBrush(QColor("#9CDCFE")))
         metadata_map[id(type_item)] = {"type": "variable_type", "variable": var}
@@ -505,7 +507,7 @@ class UvarHandler(BaseFileHandler):
  
             out_item = QTreeWidgetItem(expr_item)
             _set_label(out_item, "export", self.tr(_OUTPUT_NODE_LABEL))
-            out_item.setText(1, str(var.expression.output_node_id))
+            out_item.setText(1, str(var.expression.root))
             out_item.setForeground(1, QBrush(QColor("#B5CEA8")))
             metadata_map[id(out_item)] = {"type": "expression_output_node", "variable": var}
  
@@ -519,8 +521,8 @@ class UvarHandler(BaseFileHandler):
                 outputs_by_node = {}
                 inputs_by_node = {}
                 for rel in var.expression.relations:
-                    outputs_by_node.setdefault(rel.src_node, []).append(rel)
-                    inputs_by_node.setdefault(rel.dst_node, []).append(rel)
+                    outputs_by_node.setdefault(rel.output_node, []).append(rel)
+                    inputs_by_node.setdefault(rel.input_node, []).append(rel)
 
                 for idx, node in enumerate(var.expression.nodes):
                     node_item = QTreeWidgetItem(nodes_group)
@@ -539,12 +541,12 @@ class UvarHandler(BaseFileHandler):
                     if getattr(node, 'parameters', None):
                         for p in node.parameters:
                             p_item = QTreeWidgetItem(node_item)
-                            _set_label(p_item, "variable", f"0x{p.name_hash:08x}")
+                            _set_label(p_item, "variable", self._parameter_label(p))
                             p_item.setText(1, f"{p.type.name}: {p.value}")
                             p_item.setForeground(1, QBrush(QColor("#9CDCFE")))
                             metadata_map[id(p_item)] = {"type": "expression_node_param", "param": p, "node": node, "variable": var}
 
-                    outs = outputs_by_node.get(getattr(node, 'node_id', idx), [])
+                    outs = outputs_by_node.get(idx, [])
                     outs_item = QTreeWidgetItem(node_item)
                     _set_label(outs_item, "arrow_right", self.tr(_OUTPUTS_LABEL))
                     outs_item.setText(1, str(len(outs)))
@@ -553,11 +555,11 @@ class UvarHandler(BaseFileHandler):
                     for rel in outs:
                         rel_item = QTreeWidgetItem(outs_item)
                         rel_item.setIcon(0, line_icon("link"))
-                        rel_item.setText(0, f"{rel.src_node} [port: {rel.src_port}] → {rel.dst_node} [port: {rel.dst_port}]")
+                        rel_item.setText(0, self._get_relation_label(rel))
                         rel_item.setForeground(0, QBrush(QColor("#B5CEA8")))
                         metadata_map[id(rel_item)] = {"type": "expression_relation", "relation": rel, "variable": var}
 
-                    ins = inputs_by_node.get(getattr(node, 'node_id', idx), [])
+                    ins = inputs_by_node.get(idx, [])
                     ins_item = QTreeWidgetItem(node_item)
                     _set_label(ins_item, "arrow_left", self.tr(_INPUTS_LABEL))
                     ins_item.setText(1, str(len(ins)))
@@ -566,7 +568,7 @@ class UvarHandler(BaseFileHandler):
                     for rel in ins:
                         rel_item = QTreeWidgetItem(ins_item)
                         rel_item.setIcon(0, line_icon("link"))
-                        rel_item.setText(0, f"{rel.src_node} [port: {rel.src_port}] → {rel.dst_node} [port: {rel.dst_port}]")
+                        rel_item.setText(0, self._get_relation_label(rel))
                         rel_item.setForeground(0, QBrush(QColor("#B5CEA8")))
                         metadata_map[id(rel_item)] = {"type": "expression_relation", "relation": rel, "variable": var}
                 
@@ -1110,7 +1112,7 @@ class UvarHandler(BaseFileHandler):
             tree._metadata_map[id(expr_item)] = {"type": "expression", "variable": var}
         out_item = QTreeWidgetItem(expr_item)
         _set_label(out_item, "export", self.tr(_OUTPUT_NODE_LABEL))
-        out_item.setText(1, str(expr.output_node_id))
+        out_item.setText(1, str(expr.root))
         out_item.setForeground(1, QBrush(QColor("#B5CEA8")))
         if hasattr(tree, '_metadata_map'):
             tree._metadata_map[id(out_item)] = {"type": "expression_output_node", "variable": var}
@@ -1127,7 +1129,7 @@ class UvarHandler(BaseFileHandler):
     def _update_output_node_label(self, expr_item: 'QTreeWidgetItem', expr):
         out_item = self._find_output_node_item(expr_item)
         if out_item is not None:
-            out_item.setText(1, str(expr.output_node_id))
+            out_item.setText(1, str(expr.root))
 
     def _expr_set_output_node(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
         var = meta["variable"]
@@ -1144,13 +1146,13 @@ class UvarHandler(BaseFileHandler):
             tree,
             self.tr(_SET_OUTPUT_NODE_TITLE),
             self.tr(_NODE_ID_PROMPT),
-            expr.output_node_id,
+            expr.root,
             0,
             max_id,
         )
         if not ok:
             return
-        expr.output_node_id = value
+        expr.root = value
         expr_item = self._find_parent_expr_item(item)
         if expr_item:
             self._update_output_node_label(expr_item, expr)
@@ -1175,8 +1177,6 @@ class UvarHandler(BaseFileHandler):
             return
         node.name = name
         node.node_id = len(expr.nodes)
-        node.ukn_offset = 0
-        node.ukn_count = 0
         expr.nodes.append(node)
         expr_item = self._find_parent_expr_item(item)
         if expr_item:
@@ -1230,22 +1230,22 @@ class UvarHandler(BaseFileHandler):
         var = meta["variable"]
         node = meta["node"]
         expr = self._get_expr(var)
-        deleted_id = node.node_id
+        deleted_id = expr.nodes.index(node)
         expr_item = self._find_parent_expr_item(item)
         if expr_item:
-            to_remove = [r for r in expr.relations if r.src_node == deleted_id or r.dst_node == deleted_id]
+            to_remove = [r for r in expr.relations if deleted_id in (r.input_node, r.output_node)]
             for rel in to_remove:
                 self._expr_remove_relation_ui(tree, expr_item, var, rel)
-        expr.relations = [r for r in expr.relations if r.src_node != deleted_id and r.dst_node != deleted_id]
+        expr.relations = [r for r in expr.relations if deleted_id not in (r.input_node, r.output_node)]
         expr.nodes = [n for n in expr.nodes if n is not node]
         for i, n in enumerate(expr.nodes):
             n.node_id = i
         for r in expr.relations:
-            if r.src_node > deleted_id:
-                r.src_node -= 1
-            if r.dst_node > deleted_id:
-                r.dst_node -= 1
-        if expr.output_node_id == deleted_id:
+            if r.input_node > deleted_id:
+                r.input_node -= 1
+            if r.output_node > deleted_id:
+                r.output_node -= 1
+        if expr.root == deleted_id:
             if expr.nodes:
                 value, ok = QInputDialog.getInt(
                     tree,
@@ -1257,11 +1257,11 @@ class UvarHandler(BaseFileHandler):
                 )
                 if not ok:
                     value = 0
-                expr.output_node_id = value
+                expr.root = value
             else:
-                expr.output_node_id = 0
-        elif expr.output_node_id > deleted_id:
-            expr.output_node_id -= 1
+                expr.root = 0
+        elif expr.root > deleted_id:
+            expr.root -= 1
         if expr_item:
             self._update_output_node_label(expr_item, expr)
             nodes_group = self._find_nodes_group(expr_item)
@@ -1301,9 +1301,7 @@ class UvarHandler(BaseFileHandler):
         self._refresh_tree(tree)
 
     def _expr_change_node_id(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
-        var = meta["variable"]
         node = meta["node"]
-        expr = self._get_expr(var)
         new_id, ok = QInputDialog.getInt(
             tree,
             self.tr("Change Node Id"),
@@ -1314,23 +1312,18 @@ class UvarHandler(BaseFileHandler):
         )
         if not ok:
             return
-        for r in expr.relations:
-            if r.src_node == node.node_id:
-                r.src_node = new_id
-            if r.dst_node == node.node_id:
-                r.dst_node = new_id
         node.node_id = new_id
         self._refresh_tree(tree)
 
     def _expr_add_param(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
         node = meta["node"]
-        types = [t.name for t in NodeValueType]
+        types = [t.name for t in (*FORMATS, ParamType.Guid)]
         type_name, ok = QInputDialog.getItem(
             tree, self.tr("Add Parameter"), self.tr("Type:"), types, 0, False
         )
         if not ok:
             return
-        t = NodeValueType[type_name]
+        t = ParamType[type_name]
         name_hash_str, ok = QInputDialog.getText(
             tree,
             self.tr("Parameter Name Hash"),
@@ -1345,14 +1338,14 @@ class UvarHandler(BaseFileHandler):
             QMessageBox.warning(tree, self.tr("Invalid"), self.tr("Invalid hex value"))
             return
         value = None
-        if t == NodeValueType.Int32:
+        if t == ParamType.S32:
             v, ok = QInputDialog.getInt(
                 tree, self.tr(_PARAMETER_VALUE_TITLE), "Int32:", 0
             )
             if not ok: 
                 return
             value = v
-        elif t == NodeValueType.UInt32Maybe:
+        elif t == ParamType.U32:
             v, ok = QInputDialog.getInt(
                 tree,
                 self.tr(_PARAMETER_VALUE_TITLE),
@@ -1364,14 +1357,14 @@ class UvarHandler(BaseFileHandler):
             if not ok: 
                 return
             value = v
-        elif t == NodeValueType.Single:
+        elif t == ParamType.F32:
             v, ok = QInputDialog.getDouble(
                 tree, self.tr(_PARAMETER_VALUE_TITLE), "Float:", 0.0
             )
             if not ok: 
                 return
             value = v
-        elif t == NodeValueType.Guid:
+        elif t == ParamType.Guid:
             v, ok = QInputDialog.getText(
                 tree,
                 self.tr(_PARAMETER_VALUE_TITLE),
@@ -1391,7 +1384,7 @@ class UvarHandler(BaseFileHandler):
         p.value = value
         node.parameters.append(p)
         p_item = QTreeWidgetItem(item)
-        _set_label(p_item, "variable", f"0x{p.name_hash:08x}")
+        _set_label(p_item, "variable", self._parameter_label(p))
         p_item.setText(1, f"{p.type.name}: {p.value}")
         if hasattr(tree, '_metadata_map'):
             tree._metadata_map[id(p_item)] = {"type": "expression_node_param", "param": p, "node": node, "variable": meta["variable"]}
@@ -1405,7 +1398,7 @@ class UvarHandler(BaseFileHandler):
 
     def _expr_edit_param(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
         p = meta["param"]
-        if p.type == NodeValueType.Int32:
+        if p.type == ParamType.S32:
             v, ok = QInputDialog.getInt(
                 tree,
                 self.tr(_EDIT_PARAMETER_TITLE),
@@ -1414,7 +1407,7 @@ class UvarHandler(BaseFileHandler):
             )
             if ok: 
                 p.value = v
-        elif p.type == NodeValueType.UInt32Maybe:
+        elif p.type == ParamType.U32:
             v, ok = QInputDialog.getInt(
                 tree,
                 self.tr(_EDIT_PARAMETER_TITLE),
@@ -1425,7 +1418,7 @@ class UvarHandler(BaseFileHandler):
             )
             if ok: 
                 p.value = v
-        elif p.type == NodeValueType.Single:
+        elif p.type == ParamType.F32:
             v, ok = QInputDialog.getDouble(
                 tree,
                 self.tr(_EDIT_PARAMETER_TITLE),
@@ -1434,7 +1427,7 @@ class UvarHandler(BaseFileHandler):
             )
             if ok: 
                 p.value = v
-        elif p.type == NodeValueType.Guid:
+        elif p.type == ParamType.Guid:
             v, ok = QInputDialog.getText(
                 tree,
                 self.tr(_EDIT_PARAMETER_TITLE),
@@ -1482,7 +1475,7 @@ class UvarHandler(BaseFileHandler):
             QMessageBox.warning(tree, self.tr("Invalid"), self.tr("Invalid hex value"))
             return
         p.name_hash = new_hash
-        item.setText(0, f"0x{p.name_hash:08x}")
+        item.setText(0, self._parameter_label(p))
         self._refresh_tree(tree)
 
     def _expr_add_relation(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
@@ -1520,8 +1513,7 @@ class UvarHandler(BaseFileHandler):
         )
         if not ok: 
             return
-        existing_ids = {n.node_id for n in expr.nodes}
-        if sn not in existing_ids or dn not in existing_ids:
+        if not (0 <= sn < len(expr.nodes) and 0 <= dn < len(expr.nodes)):
             QMessageBox.warning(
                 tree,
                 self.tr(_INVALID_RELATION_TITLE),
@@ -1535,7 +1527,7 @@ class UvarHandler(BaseFileHandler):
                 self.tr("Self-connections are not allowed."),
             )
             return
-        rel = NodeConnection(src_node=sn, src_port=sp, dst_node=dn, dst_port=dp)
+        rel = NodeConnection(input_node=dn, input_pin=dp, output_node=sn, output_pin=sp)
         expr.relations.append(rel)
         expr_item = self._find_parent_expr_item(item)
         if expr_item:
@@ -1549,7 +1541,7 @@ class UvarHandler(BaseFileHandler):
             tree,
             self.tr(_EDIT_RELATION_TITLE),
             self.tr("Source node id:"),
-            rel.src_node,
+            rel.output_node,
         )
         if not ok:
             return
@@ -1557,7 +1549,7 @@ class UvarHandler(BaseFileHandler):
             tree,
             self.tr(_EDIT_RELATION_TITLE),
             self.tr("Source port:"),
-            rel.src_port,
+            rel.output_pin,
         )
         if not ok:
             return
@@ -1565,7 +1557,7 @@ class UvarHandler(BaseFileHandler):
             tree,
             self.tr(_EDIT_RELATION_TITLE),
             self.tr("Destination node id:"),
-            rel.dst_node,
+            rel.input_node,
         )
         if not ok:
             return
@@ -1573,15 +1565,14 @@ class UvarHandler(BaseFileHandler):
             tree,
             self.tr(_EDIT_RELATION_TITLE),
             self.tr("Destination port:"),
-            rel.dst_port,
+            rel.input_pin,
         )
         if not ok:
             return
         var = meta.get("variable")
         if var is not None:
             expr = self._get_expr(var)
-            existing_ids = {n.node_id for n in expr.nodes}
-            if sn not in existing_ids or dn not in existing_ids:
+            if not (0 <= sn < len(expr.nodes) and 0 <= dn < len(expr.nodes)):
                 QMessageBox.warning(
                     tree,
                     self.tr(_INVALID_RELATION_TITLE),
@@ -1595,8 +1586,8 @@ class UvarHandler(BaseFileHandler):
                     self.tr("Self-connections are not allowed."),
                 )
                 return
-        rel.src_node, rel.src_port, rel.dst_node, rel.dst_port = sn, sp, dn, dp
-        item.setText(0, f"{rel.src_node} [port: {rel.src_port}] → {rel.dst_node} [port: {rel.dst_port}]")
+        rel.output_node, rel.output_pin, rel.input_node, rel.input_pin = sn, sp, dn, dp
+        item.setText(0, self._get_relation_label(rel))
         self._refresh_tree(tree)
 
     def _expr_delete_relation(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
@@ -1616,7 +1607,11 @@ class UvarHandler(BaseFileHandler):
         self._refresh_tree(tree)
 
     def _get_relation_label(self, rel):
-        return f"{rel.src_node} [port: {rel.src_port}] → {rel.dst_node} [port: {rel.dst_port}]"
+        return f"{rel.output_node} [port: {rel.output_pin}] → {rel.input_node} [port: {rel.input_pin}]"
+
+    @staticmethod
+    def _parameter_label(parameter) -> str:
+        return expression_parameter_names().get(parameter.name_hash, f"0x{parameter.name_hash:08x}")
 
     def _find_nodes_group(self, expr_item: 'QTreeWidgetItem'):
         for i in range(expr_item.childCount()):
@@ -1633,8 +1628,7 @@ class UvarHandler(BaseFileHandler):
             node_item = nodes_group.child(i)
             meta = getattr(tree, '_metadata_map', {}).get(id(node_item))
             if meta and meta.get('type') == 'expression_node':
-                node = meta.get('node')
-                if getattr(node, 'node_id', -1) == node_id:
+                if meta['variable'].expression.nodes.index(meta['node']) == node_id:
                     return node_item
         return None
 
@@ -1652,10 +1646,10 @@ class UvarHandler(BaseFileHandler):
     def _update_io_counts(self, expr, node_item: 'QTreeWidgetItem', node_id: int):
         outs_item, ins_item = self._find_io_groups(node_item)
         if outs_item is not None:
-            outs = sum(1 for r in expr.relations if r.src_node == node_id)
+            outs = sum(1 for r in expr.relations if r.output_node == node_id)
             outs_item.setText(1, str(outs))
         if ins_item is not None:
-            ins = sum(1 for r in expr.relations if r.dst_node == node_id)
+            ins = sum(1 for r in expr.relations if r.input_node == node_id)
             ins_item.setText(1, str(ins))
 
     def _refresh_all_io_counts(self, tree: 'QTreeWidget', expr_item: 'QTreeWidgetItem', var):
@@ -1669,19 +1663,19 @@ class UvarHandler(BaseFileHandler):
             if meta and meta.get('type') == 'expression_node':
                 node = meta.get('node')
                 if node is not None:
-                    self._update_io_counts(expr, node_item, node.node_id)
+                    self._update_io_counts(expr, node_item, expr.nodes.index(node))
 
     def _expr_add_relation_ui(self, tree: 'QTreeWidget', expr_item: 'QTreeWidgetItem', var, rel):
         expr = self._get_expr(var)
-        src_node_item = self._find_node_item(tree, expr_item, rel.src_node)
-        if src_node_item is not None:
-            outs_item, _ = self._find_io_groups(src_node_item)
+        output_item = self._find_node_item(tree, expr_item, rel.output_node)
+        if output_item is not None:
+            outs_item, _ = self._find_io_groups(output_item)
             if outs_item is None:
-                outs_item = QTreeWidgetItem(src_node_item)
+                outs_item = QTreeWidgetItem(output_item)
                 _set_label(outs_item, "arrow_right", self.tr(_OUTPUTS_LABEL))
                 outs_item.setForeground(1, QBrush(QColor("#B5CEA8")))
                 if hasattr(tree, '_metadata_map'):
-                    node_meta = getattr(tree, '_metadata_map', {}).get(id(src_node_item), {})
+                    node_meta = getattr(tree, '_metadata_map', {}).get(id(output_item), {})
                     tree._metadata_map[id(outs_item)] = {"type": "expression_node_outputs", "node": node_meta.get('node'), "variable": var}
             rel_item = QTreeWidgetItem(outs_item)
             rel_item.setIcon(0, line_icon("link"))
@@ -1689,16 +1683,16 @@ class UvarHandler(BaseFileHandler):
             rel_item.setForeground(0, QBrush(QColor("#B5CEA8")))
             if hasattr(tree, '_metadata_map'):
                 tree._metadata_map[id(rel_item)] = {"type": "expression_relation", "relation": rel, "variable": var}
-            self._update_io_counts(expr, src_node_item, rel.src_node)
-        dst_node_item = self._find_node_item(tree, expr_item, rel.dst_node)
-        if dst_node_item is not None:
-            _, ins_item = self._find_io_groups(dst_node_item)
+            self._update_io_counts(expr, output_item, rel.output_node)
+        input_item = self._find_node_item(tree, expr_item, rel.input_node)
+        if input_item is not None:
+            _, ins_item = self._find_io_groups(input_item)
             if ins_item is None:
-                ins_item = QTreeWidgetItem(dst_node_item)
+                ins_item = QTreeWidgetItem(input_item)
                 _set_label(ins_item, "arrow_left", self.tr(_INPUTS_LABEL))
                 ins_item.setForeground(1, QBrush(QColor("#B5CEA8")))
                 if hasattr(tree, '_metadata_map'):
-                    node_meta = getattr(tree, '_metadata_map', {}).get(id(dst_node_item), {})
+                    node_meta = getattr(tree, '_metadata_map', {}).get(id(input_item), {})
                     tree._metadata_map[id(ins_item)] = {"type": "expression_node_inputs", "node": node_meta.get('node'), "variable": var}
             rel_item = QTreeWidgetItem(ins_item)
             rel_item.setIcon(0, line_icon("link"))
@@ -1706,13 +1700,13 @@ class UvarHandler(BaseFileHandler):
             rel_item.setForeground(0, QBrush(QColor("#B5CEA8")))
             if hasattr(tree, '_metadata_map'):
                 tree._metadata_map[id(rel_item)] = {"type": "expression_relation", "relation": rel, "variable": var}
-            self._update_io_counts(expr, dst_node_item, rel.dst_node)
+            self._update_io_counts(expr, input_item, rel.input_node)
 
     def _expr_remove_relation_ui(self, tree: 'QTreeWidget', expr_item: 'QTreeWidgetItem', var, rel):
         expr = self._get_expr(var)
-        src_node_item = self._find_node_item(tree, expr_item, rel.src_node)
-        if src_node_item is not None:
-            outs_item, _ = self._find_io_groups(src_node_item)
+        output_item = self._find_node_item(tree, expr_item, rel.output_node)
+        if output_item is not None:
+            outs_item, _ = self._find_io_groups(output_item)
             if outs_item is not None:
                 for i in reversed(range(outs_item.childCount())):
                     child = outs_item.child(i)
@@ -1720,10 +1714,10 @@ class UvarHandler(BaseFileHandler):
                     if meta and meta.get('type') == 'expression_relation' and meta.get('relation') is rel:
                         outs_item.takeChild(i)
                         break
-                self._update_io_counts(expr, src_node_item, rel.src_node)
-        dst_node_item = self._find_node_item(tree, expr_item, rel.dst_node)
-        if dst_node_item is not None:
-            _, ins_item = self._find_io_groups(dst_node_item)
+                self._update_io_counts(expr, output_item, rel.output_node)
+        input_item = self._find_node_item(tree, expr_item, rel.input_node)
+        if input_item is not None:
+            _, ins_item = self._find_io_groups(input_item)
             if ins_item is not None:
                 for i in reversed(range(ins_item.childCount())):
                     child = ins_item.child(i)
@@ -1731,4 +1725,4 @@ class UvarHandler(BaseFileHandler):
                     if meta and meta.get('type') == 'expression_relation' and meta.get('relation') is rel:
                         ins_item.takeChild(i)
                         break
-                self._update_io_counts(expr, dst_node_item, rel.dst_node)
+                self._update_io_counts(expr, input_item, rel.input_node)

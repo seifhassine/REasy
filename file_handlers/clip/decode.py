@@ -38,8 +38,8 @@ def node_hashes(node: Node) -> tuple[int, int]:
     return node.name_hashes or (murmur3_hash(node.name.encode("utf-8")), murmur3_hash(node.name.encode("utf-16-le")))
 
 
-def read_timeline(data: bytes, kind: ResourceKind | None = None, start: int = 0) -> Timeline:
-    return _Decoder(data, start).read(kind)
+def read_timeline(data: bytes, kind: ResourceKind | None = None, start: int = 0, first_unique_id: int = 0) -> Timeline:
+    return _Decoder(data, start, first_unique_id=first_unique_id).read(kind)
 
 
 def read_motclip(data: bytes, start: int, base: int) -> tuple[Timeline, int]:
@@ -49,10 +49,10 @@ def read_motclip(data: bytes, start: int, base: int) -> tuple[Timeline, int]:
 class _Decoder:
     embedded = False
 
-    def __init__(self, data: bytes, start: int = 0, base: int = 0):
+    def __init__(self, data: bytes, start: int = 0, base: int = 0, first_unique_id: int = 0):
         if len(data) < start + 8 or data[start:start + 4] != MAGIC:
             raise ClipFormatError("Not a CLIP file")
-        self.data, self.start, self.base = data, start, base
+        self.data, self.start, self.base, self.first_unique_id = data, start, base, first_unique_id
         self.profile = profile(_U32.unpack_from(data, start + 4)[0])
         self.rules = self._rules()
         if len(data) < start + self.rules.header_size:
@@ -72,7 +72,7 @@ class _Decoder:
         if dialogue and "sequence_info" not in self.rules.records:
             raise ClipFormatError(f"CLIP v{self.profile.version} has no dialogue timeline layout")
         self._read_sections(dialogue)
-        nodes = [self._node(record) for record in self.tables["nodes"]]
+        nodes = [self._node(record, index) for index, record in enumerate(self.tables["nodes"])]
         tracks = self._tracks(nodes)
         if "data" in self.tables:
             if kind not in (None, ResourceKind.USER_CURVE):
@@ -228,11 +228,14 @@ class _Decoder:
             refs.append(nodes[index])
         return refs
 
-    def _node(self, record: dict) -> Node:
+    def _node(self, record: dict, index: int) -> Node:
         if "name" not in record:
             hashes = (record["name_hash"], record["unicode_hash"])
             name = self._pool_names.get(hashes)
             return Node(name or "", name_hashes=None if name is not None else hashes, unique_id=record["unique_id"])
+        expected = self.first_unique_id + index
+        if record.get("unique_id", expected) != expected:
+            raise ClipFormatError(f"Node {index} has uniqueId {record['unique_id']}, not {expected}")
         name = self._string("c16", record["name"])
         self._same_name(record, "name_c8", "c8", name)
         return Node(name, record["node_type"], record["begin_frame"], record["end_frame"], record["guid"],
@@ -340,7 +343,7 @@ class _MotClipDecoder(_Decoder):
     def read_motclip(self) -> tuple[Timeline, int]:
         extra = self.rules.extra
         self._read_sections()
-        nodes = [self._node(record) for record in self.tables["nodes"]]
+        nodes = [self._node(record, index) for index, record in enumerate(self.tables["nodes"])]
         if not nodes:
             raise ClipFormatError("A MOT clip has no root node")
         root = nodes[0]

@@ -181,9 +181,9 @@ def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = Fa
     
     return rsz_start
 
-def parse_pfb16_rsz_userdata(rsz_file, data, skip_data=False):
+def parse_pfb16_rsz_userdata(rsz_file, data, skip_data, rsz_base_offset):
     rsz_file.has_embedded_rsz = True
-    return parse_scn19_rsz_userdata(rsz_file, data, skip_data)
+    return parse_scn19_rsz_userdata(rsz_file, data, skip_data, rsz_base_offset)
 
 def create_pfb16_resource(path=""):
     resource = Pfb16ResourceInfo(path)

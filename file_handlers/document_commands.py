@@ -37,11 +37,18 @@ class EditDocument(QObject):
 
     @contextmanager
     def macro(self, text: str):
-        self.undo_stack.beginMacro(text)
+        stack = self.undo_stack
+        stack.beginMacro(text)
         try:
             yield
-        finally:
-            self.undo_stack.endMacro()
+        except BaseException:
+            stack.endMacro()
+            if stack.canUndo():
+                (dropped := stack.command(stack.index() - 1)).undo()
+                dropped.setObsolete(True)
+                stack.undo()
+            raise
+        stack.endMacro()
 
 
 class SetFields(QUndoCommand):
@@ -58,7 +65,8 @@ class SetFields(QUndoCommand):
         if not isinstance(other, SetFields) or other.merge_key != self.merge_key or \
                 [id(target) for target, _, _ in other.edits] != [id(target) for target, _, _ in self.edits]:
             return False
-        self.edits = [(target, before, after) for (target, before, _), (_, _, after) in zip(self.edits, other.edits)]
+        self.edits = [(target, {**new_before, **before}, {**after, **new_after})
+                      for (target, before, after), (_, new_before, new_after) in zip(self.edits, other.edits)]
         return True
 
     def redo(self) -> None:
