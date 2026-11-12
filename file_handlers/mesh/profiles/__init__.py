@@ -18,6 +18,7 @@ from .base import (
     mesh_profile_for_stmesh_version,
     mesh_profile_for_versions,
     mesh_profiles,
+    native_mesh_version,
     register_mesh_profile,
 )
 
@@ -95,5 +96,6 @@ __all__ = [
     "mesh_profile_for_stmesh_version",
     "mesh_profile_for_versions",
     "mesh_profiles",
+    "native_mesh_version",
     "register_mesh_profile",
 ]

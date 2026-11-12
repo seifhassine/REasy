@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from array import array
 from copy import copy
 from dataclasses import dataclass, field, replace
 import math
@@ -20,6 +21,7 @@ from .mesh_file import (
     MeshFile,
     MeshLoadMode,
     MPLYRuntimeSettings,
+    SKIN_WEIGHT_STREAMS,
     SkinWeightBuffer,
     VertexBufferType,
 )
@@ -2818,6 +2820,28 @@ def _pack_blend_names(mesh, profile):
     return result
 
 
+def _without_placeholder_bones(mesh: MeshFile) -> MeshFile:
+    unused = mesh.fit_bone_boxes()
+    if not len(unused):
+        return mesh
+    kept = np.setdiff1d(np.arange(len(mesh.bone_remap_indices)), unused)
+    table = np.zeros(1 << 16, np.uint16)
+    table[kept] = np.arange(len(kept))
+    result = copy(mesh)
+    result.mesh_buffer = copy(mesh.mesh_buffer)
+    result.mesh_buffer.buffer_payloads = {
+        index: copy(payload) for index, payload in mesh.mesh_buffer.buffer_payloads.items()}
+    for payload in result.mesh_buffer.buffer_payloads.values():
+        for name in SKIN_WEIGHT_STREAMS:
+            if (stream := getattr(payload, name)) is not None:
+                setattr(payload, name, replace(
+                    stream, deform_indices=array("H", table[np.asarray(stream.deform_indices)].tobytes())))
+    result.bounding_boxes = replace(mesh.bounding_boxes, boxes=[mesh.bounding_boxes.boxes[entry] for entry in kept])
+    result.bone_remap_indices = [mesh.bone_remap_indices[entry] for entry in kept]
+    result.bone_remap_count = len(kept)
+    return result
+
+
 def serialize_mesh(mesh: MeshFile) -> CanonicalMeshWriteResult:
     if not isinstance(mesh, MeshFile):
         raise TypeError("serialize_mesh expects MeshFile")
@@ -2920,6 +2944,7 @@ def _serialize_ordinary_mesh(
     if mesh.mesh_buffer is None:
         raise CanonicalMeshWriteError("ordinary MESH has no MeshBuffer")
 
+    mesh = _without_placeholder_bones(mesh)
     topology_plan = _build_topology_plan(mesh)
     normal_topologies = (
         _normal_topologies(mesh, topology_plan)
@@ -2960,6 +2985,7 @@ def _serialize_ordinary_mesh(
 
     # Sections follow the order of shipped files.
     if mesh.meshes:
+        mesh.fit_stray_box(mesh.meshes[0])
         main_offset = _write_mesh_data(
             builder,
             mesh.meshes[0],

@@ -69,8 +69,6 @@ def _ordinary(mesh):
         V.require_zero(label + " tail reserve", owner.wilds_reserved)
         V.require_equal(label + " buffer ID", owner.buffer_index, i)
     for md in mesh.meshes:
-        V.require_equal("MeshData SkinWeightCount", md.skin_weight_count_raw, 0x12)
-        V.require_equal("MeshData AABB padding", (md.aabb_min_padding, md.aabb_max_padding), (1, 1))
         V.require_zero("MeshData chunk/reserve", (md.chunk, md.reserve))
     for _, _, lod in all_lods(mesh):
         V.require_zero("MeshLOD reserves", (lod.vertex_format, lod.reserve))

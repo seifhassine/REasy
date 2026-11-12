@@ -149,27 +149,8 @@ def _assert_blend_shape_domains(mesh: object) -> None:
 
 
 def _assert_topology_domains(mesh: object) -> None:
-    raw_count_map = dict(mesh.profile.skin_weight_influences_by_raw)
     for mesh_data in getattr(mesh, "meshes", ()):
-        _require(
-            int(mesh_data.skin_weight_count_raw) in raw_count_map,
-            "MeshData SkinWeightCount is not a canonical build encoding",
-        )
-        if mesh.profile.mesh_data_has_modern_bounds:
-            expected_padding = int(mesh.profile.canonical_modern_aabb_padding)
-            _require(
-                int(mesh_data.chunk) == 0
-                and int(mesh_data.aabb_min_padding) == expected_padding
-                and int(mesh_data.aabb_max_padding) == expected_padding,
-                "modern MeshData AABB padding must use the profile-owned "
-                "native serializer constant",
-            )
-        else:
-            _require(
-                float(mesh_data.bounding_box[0][3]) == 1
-                and float(mesh_data.bounding_box[1][3]) == 1,
-                "MeshData AABB homogeneous W lanes must both equal 1.0",
-            )
+        _require(int(mesh_data.chunk) == 0, "MeshData AABB chunk must be zero")
         _require(
             len(mesh_data.lod_offsets) >= len(mesh_data.lods),
             "parsed LODs exceed the MeshData LOD pointer table",
@@ -322,14 +303,6 @@ def _assert_misc_domains(mesh: object) -> None:
                 box.minimum,
                 box.maximum,
             )
-    shadow = getattr(mesh, "shadow_mesh", None)
-    if shadow is not None:
-        raw_count_map = dict(mesh.profile.skin_weight_influences_by_raw)
-        _require(
-            int(shadow.skin_weight_count) in raw_count_map,
-            "ShadowMeshLayout SkinWeightCount is not a canonical build encoding",
-        )
-
     for mesh_index, mesh_data in enumerate(getattr(mesh, "meshes", ())):
         sphere = tuple(mesh_data.bounding_sphere)
         minimum, maximum = mesh_data.bounding_box

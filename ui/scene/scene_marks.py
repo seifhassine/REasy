@@ -137,9 +137,11 @@ def shape_marks(meshes: Iterable[SceneDrawMesh], view: SceneView) -> tuple:
 
 def bounds_marks(boxes: Iterable[tuple]) -> tuple:
     marks = []
-    for minimum, maximum, colour in boxes:
+    for minimum, maximum, colour, *placed in boxes:
         ends = np.asarray([minimum, maximum], np.float64).reshape(2, 3)
         corners = np.array([[ends[(corner >> (2 - axis)) & 1, axis] for axis in range(3)] for corner in range(8)])
+        for matrix in placed:
+            corners = corners @ matrix[:3, :3] + matrix[3, :3]
         marks.append(LitLines(corners[np.array(ALIGNED_EDGES)], 1.5, unorm(colour)))
     return tuple(marks)
 

@@ -142,6 +142,10 @@ class MeshViewer(QWidget):
         self._build_ui()
         mesh = getattr(self.handler, "mesh", None)
         if mesh is not None:
+            self._show_deviations()
+            if mesh.deviations:
+                print(f"Warning: {self.handler.filepath} holds values the game's own files do not have: "
+                      + "; ".join(mesh.deviations))
             try:
                 self.viewport = _MeshViewport(
                     mesh,
@@ -245,6 +249,14 @@ class MeshViewer(QWidget):
 
     def _show_attribute_status(self) -> None:
         self.attribute_controls.set_status(self.attributes_preview.status())
+
+    def _show_deviations(self) -> None:
+        deviations = self.handler.mesh.deviations
+        self.deviation_note.setText("\n".join((
+            self.tr("This mesh holds values the game's own files do not have. Saving writes the game's values."),
+            *deviations,
+        )))
+        self.deviation_note.setVisible(bool(deviations))
 
     def _show_preview_status(self, *_told) -> None:
         text = self._geometry_error
@@ -369,12 +381,14 @@ class MeshViewer(QWidget):
             self.viewport._frame_interval() if self.viewport else 0)
         self.morph_controls.setContentsMargins(6, 4, 6, 4)
         self.morph_controls.changed.connect(self._refresh_geometry)
-        self.preview_status = styled_label(parent=self, banner="danger")
-        self.preview_status.setTextFormat(Qt.PlainText)
-        self.preview_status.setWordWrap(True)
-        self.preview_status.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.preview_status.hide()
-        self._layout.addWidget(self.preview_status)
+        self.deviation_note, self.preview_status = (styled_label(parent=self, banner=tone)
+                                                    for tone in ("warning", "danger"))
+        for note in (self.deviation_note, self.preview_status):
+            note.setTextFormat(Qt.PlainText)
+            note.setWordWrap(True)
+            note.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            note.hide()
+            self._layout.addWidget(note)
 
         self.preview_splitter = QSplitter(Qt.Horizontal, self)
         self.preview_splitter.setChildrenCollapsible(False)
@@ -491,6 +505,8 @@ class MeshViewer(QWidget):
 
     def save_completed(self, _path):
         self._refresh_sdftex_path()
+        self.handler.mesh.deviations.clear()
+        self._show_deviations()
 
     def _game_lighting(self) -> bool:
         material = MeshMaterialResolver.material_profile(self.handler)
@@ -2690,7 +2706,7 @@ class _MeshViewport(ScenePreviewWidget):
     def _make_lit_overlays(self, bounds: bool, pivots: bool, labels: bool, ratio: float,
                            background: tuple[int, int, int], wireframe: str, line_width: float,
                            shape: LitShape | None) -> LitOverlays:
-        boxes = [(minimum, maximum, _BOUNDS_COLOUR) for minimum, maximum in self._parsed_bounds()] if bounds else []
+        boxes = [(*box[:2], _BOUNDS_COLOUR, *box[2:]) for box in self._parsed_bounds()] if bounds else []
         marks = list(bounds_marks(boxes))
         pivot_data = getattr(self.mesh, "group_pivots", None)
         points = getattr(pivot_data, "pivots", ()) if pivots and pivot_data is not None else ()
@@ -2836,8 +2852,8 @@ class _MeshViewport(ScenePreviewWidget):
         painter.end()
         return atlas, rects
 
-    def _parsed_bounds(self) -> list[tuple[np.ndarray, np.ndarray]]:
-        result: list[tuple[np.ndarray, np.ndarray]] = []
+    def _parsed_bounds(self) -> list[tuple[np.ndarray, ...]]:
+        result: list[tuple[np.ndarray, ...]] = []
         for mesh_data in getattr(self.mesh, "meshes", ()):
             minimum, maximum = mesh_data.bounding_box
             result.append(
@@ -2847,11 +2863,17 @@ class _MeshViewport(ScenePreviewWidget):
                 )
             )
         layout = getattr(self.mesh, "bounding_boxes", None)
-        for box in getattr(layout, "boxes", ()):
+        remap = self.mesh.bone_remap_indices
+        bind = np.asarray(self.mesh.world_matrices, np.float64).reshape(-1, 4, 4)
+        for entry, box in enumerate(getattr(layout, "boxes", ())):
+            if entry in self.mesh.placeholder_bones:
+                continue
+            placed = (bind[remap[entry]],) if entry < len(remap) and 0 <= remap[entry] < len(bind) else ()
             result.append(
                 (
                     np.asarray(box.minimum, dtype=np.float32),
                     np.asarray(box.maximum, dtype=np.float32),
+                    *placed,
                 )
             )
         mesh_buffer = getattr(self.mesh, "mesh_buffer", None)

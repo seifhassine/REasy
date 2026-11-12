@@ -32,9 +32,10 @@ from .profiles import (
     NormalRecalcLayout,
     coerce_mesh_profile,
     mesh_profile_for_versions,
+    native_mesh_version,
 )
 from .models import MESH_MAGIC, MPLY_MAGIC, MeshAABB
-lazy from .contract_utils import split_auxiliary_layouts
+lazy from .contract_utils import all_groups, split_auxiliary_layouts
 
 lazy from .blend_shape import (
     BlendShapeData,
@@ -349,7 +350,7 @@ class Header:
         self.magic = h.read_uint32()
         if self.magic not in (MESH_MAGIC, MPLY_MAGIC):
             return False
-        self.version = h.read_uint32()
+        self.version = native_mesh_version(h.read_uint32(), file_version)
         self.file_size = h.read_uint32()
         self.lod_hash = h.read_uint32()
         self.profile = mesh_profile_for_versions(self.version, file_version)
@@ -939,11 +940,6 @@ def _decode_mhwilds_skin_weights(
         implicit_last_weight = True
         trailing = ignored
     elif declared_influence_count in (6, 8):
-        if continuation_data is not None:
-            raise ValueError(
-                f"Wilds {declared_influence_count}-weight skinning must not "
-                "have a type-7 continuation stream"
-            )
         # SkinWeightCount_8 is an alias of SkinWeightCount_6 in all shipped SDF targets.
         decoded_indices = primary_indices
         explicit_units = primary[:, 8:13]
@@ -960,10 +956,6 @@ def _decode_mhwilds_skin_weights(
         implicit_last_weight = True
         trailing = primary[:, 14:16].tobytes()
     elif declared_influence_count == 4:
-        if continuation_data is not None:
-            raise ValueError(
-                "Wilds 4-weight skinning must not have a type-7 continuation stream"
-            )
         # Despite its name, the shader loads three indices and three UNORM weights normalized by their sum.
         decoded_indices = primary_indices[:, :3]
         units = primary[:, 8:11].astype(np.float32)
@@ -1708,6 +1700,7 @@ class Submesh(_MeshBufferOwned):
         self.verts_index_offset = 0
         self.vert_count = 0
         self.file_offset = 0
+        self.unpadded_index_range = False
 
     @property
     def runtime_ignored_reserve03(self) -> int:
@@ -1735,9 +1728,7 @@ class Submesh(_MeshBufferOwned):
     @property
     def allocated_index_count(self) -> int:
         count = int(self.indices_count)
-        if (
-            self.profile.submesh_index_ranges_are_even_aligned
-        ):
+        if self.profile.submesh_index_ranges_are_even_aligned and not self.unpadded_index_range:
             return (count + 1) & ~1
         return count
 
@@ -1814,6 +1805,9 @@ class MeshGroup(_MeshBufferOwned):
             sm.read(h)
             sm.part_id = self.group_id
             self.submeshes.append(sm)
+        if self.face_count == self.drawable_index_count:
+            for sm in self.submeshes:
+                sm.unpadded_index_range = True
 
         if self.profile.submesh_has_buffer_index and self.submeshes:
             indices = {submesh.buffer_index for submesh in self.submeshes}
@@ -3521,6 +3515,8 @@ class MeshFile:
         self.source_size = 0
         self.sections: Dict[str, MeshSectionRecord] = {}
         self.semantic_notes: List[MeshSemanticNote] = []
+        self.deviations: List[str] = []
+        self.placeholder_bones = np.zeros(0, np.intp)
         self._scene_contract: Optional[Tuple[bool, str]] = None
 
     @property
@@ -3542,7 +3538,109 @@ class MeshFile:
     def assert_runtime_contract(self) -> None:
         check = self._canonical_contract_check("runtime_contract")
         if check is not None:
+            if self.header.magic == MESH_MAGIC:
+                self._note_deviations()
             check(self)
+
+    def _note_deviations(self) -> None:
+        profile = self.header.profile
+        modern = profile.mesh_data_has_modern_bounds
+        native_counts = [stored for stored, _influences in profile.skin_weight_influences_by_raw]
+        for owner, layout in (*(("MeshData", data) for data in self.meshes), ("ShadowMeshLayout", self.shadow_mesh)):
+            if layout is not None and layout.skin_weight_count_raw not in native_counts:
+                self.deviates(f"{owner} SkinWeightCount is 0x{layout.skin_weight_count_raw:02X}; the game's files have "
+                              + " or ".join(f"0x{stored:02X}" for stored in native_counts))
+        native_padding = (profile.canonical_modern_aabb_padding,) * 2 if modern else (1.0, 1.0)
+        for mesh_data in self.meshes:
+            padding = ((mesh_data.aabb_min_padding, mesh_data.aabb_max_padding) if modern
+                       else (mesh_data.bounding_box[0][3], mesh_data.bounding_box[1][3]))
+            if padding != native_padding:
+                self.deviates(f"MeshData bounding box padding is {tuple(round(value, 6) for value in padding)}; "
+                              f"the game's files have {native_padding}")
+            self.fit_stray_box(mesh_data)
+        self.placeholder_bones = self.fit_bone_boxes()
+        if profile.submesh_index_ranges_are_even_aligned and any(
+                submesh.unpadded_index_range and submesh.indices_count & 1
+                for group in all_groups(self) for submesh in group.submeshes):
+            self.deviates("MeshCluster index ranges are not padded to even counts; the game's files pad them")
+
+    def fit_stray_box(self, mesh_data: "MeshData") -> None:
+        payloads = self.mesh_buffer.buffer_payloads
+        parts = [part for part in (
+            np.asarray(payloads[submesh.buffer_index].positions, np.float32).reshape(-1, 3)[
+                submesh.verts_index_offset:submesh.verts_index_offset + submesh.vert_count]
+            for lod in mesh_data.lods[:1] for group in lod.mesh_groups for submesh in group.submeshes
+        ) if len(part)]
+        box = np.asarray(mesh_data.bounding_box, np.float32)[:, :3]
+        if not parts or any(((part >= box[0]) & (part <= box[1])).all(axis=1).any() for part in (parts[0][:1], *parts)):
+            return
+        points = np.concatenate(parts)
+        low, high = points.min(axis=0), points.max(axis=0)
+        shown = [tuple(round(float(value), 6) for value in corner) for corner in (*box, low, high)]
+        self.deviates(f"MeshData bounding box {shown[0]} to {shown[1]} holds none of the first LOD's vertices; "
+                      f"the game's files have their bounds, {shown[2]} to {shown[3]}")
+        centre = (low.astype(np.float64) + high) / 2
+        mesh_data.bounding_box = tuple((*map(float, corner), old[3])
+                                       for corner, old in zip((low, high), mesh_data.bounding_box))
+        mesh_data.bounding_sphere = (*map(float, centre), float(np.linalg.norm(points - centre, axis=1).max()))
+
+    def fit_bone_boxes(self) -> np.ndarray:
+        layout, remap = self.bounding_boxes, self.bone_remap_indices
+        none = np.zeros(0, np.intp)
+        if (layout is None or self.mesh_buffer is None or not remap or len(layout.boxes) != len(remap)
+                or not all(0 <= joint < len(self.inverse_bind_matrices) for joint in remap)):
+            return none
+        stored = np.array([[box.minimum, box.maximum] for box in layout.boxes], np.float32)
+        skins = [(np.asarray(payload.positions, np.float32).reshape(-1, 3),
+                  np.asarray(stream.deform_indices).reshape(stream.vertex_count, -1),
+                  np.asarray(stream.weights).reshape(stream.vertex_count, -1))
+                 for payload in self.mesh_buffer.buffer_payloads.values() for name in SKIN_WEIGHT_STREAMS
+                 if (stream := getattr(payload, name)) is not None and stream.vertex_count]
+        placeholder = (stored == ((-1,) * 3, (1,) * 3)).all(axis=(1, 2))
+        if not skins or not placeholder.any() and not all(
+                ((points[rows, None] >= held[:, :, 0]) & (points[rows, None] <= held[:, :, 1])).all(axis=2)[
+                    weights[rows] > 0].all()
+                for points, indices, weights in skins
+                for rows in [np.linspace(0, len(indices) - 1, 8).astype(np.intp)]
+                for held in [stored[np.minimum(indices[rows], len(remap) - 1)]]):
+            return none
+        inverse = np.array([self.inverse_bind_matrices[joint] for joint in remap], np.float64).reshape(-1, 4, 4)
+        corners = stored[:, np.indices((2, 2, 2)).reshape(3, 8).T, range(3)]
+        spans = np.array([[[extreme(points[:, axis]) for axis in range(3)] for extreme in (np.min, np.max)]
+                          for points, _indices, _weights in skins])
+        reach = 1e-5 * np.maximum(1, np.abs(stored).max(axis=(1, 2)))
+        if not placeholder.any() and not (
+                (np.abs(corners @ inverse[:, :3, :3] + inverse[:, 3:, :3] - corners).max(axis=(1, 2)) > reach)
+                & (stored[:, 0] >= spans[:, 0].min(axis=0)).all(axis=1)
+                & (stored[:, 1] <= spans[:, 1].max(axis=0)).all(axis=1)).any():
+            return none
+        found = np.full((len(remap), 2, 2, 3), np.inf)
+        found[:, :, 1] = -np.inf
+        for points, indices, weights in skins:
+            rows, slots = np.nonzero(weights > 0)
+            entries = indices[rows, slots]
+            order = np.argsort(entries, kind="stable")
+            rows, entries = rows[order], entries[order]
+            values, starts = np.unique(entries, return_index=True)
+            for entry, start, end in zip(values, starts, np.r_[starts[1:], len(entries)]):
+                if entry >= len(remap):
+                    break
+                own = points[rows[start:end]].astype(np.float64)
+                for space, part in enumerate((own, own @ inverse[entry, :3, :3] + inverse[entry, 3, :3])):
+                    found[entry, space, 0] = np.minimum(found[entry, space, 0], part.min(axis=0))
+                    found[entry, space, 1] = np.maximum(found[entry, space, 1], part.max(axis=0))
+        moved = np.flatnonzero((stored == found[:, 0]).all(axis=(1, 2))
+                               & (np.abs(found[:, 1] - stored).max(axis=(1, 2)) > reach))
+        if len(moved):
+            self.deviates(f"BoundingBoxLayout boxes are their vertices' bounds in the model's space ({len(moved)} of "
+                          f"{len(remap)}); the game's files have them in each joint's space")
+        for entry, (low, high) in zip(moved, found[moved, 1].astype(np.float32).tolist()):
+            layout.boxes[entry] = replace(layout.boxes[entry], minimum=tuple(low), maximum=tuple(high))
+        unused = np.flatnonzero(placeholder & np.isinf(found[:, 0, 0, 0]))
+        if len(unused):
+            self.deviates(f"Skeleton palette lists joints with no vertices and a box of -1 to 1 ({len(unused)} of "
+                          f"{len(remap)}); the game's files list no such joint")
+        return unused
 
     def scene_contract(self) -> Tuple[bool, str]:
         """A SCENE read's runtime contract, checked once: whether it holds, and the error's text if not."""
@@ -3585,6 +3683,8 @@ class MeshFile:
                 f"{self.profile.canonical_import_contract!r}"
             )
         check(self)
+        if self.deviations:
+            raise ValueError(f"mesh holds values the game's files do not: {self.deviations[0]}")
 
     @property
     def gpu_index_buffer_size(self) -> int:
@@ -3634,6 +3734,10 @@ class MeshFile:
         note = MeshSemanticNote(section, field, message)
         if note not in self.semantic_notes:
             self.semantic_notes.append(note)
+
+    def deviates(self, message: str) -> None:
+        if message not in self.deviations:
+            self.deviations.append(message)
 
     def _section_size(self, start: int, sorted_offsets: List[int]) -> int:
         for offset in sorted_offsets:
@@ -4746,6 +4850,9 @@ class MeshFile:
             file_version=file_version,
         ):
             raise ValueError("Not a mesh file")
+        stored_version = struct.unpack_from("<I", data, 4)[0]
+        if stored_version != self.header.version:
+            self.deviates(f"Header version is {stored_version}; the game's files have {self.header.version}")
         sorted_offsets = self._collect_section_offsets(len(data))
         if self.load_mode is MeshLoadMode.FULL:
             self._capture_sections(data, sorted_offsets)
@@ -4856,6 +4963,12 @@ class MeshFile:
                 lightweight=not self.is_full,
             )
             self.meshes.append(md)
+            if (self.header.profile.skin_weight_count_selects_influence_layout and md.skin_weight_influence_count != 12
+                    and any(payload.skin_weight_continuation_bytes
+                            for payload in self.mesh_buffer.buffer_payloads.values())):
+                self.deviates(
+                    f"MeshData SkinWeightCount is 0x{md.skin_weight_count_raw:02X} ({md.skin_weight_influence_count} "
+                    "weights) on vertices that carry the 12-weight stream; the game's files have 0x1B with it")
             self.streaming_data_loaded = bool(
                 self.mesh_buffer._streaming_data
                 and self.streaming_buffer_count > 0
@@ -4973,23 +5086,20 @@ class MeshFile:
                     self.header.material_indices_offset,
                     sorted_offsets,
                 )
+                if section_size < required_size:
+                    raise ValueError(f"Material-index table leaves its allocation ({section_size} < {required_size})")
                 if section_size != allocated_size:
-                    raise ValueError(
-                        "Material-index allocation must exactly match "
-                        "MeshData.materialCount aligned to 16 bytes "
-                        f"({section_size} != {allocated_size})"
-                    )
+                    self.deviates(f"Material-index table is allocated {section_size} bytes; "
+                                  f"the game's files allocate {allocated_size}")
                 self.material_indices = [h.read_int16() for _ in range(mcount)]
                 padding = _checked_slice(
                     data,
                     self.header.material_indices_offset + required_size,
-                    allocated_size - required_size,
+                    section_size - required_size,
                     "Material-index alignment padding",
                 )
                 if any(padding):
-                    raise ValueError(
-                        "Material-index alignment padding is nonzero"
-                    )
+                    self.deviates("Material-index table padding is not zero; the game's files have zeros")
                 if self.header.magic == MPLY_MAGIC:
                     self.material_names = self.names[:mcount]
                 else:

@@ -451,6 +451,12 @@ def mesh_profile_for_stmesh_version(version: int) -> MeshGameProfile | None:
     return matches[0] if matches else None
 
 
+def native_mesh_version(internal_version: int, file_version: int) -> int:
+    natives = {internal for (internal, version), profiles in _PAIR_PROFILES.items() if version == int(file_version)
+               and any((internal, version) not in profile.read_only_version_pairs for profile in profiles)}
+    return natives.pop() if len(natives) == 1 else int(internal_version)
+
+
 def mesh_profile_for_versions(
     internal_version: int,
     file_version: int,
@@ -509,5 +515,6 @@ __all__ = [
     "mesh_profile_for_main_version",
     "mesh_profile_for_versions",
     "mesh_profiles",
+    "native_mesh_version",
     "register_mesh_profile",
 ]
