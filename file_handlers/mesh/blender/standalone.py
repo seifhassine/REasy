@@ -11,7 +11,7 @@ from ..canonical_writer import serialize_mesh
 from .export import joint_names
 from .mapping import ADD, DROP, MERGE, Bone
 lazy from .materials import compact_names
-from .package import from_blender, matrix_to_blender
+from .package import BLEND_FORMAT, from_blender, matrix_to_blender, orthonormal
 from .rebuild import BlendImportError, parse_source, rebuild_from_dump
 lazy from .scene import build_scene
 
@@ -91,18 +91,6 @@ def _parents_first(bones):
     return ordered
 
 
-def _orthonormal(matrix):
-    """Engine joints are rigid. ``matrix`` is in Blender's column-vector form, so translation sits in column 3 and is
-    kept."""
-    result = np.array(matrix, np.float64).reshape(4, 4)
-    u, _s, vt = np.linalg.svd(result[:3, :3])
-    rotation = u @ vt
-    if np.linalg.det(rotation) < 0:
-        rotation[:, 0] = -rotation[:, 0]
-    result[:3, :3], result[3] = rotation, (0, 0, 0, 1)
-    return result
-
-
 def _reference_armature(mesh, mapping, source_armatures):
     names = joint_names(mesh)
     bones = []
@@ -118,7 +106,7 @@ def _reference_armature(mesh, mapping, source_armatures):
             continue
         parent = next(filter(None, (_joint_of(a, mapping, added) for a in mapping.ancestors(row.source))), "")
         if row.source in source:
-            rest = _orthonormal(_bone_world(*source[row.source]))
+            rest = orthonormal(_bone_world(*source[row.source]))
         elif parent in names:
             # A bare vertex group has no rest pose of its own; it starts at its parent joint.
             rest = matrix_to_blender(mesh.world_matrices[names.index(parent)])
@@ -127,7 +115,8 @@ def _reference_armature(mesh, mapping, source_armatures):
         name = added[row.source] = _unique(row.source, used)
         bones.append({"name": name, "parent": parent, "matrix": rest.ravel().tolist(), "rest": [], "joint": -1,
                       "deform": True, "exported": name})
-    return {"name": "reference", "matrix": np.eye(4).ravel().tolist(), "bones": bones}, added
+    return {"name": "reference", "matrix": np.eye(4).ravel().tolist(), "bones": bones,
+            "blend_format": BLEND_FORMAT}, added
 
 
 def _unique(name, used):

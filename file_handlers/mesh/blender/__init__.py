@@ -32,23 +32,29 @@ def resource_version(mesh, file_version=None):
     return max(pairs)[1]
 
 
-def export_blend(mesh, path, *, blender=None, title=None, file_version=None, merge_seams=True, verify=True):
+def write_package(mesh, folder, *, title, file_version=None, merge_seams=True):
     version = resource_version(mesh, file_version)
     encoded = serialize_mesh(mesh)
     source = parse_source(encoded.main, encoded.streaming, version)
-    path = Path(path)
-    title = title or path.name.split(".")[0]
     manifest, arrays, _sources, _scene = build_export_package(
         source, title=title, source_main=encoded.main, source_streaming=encoded.streaming,
         file_version=version, merge_seams=merge_seams)
+    folder = Path(folder)
+    save_package(folder, manifest, arrays)
+    (folder / "source_main.bin").write_bytes(encoded.main)
+    if encoded.streaming is not None:
+        (folder / "source_streaming.bin").write_bytes(encoded.streaming)
+    return manifest, arrays
+
+
+def export_blend(mesh, path, *, blender=None, title=None, file_version=None, merge_seams=True, verify=True):
+    path = Path(path)
     blender = blender or find_blender()
     with temporary_directory() as directory:
         directory = Path(directory)
         package = directory / "package"
-        save_package(package, manifest, arrays)
-        (package / "source_main.bin").write_bytes(encoded.main)
-        if encoded.streaming is not None:
-            (package / "source_streaming.bin").write_bytes(encoded.streaming)
+        manifest, _arrays = write_package(mesh, package, title=title or path.name.split(".")[0],
+                                          file_version=file_version, merge_seams=merge_seams)
         staged = directory / "scene.blend"
         run_script(blender, "export", package, staged)
         verified = result = None
@@ -74,6 +80,10 @@ class BlendDump:
     def foreign(self):
         return bool(self.manifest.get("foreign"))
 
+    @property
+    def roots(self):
+        return self.manifest.get("roots", [])
+
 
 def _read(blender, path, directory, root, apply_modifiers):
     run_script(blender, "dump", path, directory, root or "", *(() if apply_modifiers else ("--keep-modifiers",)))
@@ -96,6 +106,8 @@ def read_blend(path, *, blender=None, root="", apply_modifiers=True):
 def apply_blend(dump, *, recompute_normals=False, skin_unweighted=False):
     if dump.foreign:
         raise BlendImportError("This scene was not exported by REasy; import it onto a reference mesh")
+    if dump.roots:
+        raise BlendImportError("This scene holds several REasy meshes; read one of " + ", ".join(dump.roots))
     return rebuild_from_dump(dump.manifest, dump.arrays, dump.main, dump.streaming,
                              recompute_normals=recompute_normals, skin_unweighted=skin_unweighted)
 
@@ -107,4 +119,5 @@ def import_blend(path, *, blender=None, root="", apply_modifiers=True, recompute
 
 __all__ = ["BlendDump", "BlendExportResult", "BlendImportError", "BlendImportResult", "BlenderError", "BoneMapping",
            "Reference", "apply_blend", "blender_version", "export_blend", "find_blender", "import_blend",
-           "read_blend", "reference_bones", "reference_import", "resource_version", "source_bones", "suggest"]
+           "read_blend", "reference_bones", "reference_import", "resource_version", "source_bones", "suggest",
+           "write_package"]

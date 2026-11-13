@@ -320,7 +320,10 @@ class MeshHandler(BaseFileHandler):
             if not held:
                 raise ValueError(failure)
             return self.mesh
-        if self.mesh is not None and self.mesh.is_full:
+        return self.full_mesh()
+
+    def full_mesh(self) -> Optional[MeshFile]:
+        if self.mesh is not None and self.mesh.load_mode is MeshLoadMode.FULL:
             return self.mesh
         data = None if self.reread is None else self.reread()
         if data is None:

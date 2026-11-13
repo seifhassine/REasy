@@ -7,6 +7,7 @@ import numpy as np
 
 FORMAT = "reasy-blend"
 FORMAT_VERSION = 1
+BLEND_FORMAT = 2
 
 AXES = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float64)
 
@@ -28,17 +29,27 @@ def flip_uv(uv):
 
 
 def matrix_to_blender(row_major):
-    column = np.asarray(row_major, dtype=np.float64).reshape(4, 4).T
     axes = np.eye(4)
     axes[:3, :3] = AXES
-    return axes @ column @ axes.T
+    return axes @ np.asarray(row_major, dtype=np.float64).reshape(4, 4).T
 
 
-def matrix_from_blender(matrix):
+def matrix_from_blender(matrix, blend_format):
     axes = np.eye(4)
     axes[:3, :3] = AXES
-    column = axes.T @ np.asarray(matrix, dtype=np.float64).reshape(4, 4) @ axes
+    # Bones of format 1 turned their own axes into Blender's too.
+    column = axes.T @ np.asarray(matrix, dtype=np.float64).reshape(4, 4) @ (axes if blend_format == 1 else np.eye(4))
     return column.T.reshape(-1)
+
+
+def orthonormal(matrix):
+    result = np.array(matrix, np.float64).reshape(4, 4)
+    u, _s, vt = np.linalg.svd(result[:3, :3])
+    rotation = u @ vt
+    if np.linalg.det(rotation) < 0:
+        rotation[:, 0] = -rotation[:, 0]
+    result[:3, :3], result[3] = rotation, (0, 0, 0, 1)
+    return result
 
 
 def save_package(directory, manifest, arrays):

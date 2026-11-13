@@ -1019,8 +1019,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
             ),
             load_mode=MeshLoadMode.SCENE if game else MeshLoadMode.LIGHT,
         )
-        if not game:
-            mesh_handler.reread = partial(self._resource_bytes, source, renderable.mesh_path)
+        mesh_handler.reread = partial(self._resource_bytes, source, renderable.mesh_path)
         mesh = getattr(mesh_handler, "mesh", None)
         base_mesh = None
         if mesh is not None:

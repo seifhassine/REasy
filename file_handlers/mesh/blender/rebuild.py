@@ -226,7 +226,7 @@ class _Import:
             stored = np.asarray(bone["rest"], dtype=np.float64)
             if stored.size == 16 and np.allclose(rest, stored.reshape(4, 4), atol=REST_TOLERANCE, rtol=0):
                 continue
-            changed.append((joint, rest))
+            changed.append((joint, _row_major(rest, armature["blend_format"])))
         new_bones = [bone for bone in armature["bones"] if bone["name"] not in joint_of]
         # Parents first, so a new joint can attach to another new joint.
         pending = list(new_bones)
@@ -236,8 +236,8 @@ class _Import:
                 parent = bone["parent"]
                 if parent and parent not in joint_of and any(b["name"] == parent for b in pending):
                     continue
-                joint_of[bone["name"]] = self._append_joint(bone, joint_of.get(parent, -1),
-                                                            world @ np.asarray(bone["matrix"]).reshape(4, 4))
+                joint_of[bone["name"]] = self._append_joint(bone, joint_of.get(parent, -1), _row_major(
+                    world @ np.asarray(bone["matrix"]).reshape(4, 4), armature["blend_format"]))
                 pending.remove(bone)
                 progress = True
             if not progress:
@@ -272,7 +272,7 @@ class _Import:
             indices[position] = len(mesh.names)
             mesh.names.append(name)
 
-    def _append_joint(self, bone, parent, rest):
+    def _append_joint(self, bone, parent, world):
         mesh = self.mesh
         joint = len(mesh.bones)
         node = JointNode(index=joint, parent_index=parent, sibling_index=-1, child_index=-1,
@@ -287,7 +287,6 @@ class _Import:
                     last = mesh.bones[last.sibling_index]
                 mesh.bones[last.index] = replace(last, sibling_index=joint)
         mesh.bones.append(node)
-        world = _row_major(rest)
         parent_world = (np.asarray(mesh.world_matrices[parent], dtype=np.float64).reshape(4, 4)
                         if parent >= 0 else np.eye(4))
         local = world @ np.linalg.inv(parent_world)
@@ -302,10 +301,9 @@ class _Import:
     def _set_rest(self, changed):
         mesh = self.mesh
         world = [np.asarray(m, dtype=np.float64).reshape(4, 4) for m in mesh.world_matrices]
-        for joint, rest in changed.items():
+        for joint, matrix in changed.items():
             original = world[joint]
             scale = np.linalg.norm(original[:3, :3], axis=1)
-            matrix = _row_major(rest)
             matrix[:3, :3] *= scale[:, None]
             world[joint] = matrix
         for joint, node in enumerate(mesh.bones):
@@ -725,5 +723,5 @@ def rebuild_from_dump(manifest, arrays, source_main, source_streaming, *, recomp
     return BlendImportResult(result_mesh, output, file_version, report.changes, report.losses, unchanged)
 
 
-def _row_major(column):
-    return matrix_from_blender(column).reshape(4, 4)
+def _row_major(column, blend_format):
+    return matrix_from_blender(column, blend_format).reshape(4, 4)

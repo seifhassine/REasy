@@ -998,6 +998,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         else:
             self.freecam.focus(self._selection_center, extent)
 
+    @property
+    def hidden_keys(self) -> frozenset[str]:
+        return frozenset(self._hidden_keys)
+
     def set_hidden_keys(self, keys: set[str], *, refresh: bool = True):
         keys = set(keys)
         if keys == self._hidden_keys:

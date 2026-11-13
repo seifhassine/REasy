@@ -12,9 +12,11 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHeaderView,
     QInputDialog,
+    QMenu,
     QMessageBox,
     QSplitter,
     QStackedWidget,
+    QToolButton,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -23,7 +25,7 @@ from PySide6.QtWidgets import (
 lazy from file_handlers.clip.editor import ClipEditor
 lazy from file_handlers.clip.editor.transport import Transport
 lazy from file_handlers.mesh.blender.mapping import suggest
-lazy from file_handlers.mesh.blender_ui import require_blender, review_mapping, run_busy
+lazy from file_handlers.mesh.blender_ui import open_blend, require_blender, review_mapping, run_busy
 lazy from settings import app_settings
 lazy from ui.editor_widgets import editor_strip, tool_button, toolbar_separator
 lazy from utils.hash_util import murmur3_hash_utf16le
@@ -32,7 +34,7 @@ from file_handlers.document_commands import Change
 
 from .. import edits
 from ..banks import entry_mirrored, entry_motion, entry_sequences, handler_reader, stop_row
-from ..blender import action_bones, action_tracks, export_blend, read_actions
+from ..blender import action_bones, action_tracks, export_blend, read_actions, read_armatures
 from ..model import MotionList, MotionListEntry, MotionTree, Sequence
 from ..pose import Rig
 from ..preview import MotionPreview
@@ -80,11 +82,17 @@ class MotionEditor(QWidget):
         document.undo_stack.canRedoChanged.connect(redo.setEnabled)
         undo.setEnabled(False)
         redo.setEnabled(False)
+        export = tool_button("export", self.tr("Export the selected motions to a .blend, one action each"),
+                             text=self.tr("Blender"))
+        export.setMenu(QMenu(export))
+        export.setPopupMode(QToolButton.InstantPopup)
+        for text, mode in ((self.tr("Onto an armature in a .blend…"), "onto"), (self.tr("As a new .blend…"), ""),
+                           (self.tr("As a new .blend with the previewed meshes…"), "meshes")):
+            export.menu().addAction(text).setData(mode)
+        export.menu().triggered.connect(self._export_blend)
         for widget in (undo, redo, toolbar_separator(),
                        tool_button("copy", self.tr("Duplicate (Ctrl+D)"), self._duplicate),
-                       tool_button("delete", self.tr("Delete (Del)"), self._delete), toolbar_separator(),
-                       tool_button("export", self.tr("Export the selected motions to a .blend, one action each"),
-                                   self._export_blend, text=self.tr("Blender")),
+                       tool_button("delete", self.tr("Delete (Del)"), self._delete), toolbar_separator(), export,
                        tool_button("import", self.tr("Replace the motion's keys with an action from a .blend"),
                                    self._import_blend)):
             row.addWidget(widget)
@@ -235,8 +243,8 @@ class MotionEditor(QWidget):
         skeletons = self._skeletons()
         return Rig.of_skeleton(*skeletons) if skeletons else rig
 
-    def _export_blend(self) -> None:
-        title = self.tr("Export to Blender")
+    def _export_blend(self, action) -> None:
+        mode, title = action.data(), self.tr("Export to Blender")
         chosen = [self.state.motion, *map(self.document.motion_of, self.state.selection)]
         motions = [motion for motion in dict.fromkeys(chosen) if motion is not None]
         rig = self._rig()
@@ -244,15 +252,41 @@ class MotionEditor(QWidget):
             QMessageBox.information(self, title, self.tr("Select a motion first.") if not motions else self.tr(
                 "Exporting needs a motion and a skeleton: this file holds no skeleton, and no prefab is previewed."))
             return
+        played = rig is self.preview.rig()
+        meshes = self.preview.shown_meshes() if mode == "meshes" and played else []
+        if mode == "meshes" and not meshes:
+            QMessageBox.information(self, title, self.tr(
+                "No mesh shown in the preview takes this motion: preview a prefab that holds its joints."))
+            return
+        parts = {"rigs": self.preview.poser.rigs, "meshes": meshes} if meshes else {}
         name = Path(self.handler.filepath or "motion").name.split(".")[0]
         caption, stem = (title, motions[0].name) if len(motions) == 1 else (
             self.tr("Export {0} motions to Blender").format(len(motions)), name)
-        path, _filter = QFileDialog.getSaveFileName(self, caption, stem + ".blend", "Blender (*.blend)")
-        blender = require_blender(self, self.handler.app) if path else None
-        add = rig is self.preview.rig() and self.preview.adds()
+        blender, target, start = None, (), stem + ".blend"
+        if mode == "onto":
+            read = open_blend(self, self.handler.app, self.tr("Export onto an armature in a .blend"),
+                              self.tr("Reading the armatures…"), read_armatures)
+            if read is None:
+                return
+            blender, scene, armatures = read
+            names = [armature["name"] for armature in armatures]
+            likely = max(range(len(names)), key=lambda at: len(set(armatures[at]["names"]) & set(rig.names)))
+            picked, accepted = (QInputDialog.getItem(self, title, self.tr("Armature"), names, likely, False)
+                                if len(names) > 1 else (names[0], True))
+            armature = armatures[names.index(picked)] if accepted else None
+            pairs = armature and self._pairs(armature, (), rig, stem, export=True)
+            if not pairs:
+                if pairs == []:
+                    QMessageBox.information(self, title, self.tr(
+                        "None of the armature's bones map onto the motion's joints."))
+                return
+            target, start = (scene, armature, pairs), str(Path(scene).with_name(f"{Path(scene).stem}_{stem}.blend"))
+        path, _filter = QFileDialog.getSaveFileName(self, caption, start, "Blender (*.blend)")
+        blender = (blender or require_blender(self, self.handler.app)) if path else None
+        add = played and self.preview.adds()
         if blender is not None:
             _done, error = run_busy(self, self.tr("Writing the .blend…"),
-                                    lambda: export_blend(blender, rig, motions, path, name, add))
+                                    lambda: export_blend(blender, rig, motions, path, name, add, *target, **parts))
             if error:
                 QMessageBox.warning(self, title, error)
 
@@ -263,15 +297,10 @@ class MotionEditor(QWidget):
             QMessageBox.information(self, title, self.tr("Select a motion of this file first; its joints come from "
                                                          "the file's skeleton or the previewed prefab."))
             return
-        path, _filter = QFileDialog.getOpenFileName(self, title, "", "Blender (*.blend)")
-        blender = require_blender(self, self.handler.app) if path else None
-        if blender is None:
+        if (read := open_blend(self, self.handler.app, title, self.tr("Reading the actions…"),
+                               read_actions)) is None:
             return
-        read, error = run_busy(self, self.tr("Reading the actions…"), lambda: read_actions(blender, path))
-        if error:
-            QMessageBox.warning(self, title, error)
-            return
-        manifest, arrays = read
+        manifest, arrays = read[2]
         names = [action["name"] for action in manifest["actions"]]
         if not names:
             QMessageBox.information(self, title, self.tr("The .blend has no action keying its armature's bones."))
@@ -283,7 +312,8 @@ class MotionEditor(QWidget):
             if not accepted:
                 return
             number = names.index(chosen)
-        pairs = self._pairs(manifest, number, rig, motion)
+        action = manifest["actions"][number]
+        pairs = self._pairs(manifest["armatures"][action["armature"]], action["bones"], rig, motion.name)
         if pairs is None:
             return
         tracks, end = action_tracks(manifest, arrays, number, rig, motion, pairs,
@@ -295,11 +325,11 @@ class MotionEditor(QWidget):
                      for skeleton in reversed(self._skeletons()) for joint in skeleton.joints}
         edits.replace_tracks(self.document, motion, tracks, end, joint_ids, title)
 
-    def _pairs(self, manifest: dict, number: int, rig: Rig, motion) -> list | None:
-        mapping = suggest(action_bones(manifest), bones_of(rig.names, rig.parents, rig.models(rig.base_locals)),
-                          dict.fromkeys(manifest["actions"][number]["bones"], 1), positions=False)
+    def _pairs(self, armature: dict, keyed, rig: Rig, label: str, export: bool = False) -> list | None:
+        mapping = suggest(action_bones(armature), bones_of(rig.names, rig.parents, rig.models(rig.base_locals)),
+                          dict.fromkeys(keyed, 1), positions=False)
         if any(row.target != row.source for row in mapping.rows if row.mapped) and not review_mapping(
-                self, self.handler.app, mapping, rig.names, motion.name, motion=True):
+                self, self.handler.app, mapping, rig.names, label, motion=True, export=export):
             return None
         return [(row.source, row.target) for row in mapping.rows if row.mapped]
 

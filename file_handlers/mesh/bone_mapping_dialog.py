@@ -177,14 +177,17 @@ class _Delegate(QStyledItemDelegate):
 
 
 class BoneMappingDialog(QDialog):
-    def __init__(self, mapping, reference_label="", parent=None, motion=False):
+    def __init__(self, mapping, reference_label="", parent=None, motion=False, export=False):
         """``motion``: bones drive joints of a motion (the rows' ``weighted`` counts keyed bones)."""
         super().__init__(parent)
         self.mapping, self.motion = mapping, motion
-        self.setWindowTitle(self.tr("Map the action's bones") if motion else self.tr("Map the model's bones"))
+        self.setWindowTitle(self.tr("Map the armature's bones") if export else self.tr("Map the action's bones")
+                            if motion else self.tr("Map the model's bones"))
         self.resize(980, 640)
         layout = QVBoxLayout(self)
         intro = QLabel((self.tr(
+            "Each bone of the armature follows the joint of {reference} it maps to, found by body part, then by "
+            "name; bones without a joint follow their parents.") if export else self.tr(
             "Each bone of the armature drives the joint of {reference} it maps to, found by body part, then by name; "
             "joints without a bone follow their parents. Rows needing a look: keyed bones without a joint.")
             if motion else self.tr(
@@ -232,7 +235,8 @@ class BoneMappingDialog(QDialog):
         files.addWidget(save_button)
         files.addStretch(1)
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.button(QDialogButtonBox.Ok).setText(self.tr("Import with this mapping"))
+        buttons.button(QDialogButtonBox.Ok).setText(self.tr("Export with this mapping") if export
+                                                    else self.tr("Import with this mapping"))
         files.addWidget(buttons)
         layout.addLayout(files)
 

@@ -235,6 +235,12 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
         rigs = [] if self._poser is None else self._poser.rigs
         return next((entry.layer.add for entry in rigs if entry.binding is not None), False)
 
+    def shown_meshes(self) -> list[tuple]:
+        hidden = self.scene.preview.hidden_keys
+        shown = {mesh.key: mesh.handler for mesh in self.scene.loaded_meshes() if mesh.key not in hidden}
+        return list({(part.rig, shown[part.key].filepath): (part.rig, shown[part.key])
+                     for part in self._poser.skinned if part.key in shown}.values())
+
     def open_strands(self) -> None:
         if self._strands is None:
             self._strands = MotionStrandsDialog(self, self.prefab)

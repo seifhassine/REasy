@@ -11,9 +11,10 @@ from mathutils import Matrix
 SOURCE_MAIN = "reasy_source_main"
 SOURCE_STREAMING = "reasy_source_streaming"
 MAX_NAME_BYTES = 63
-# Must match package.FORMAT and package.FORMAT_VERSION; REasy modules cannot be imported here.
+# Must match package.FORMAT, FORMAT_VERSION and BLEND_FORMAT; REasy modules cannot be imported here.
 FORMAT = "reasy-blend"
 FORMAT_VERSION = 1
+BLEND_FORMAT = 2
 
 
 def _load(directory):
@@ -58,6 +59,7 @@ def _orthonormal(matrix):
 def _build_armature(manifest, arrays, root):
     skeleton = manifest["skeleton"]
     data = bpy.data.armatures.new(manifest["title"] + " skeleton")
+    data["reasy_format"] = BLEND_FORMAT
     data.display_type = "STICK"
     armature = bpy.data.objects.new(manifest["title"] + " skeleton", data)
     root.objects.link(armature)
@@ -156,19 +158,17 @@ def _add_shape_keys(obj, entry, prefix, arrays):
     obj.data.shape_keys["reasy_mesh"] = entry["key"]
 
 
-def export(package, output):
+def _build_model(package):
     manifest, arrays = _load(package)
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    scene = bpy.context.scene
     root = bpy.data.collections.new(manifest["title"])
-    scene.collection.children.link(root)
+    bpy.context.scene.collection.children.link(root)
     package = Path(package)
     root[SOURCE_MAIN] = (package / "source_main.bin").read_bytes()
     if manifest["has_streaming"]:
         root[SOURCE_STREAMING] = (package / "source_streaming.bin").read_bytes()
     root["reasy_file_version"] = str(manifest["file_version"])
     root["reasy_game"] = manifest["game"]
-    root["reasy_format"] = 1
+    root["reasy_format"] = BLEND_FORMAT
     root["reasy_merge_seams"] = bool(manifest["merge_seams"])
 
     materials = []
@@ -218,6 +218,12 @@ def export(package, output):
         layer = _find_layer_collection(bpy.context.view_layer.layer_collection, collection)
         if layer is not None and hidden:
             layer.hide_viewport = True
+    return armature, bone_names
+
+
+def export(package, output):
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    _build_model(package)
     bpy.ops.wm.save_as_mainfile(filepath=str(output), compress=True)
 
 
@@ -402,7 +408,8 @@ def _dump_armature(obj):
                       "matrix": _matrix(bone.matrix_local), "joint": int(bone.get("reasy_joint", -1)),
                       "rest": list(bone.get("reasy_rest", [])), "deform": bool(bone.use_deform),
                       "exported": str(bone.get("reasy_exported_name", bone.name))})
-    return {"name": obj.name, "matrix": _matrix(obj.matrix_world), "bones": bones}
+    return {"name": obj.name, "matrix": _matrix(obj.matrix_world), "bones": bones,
+            "blend_format": int(obj.data.get("reasy_format", 1))}
 
 
 def _dump_object(obj, collection, manifest, arrays, meshes, apply_modifiers):
@@ -451,9 +458,10 @@ def _dump_reasy(root, package, apply_modifiers):
                                              "mesh_index": int(collection.get("reasy_mesh_index", 0))})
     meshes = {}
     in_root = {obj.name for obj in root.all_objects}
+    rooted = {obj.name for other in _roots("") for obj in other.all_objects}
     for obj in bpy.data.objects:
         if obj.name not in in_root:
-            if obj.type == "MESH" and obj.data is not None and "reasy_mesh" in obj.data:
+            if obj.name not in rooted and obj.type == "MESH" and obj.data is not None and "reasy_mesh" in obj.data:
                 manifest["outside"].append(obj.name)
         elif obj.type == "ARMATURE":
             manifest["armatures"].append(_dump_armature(obj))
@@ -483,7 +491,7 @@ def dump(blend, package, root_name="", apply_modifiers=True):
     bpy.ops.wm.open_mainfile(filepath=str(blend), load_ui=False)
     roots = _roots(root_name)
     if len(roots) > 1:
-        raise SystemExit("REASY_ERROR: several REasy mesh collections: " + json.dumps([r.name for r in roots]))
+        return _save(package, {"roots": [root.name for root in roots]}, {})
     if not roots and root_name:
         raise SystemExit(f"REASY_ERROR: no REasy mesh collection named {root_name!r} in this .blend")
     package = Path(package)
@@ -495,22 +503,47 @@ def dump(blend, package, root_name="", apply_modifiers=True):
     _save(package, manifest, arrays)
 
 
-def _rest_turns(armature, names):
+def _rest_turns(armature, names, built):
     """Per bone, the turn from the rest asked for to the one Blender stored: float32 heads and tails turn a short
     bone far from the origin."""
-    return np.array([np.reshape(bone["reasy_built"], (4, 4))[:3, :3].T @ np.array(bone.matrix_local.to_3x3())
-                     for bone in (armature.data.bones[name] for name in names)])
+    return np.array([np.array(_orthonormal(matrix).to_3x3()).T @ np.array(bone.matrix_local.to_3x3())
+                     for bone, matrix in zip((armature.data.bones[name] for name in names), built)])
 
 
-def export_motions(package, output):
+def _relate(built, manifest):
+    for part, bone, leader, joint in manifest["follows"]:
+        constraint = built[part][0].pose.bones[built[part][1][bone]].constraints.new("COPY_TRANSFORMS")
+        constraint.target, constraint.subtarget = built[leader][0], built[leader][1][joint]
+        constraint.target_space = constraint.owner_space = "POSE"
+    for part, leader, joint, matrix, scaled in manifest["hangs"]:
+        for bone in built[part][0].pose.bones:
+            if bone.parent is None:
+                constraint = bone.constraints.new("CHILD_OF")
+                constraint.target, constraint.subtarget = built[leader][0], built[leader][1][joint]
+                constraint.inverse_matrix = Matrix(np.reshape(matrix, (4, 4)).tolist())
+                constraint.use_scale_x = constraint.use_scale_y = constraint.use_scale_z = scaled
+
+
+def export_motions(package, output, blend=""):
     manifest, arrays = _load(package)
-    bpy.ops.wm.read_factory_settings(use_empty=True)
+    target = manifest["armature"]
+    if blend:
+        bpy.ops.wm.open_mainfile(filepath=str(blend), load_ui=False)
+        armature, names = bpy.context.scene.objects[target], manifest["skeleton"]["names"]
+    else:
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        built = [_build_model(Path(package) / name) for name in manifest["models"]]
+        if target is None:
+            root = bpy.data.collections.new(manifest["title"])
+            bpy.context.scene.collection.children.link(root)
+            built.append(_build_armature(manifest, arrays, root))
+        armature, names = built[-1 if target is None else target]
+        _relate(built, manifest)
     scene = bpy.context.scene
-    root = bpy.data.collections.new(manifest["title"])
-    scene.collection.children.link(root)
-    armature, names = _build_armature(manifest, arrays, root)
-    turns = _rest_turns(armature, names)
-    armature.animation_data_create()
+    turns = _rest_turns(armature, names, arrays["bones.matrix"].reshape(-1, 4, 4))
+    animation = armature.animation_data_create()
+    if animation.action is not None:
+        animation.action.use_fake_user = True
     for number, spec in enumerate(manifest["actions"]):
         action = bpy.data.actions.new(spec["name"])
         action.use_fake_user = True
@@ -530,9 +563,11 @@ def export_motions(package, output):
                     curve.keyframe_points.foreach_set("co", np.column_stack((frames, values[:, column, index])).ravel())
                     curve.keyframe_points.foreach_set("interpolation", np.ones(len(frames), np.int32))
                     curve.update()
+        for joint in spec["rotation"]:
+            armature.pose.bones[names[joint]].rotation_mode = "QUATERNION"
         if number == 0:
-            armature.animation_data.action = action
-            armature.animation_data.action_slot = slot
+            animation.action = action
+            animation.action_slot = slot
             scene.render.fps = int(spec["fps"])
             scene.frame_start, scene.frame_end = 0, int(frames[-1])
     bpy.ops.wm.save_as_mainfile(filepath=str(output), compress=True)
@@ -551,28 +586,53 @@ def _animated_bones(action, slot):
     return {name: sorted(props) for name, props in found.items()}
 
 
-def dump_motions(blend, package):
+def _armatures(blend):
     bpy.ops.wm.open_mainfile(filepath=str(blend), load_ui=False)
-    scene = bpy.context.scene
-    armature = next((obj for obj in scene.objects if obj.type == "ARMATURE"), None)
-    if armature is None:
+    armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
+    if not armatures:
         raise SystemExit("REASY_ERROR: the .blend holds no armature")
-    names = [bone.name for bone in armature.data.bones]
-    manifest = {"names": names, "actions": [],
-                "turn": [value for row in armature.matrix_world.to_quaternion().to_matrix().to_4x4() for value in row],
-                "parents": [bone.parent.name if bone.parent else "" for bone in armature.data.bones],
-                "rest": [[value for row in bone.matrix_local for value in row] for bone in armature.data.bones],
-                "built": [list(bone.get("reasy_built", bone.get("reasy_rest", []))) for bone in armature.data.bones]}
-    arrays = {}
-    armature.animation_data_create()
+    return armatures
+
+
+def _dump_bones(armature):
+    bones = armature.data.bones
+    return {"name": armature.name, "names": [bone.name for bone in bones],
+            "turn": [value for row in armature.matrix_world.to_quaternion().to_matrix().to_4x4() for value in row],
+            "parents": [bone.parent.name if bone.parent else "" for bone in bones],
+            "rest": [[value for row in bone.matrix_local for value in row] for bone in bones],
+            "built": [list(bone.get("reasy_built", bone.get("reasy_rest", []))) for bone in bones],
+            "blend_format": int(armature.data.get("reasy_format", 1))}
+
+
+def dump_armatures(blend, package):
+    _save(package, {"armatures": [_dump_bones(armature) for armature in _armatures(blend)]}, {})
+
+
+def _owner(armatures, slot, bones):
+    users = slot.users()
+    return max(armatures, key=lambda armature: (armature in users, len(bones.keys() & armature.data.bones.keys()),
+                                                slot.name_display == armature.name))
+
+
+def dump_motions(blend, package):
+    armatures = _armatures(blend)
+    scene = bpy.context.scene
+    manifest = {"armatures": [_dump_bones(armature) for armature in armatures], "actions": []}
+    arrays, held = {}, []
     for action in bpy.data.actions:
         slot = next((slot for slot in action.slots if slot.target_id_type == "OBJECT"), None)
         bones = {} if slot is None else _animated_bones(action, slot)
-        if not bones:
-            continue
+        if bones:
+            held.append((action, slot, bones, _owner(armatures, slot, bones)))
+    for action, slot, bones, armature in held:
+        names = [bone.name for bone in armature.data.bones]
         start, end = (int(round(value)) for value in action.frame_range)
-        armature.animation_data.action = action
-        armature.animation_data.action_slot = slot
+        animation = armature.animation_data_create()
+        animation.action = action
+        animation.action_slot = slot
+        # Bones the action does not key would keep the pose another action left on them.
+        for bone in armature.pose.bones:
+            bone.matrix_basis.identity()
         matrices = np.empty((end - start + 1, len(names), 4, 4), np.float32)
         posed = [armature.pose.bones[name] for name in names]
         for offset in range(end - start + 1):
@@ -580,7 +640,7 @@ def dump_motions(blend, package):
             for index, bone in enumerate(posed):
                 matrices[offset, index] = np.array(bone.matrix, np.float32)
         arrays[f"a{len(manifest['actions'])}.matrix"] = matrices
-        manifest["actions"].append({"name": action.name, "bones": bones})
+        manifest["actions"].append({"name": action.name, "bones": bones, "armature": armatures.index(armature)})
     _save(package, manifest, arrays)
 
 
@@ -590,7 +650,9 @@ def main():
     if mode == "export":
         export(argv[1], argv[2])
     elif mode == "motion_export":
-        export_motions(argv[1], argv[2])
+        export_motions(*argv[1:])
+    elif mode == "armatures":
+        dump_armatures(argv[1], argv[2])
     elif mode == "motion_dump":
         dump_motions(argv[1], argv[2])
     elif mode == "dump":

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
-    QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QTextEdit, QVBoxLayout,
+    QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog, QMessageBox, QTextEdit, QVBoxLayout,
 )
 
 lazy from settings import app_settings, remember_setting
@@ -87,6 +87,21 @@ def run_busy(parent, label, work):
                        status=label), ""
     except Exception as exc:
         return None, str(exc) or type(exc).__name__
+
+
+def _read_busy(parent, title, status, work):
+    found, error = run_busy(parent, status, work)
+    if error:
+        QMessageBox.warning(parent, title, error)
+    return found
+
+
+def open_blend(parent, app, title, status, read, start=""):
+    path, _filter = QFileDialog.getOpenFileName(parent, title, start,
+                                                translate("BlenderRoundTrip", "Blender scenes (*.blend)"))
+    blender = require_blender(parent, app) if path else None
+    found = None if blender is None else _read_busy(parent, title, status, lambda: read(blender, path))
+    return None if found is None else (blender, path, found)
 
 
 class BlendImportReview(QDialog):
@@ -257,20 +272,21 @@ def _store_mapping(app, joints, mapping):
     remember_setting(app, MAPPINGS_KEY, saved)
 
 
-def review_mapping(parent, app, mapping, joints, label, motion=False) -> bool:
+def review_mapping(parent, app, mapping, joints, label, motion=False, export=False) -> bool:
     unread = _recall_mapping(app, joints, mapping)
     if unread:
         QMessageBox.warning(parent, translate("BlenderRoundTrip", "Bone mapping"), translate("BlenderRoundTrip",
             "The bone mapping remembered for this skeleton could not be read; the suggested mapping is shown."
         ) + "\n\n" + unread)
-    if BoneMappingDialog(mapping, label, parent, motion=motion).exec() != QDialog.Accepted:
+    if BoneMappingDialog(mapping, label, parent, motion=motion, export=export).exec() != QDialog.Accepted:
         return False
     _store_mapping(app, joints, mapping)
     return True
 
 
-def _scene_reader(path, blender):
-    return lambda apply_modifiers: read_blend(path, blender=blender, apply_modifiers=apply_modifiers)
+def _scene_reader(path, blender, dump):
+    return lambda apply_modifiers: read_blend(path, blender=blender, root=dump.manifest["root"],
+                                              apply_modifiers=apply_modifiers)
 
 
 def _reference_review(parent, app, path, blender, dump, current=None):
@@ -284,7 +300,7 @@ def _reference_review(parent, app, path, blender, dump, current=None):
                                                                  choice.label):
         return None
     review = BlendImportReview(
-        f"{Path(path).name} → {choice.label}", _scene_reader(path, blender),
+        f"{Path(path).name} → {choice.label}", _scene_reader(path, blender, dump),
         lambda scene, recompute, skin: reference_import(scene, choice.reference, mapping, recompute_normals=recompute,
                                                         skin_unweighted=skin),
         parent, dump)
@@ -293,25 +309,28 @@ def _reference_review(parent, app, path, blender, dump, current=None):
 
 
 def _exported_review(parent, path, blender, dump):
-    return BlendImportReview(Path(path).name, _scene_reader(path, blender),
+    return BlendImportReview(Path(path).name, _scene_reader(path, blender, dump),
                              lambda scene, recompute, skin: apply_blend(scene, recompute_normals=recompute,
                                                                         skin_unweighted=skin), parent, dump)
 
 
-def _open_scene(parent, app, start=""):
-    path, _filter = QFileDialog.getOpenFileName(parent, translate("BlenderRoundTrip", "Import from Blender"), start,
-                                                translate("BlenderRoundTrip", "Blender scenes (*.blend)"))
-    blender = require_blender(parent, app) if path else None
-    if blender is None:
+def _open_scene(parent, app, start="", named=""):
+    title = translate("BlenderRoundTrip", "Import from Blender")
+    status = translate("BlenderRoundTrip", "Reading the Blender scene…")
+    opened = open_blend(parent, app, title, status, lambda blender, path: read_blend(path, blender=blender), start)
+    if opened is None:
         return None
-    dump, error = run_busy(parent, translate("BlenderRoundTrip", "Reading the Blender scene…"),
-                            lambda: read_blend(path, blender=blender))
-    if not error and dump.foreign and not dump.manifest["objects"]:
-        error = translate("BlenderRoundTrip", "The scene has no visible mesh objects.")
-    if error:
-        QMessageBox.warning(parent, translate("BlenderRoundTrip", "Blender import failed"), error)
+    blender, path, dump = opened
+    if dump.roots:
+        root, accepted = QInputDialog.getItem(parent, title, translate("BlenderRoundTrip", "Mesh"), dump.roots,
+                                              dump.roots.index(named) if named in dump.roots else 0, False)
+        dump = accepted and _read_busy(parent, title, status, lambda: read_blend(path, blender=blender, root=root))
+        if not dump:
+            return None
+    if dump.foreign and not dump.manifest["objects"]:
+        QMessageBox.warning(parent, title, translate("BlenderRoundTrip", "The scene has no visible mesh objects."))
         return None
-    return path, blender, dump
+    return blender, path, dump
 
 
 def _open_mesh_choice(viewer):
@@ -327,10 +346,11 @@ def _open_mesh_choice(viewer):
 def import_into_viewer(viewer):
     handler = viewer.handler
     app = getattr(handler, "app", None)
-    opened = _open_scene(viewer, app, str(Path(handler.filepath).with_suffix(".blend")) if handler.filepath else "")
+    opened = _open_scene(viewer, app, str(Path(handler.filepath).with_suffix(".blend")) if handler.filepath else "",
+                         Path(handler.filepath or "").name.split(".")[0])
     if opened is None:
         return
-    path, blender, dump = opened
+    blender, path, dump = opened
 
     def same_mesh(result):
         version = result.file_version
@@ -361,7 +381,7 @@ def import_mesh_from_blender(window):
     opened = _open_scene(window, window)
     if opened is None:
         return
-    path, blender, dump = opened
+    blender, path, dump = opened
     review = (_reference_review(window, window, path, blender, dump) if dump.foreign
               else _exported_review(window, path, blender, dump))
     result = review.run() if review is not None else None
@@ -369,5 +389,5 @@ def import_mesh_from_blender(window):
         save_and_open(window, window, result, Path(path).stem)
 
 
-__all__ = ["BlendImportReview", "apply_to_document", "import_into_viewer", "import_mesh_from_blender",
+__all__ = ["BlendImportReview", "apply_to_document", "import_into_viewer", "import_mesh_from_blender", "open_blend",
            "require_blender", "run_busy", "save_and_open"]
