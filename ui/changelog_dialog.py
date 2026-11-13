@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QDialog, QWidget, QLabel, QVBoxLayout, QHBoxLayou
 lazy from ui.editor_widgets import styled_label
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
+lazy from ui.support import SUPPORT_URL
 lazy from utils.app_paths import application_root
 
 _TAG_BADGES = {
@@ -18,11 +19,16 @@ _TAG_BADGES = {
 _HEAD = (521.5, 360.0, 259.0)
 
 
-class _IllustrationPanel(QFrame):
+class IllustrationPanel(QFrame):
     def __init__(self, image_path: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("IllustrationPanel")
         self.setAttribute(Qt.WA_StyledBackground, True)
+        colors = current_colors()
+        self.setStyleSheet(
+            f"QFrame#IllustrationPanel {{ background-color: {colors['view_bg']}; border: none; "
+            f"border-right: 1px solid {colors['gutter']}; }}"
+        )
         self.setMinimumWidth(200)
         self.setMaximumWidth(260)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
@@ -114,7 +120,7 @@ class ChangelogDialog(QDialog):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        left = _IllustrationPanel(str(application_root() / "resources" / "images" / "reasy_guy.png"))
+        left = IllustrationPanel(str(application_root() / "resources" / "images" / "reasy_guy.png"))
         root.addWidget(left)
 
         right_container = QWidget()
@@ -320,6 +326,9 @@ class ChangelogDialog(QDialog):
         github_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy")))
         github_btn.setCursor(Qt.PointingHandCursor)
         buttons_row.addWidget(github_btn)
+        support_btn = QPushButton(line_icon("heart", current_colors()["danger"]), self.tr("Support REasy"))
+        support_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(SUPPORT_URL)))
+        buttons_row.addWidget(support_btn)
 
         buttons_row.addStretch(1)
         view_btn = QPushButton(line_icon("external"), self.tr("View release notes…"))
@@ -362,9 +371,6 @@ class ChangelogDialog(QDialog):
 
     def _apply_stylesheet(self, colors: dict):
         self.setStyleSheet(f"""
-            QFrame#IllustrationPanel {{
-                background-color: {colors['view_bg']}; border: none; border-right: 1px solid {colors['gutter']};
-            }}
             QScrollArea#changeList {{ border: 1px solid {colors['border_subtle']}; }}
             QFrame#ChangeItem {{
                 background: transparent; border: none; border-bottom: 1px solid {colors['border_subtle']};

@@ -17,6 +17,7 @@ from settings import DEFAULT_SETTINGS, load_settings, normalize_settings, save_s
 lazy from app_config import CURRENT_VERSION, GAMES
 lazy from ui.changelog_dialog import ChangelogDialog
 lazy from ui.settings_dialog import SettingsDialog
+lazy from ui.support import SupportDialog
 lazy from ui.icons import line_icon
 lazy from ui.styles import apply_theme, current_colors, get_color_scheme
 lazy from utils.app_paths import resource_path
@@ -571,9 +572,6 @@ class REasyEditorApp(QMainWindow):
         add_action(help_menu, self.tr("What's new?"), self.show_changelog)
         add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki, icon="external")
 
-        donate_menu = menubar.addMenu(self.tr("Donate"))
-        add_action(donate_menu, self.tr("Support REasy"), self.show_donate_dialog)
-
     def _update_general_shortcut_state(self):
         disabled = bool(getattr(self.get_active_tab(), "suppress_general_shortcuts", False))
         shortcuts = self.settings.get("keyboard_shortcuts", {})
@@ -760,6 +758,14 @@ class REasyEditorApp(QMainWindow):
         self.update_button.setIconSize(QSize(14, 14))
         self.update_button.hide()
         layout.addWidget(self.update_button)
+        self.support_button = QToolButton(corner)
+        self.support_button.setObjectName("supportMenuButton")
+        self.support_button.setText(self.tr("Support"))
+        self.support_button.setToolTip(self.tr("Support REasy's development"))
+        self.support_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.support_button.setIconSize(QSize(14, 14))
+        self.support_button.clicked.connect(self.show_support_dialog)
+        layout.addWidget(self.support_button)
         self.menuBar().setCornerWidget(corner, Qt.TopRightCorner)
 
     def _apply_menubar_corner_style(self):
@@ -768,20 +774,21 @@ class REasyEditorApp(QMainWindow):
             return
         colors = current_colors()
         self.update_button.setIcon(line_icon("import", colors["warning"]))
+        self.support_button.setIcon(line_icon("heart", colors["danger"]))
         if hasattr(self, "ai_chat_button"):
             self.ai_chat_button.setIcon(line_icon("bot"))
         corner.setStyleSheet(
             f"""
             QWidget#menuBarCorner {{ background: transparent; }}
-            QToolButton#aiAssistantMenuButton, QToolButton#updateMenuButton {{
+            QToolButton#aiAssistantMenuButton, QToolButton#updateMenuButton, QToolButton#supportMenuButton {{
                 background: transparent;
                 border: 1px solid transparent;
                 border-radius: 3px;
                 padding: 2px 8px 2px 6px;
                 font-weight: 600;
             }}
-            QToolButton#aiAssistantMenuButton {{ color: {colors['text_muted']}; }}
-            QToolButton#aiAssistantMenuButton:hover {{
+            QToolButton#aiAssistantMenuButton, QToolButton#supportMenuButton {{ color: {colors['text_muted']}; }}
+            QToolButton#aiAssistantMenuButton:hover, QToolButton#supportMenuButton:hover {{
                 background: {colors['surface_hover']};
                 color: {colors['text_bright']};
             }}
@@ -1649,26 +1656,8 @@ class REasyEditorApp(QMainWindow):
     def show_wiki(self):
         QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy-Wiki"))
 
-    def show_donate_dialog(self):
-        dialog = QDialog(self)
-        dialog.setWindowTitle(self.tr("Support REasy Editor"))
-        layout = QVBoxLayout(dialog)
-
-        thank_you_label = QLabel(self.tr("Thank you for your feedback and support!\nYour contributions help keep this project going."))
-        thank_you_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(thank_you_label)
-
-        link_label = QLabel('<a href="https://linktr.ee/seifhassine">https://linktr.ee/seifhassine</a>')
-        link_label.setAlignment(Qt.AlignCenter)
-        link_label.setOpenExternalLinks(True)
-        layout.addWidget(link_label)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok)
-        buttons.accepted.connect(dialog.accept)
-        layout.addWidget(buttons)
-
-        dialog.setMinimumWidth(300)
-        dialog.exec()
+    def show_support_dialog(self):
+        SupportDialog(self).exec()
 
     def on_restore_backup(self):
         active = self.get_active_tab()

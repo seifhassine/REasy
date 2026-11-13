@@ -10,6 +10,7 @@
   <a href="https://github.com/seifhassine/REasy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/seifhassine/REasy"></a>
   <a href="https://github.com/seifhassine/REasy/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/seifhassine/REasy/total"></a>
   <a href="https://github.com/seifhassine/REasy/actions/workflows/build.yml"><img alt="Build" src="https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://linktr.ee/seifhassine"><img alt="Support REasy" src="https://img.shields.io/badge/Support_REasy-db61a2?logo=githubsponsors&logoColor=white"></a>
 </p>
 
 <div align="center">
@@ -95,6 +96,10 @@ Up-to-date RSZ dumps for every game are in [resources/data/dumps](resources/data
 
 PRs are welcome and I review them. AI-assisted contributions are fine as long as a human has reviewed them properly: keep the code clean, include correctness tests, and stick to one file format or submodule per PR.
 
+## Support REasy
+
+REasy is free to use. If it helps your modding, you can support its development [here](https://linktr.ee/seifhassine).
+
 ## Credits
 
 - [@alphazolam](https://github.com/alphazolam) for the 010 RE templates
@@ -105,8 +110,6 @@ PRs are welcome and I review them. AI-assisted contributions are fine as long as
 - @Ekey for the PAK decryption algorithms
 - @NSACloud for older mesh format research (Now reworked)
 - @brewedenhell for contributions to the [Wiki](https://github.com/seifhassine/REasy-Wiki/tree/main)
-
-If you'd like to support development, you can do so [here](https://linktr.ee/seifhassine).
 
 ## License and use
 

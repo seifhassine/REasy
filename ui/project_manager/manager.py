@@ -2113,6 +2113,8 @@ class ProjectManager(QDockWidget):
         box.setText(msg)
         reveal_btn = box.addButton(self.tr("Show in Folder"), QMessageBox.ActionRole)
         box.addButton(QMessageBox.Ok)
+        for button in box.buttons():
+            button.setMinimumWidth(button.sizeHint().width())
         box.exec()
 
         if box.clickedButton() is reveal_btn:
