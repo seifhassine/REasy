@@ -83,7 +83,7 @@ class MotionEditor(QWidget):
         for widget in (undo, redo, toolbar_separator(),
                        tool_button("copy", self.tr("Duplicate (Ctrl+D)"), self._duplicate),
                        tool_button("delete", self.tr("Delete (Del)"), self._delete), toolbar_separator(),
-                       tool_button("export", self.tr("Export the motions to a .blend, one action each"),
+                       tool_button("export", self.tr("Export the selected motions to a .blend, one action each"),
                                    self._export_blend, text=self.tr("Blender")),
                        tool_button("import", self.tr("Replace the motion's keys with an action from a .blend"),
                                    self._import_blend)):
@@ -237,14 +237,17 @@ class MotionEditor(QWidget):
 
     def _export_blend(self) -> None:
         title = self.tr("Export to Blender")
-        motions = self.document.motions() or ([self.state.motion] if self.state.motion is not None else [])
+        chosen = [self.state.motion, *map(self.document.motion_of, self.state.selection)]
+        motions = [motion for motion in dict.fromkeys(chosen) if motion is not None]
         rig = self._rig()
         if not motions or rig is None:
-            QMessageBox.information(self, title, self.tr("Exporting needs a motion and a skeleton: this file holds no "
-                                                         "skeleton, and no prefab is previewed."))
+            QMessageBox.information(self, title, self.tr("Select a motion first.") if not motions else self.tr(
+                "Exporting needs a motion and a skeleton: this file holds no skeleton, and no prefab is previewed."))
             return
         name = Path(self.handler.filepath or "motion").name.split(".")[0]
-        path, _filter = QFileDialog.getSaveFileName(self, title, name + ".blend", "Blender (*.blend)")
+        caption, stem = (title, motions[0].name) if len(motions) == 1 else (
+            self.tr("Export {0} motions to Blender").format(len(motions)), name)
+        path, _filter = QFileDialog.getSaveFileName(self, caption, stem + ".blend", "Blender (*.blend)")
         blender = require_blender(self, self.handler.app) if path else None
         add = rig is self.preview.rig() and self.preview.adds()
         if blender is not None:
