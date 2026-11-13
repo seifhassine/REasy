@@ -134,8 +134,8 @@ class MotionEditor(QWidget):
         for pane in (self.tree, self.preview, self.curves, self.trees, self.inspector, self.transport):
             for keys, slot in ((QKeySequence.Undo, document.undo_stack.undo),
                                (QKeySequence.Redo, document.undo_stack.redo), ("Ctrl+D", self._duplicate)):
-                QShortcut(keys, pane, slot, context=Qt.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence.Delete, self.tree, self._delete, context=Qt.WidgetShortcut)
+                QShortcut(keys, pane, slot).setContext(Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence.Delete, self.tree, self._delete).setContext(Qt.WidgetShortcut)
         self.preview.scene.preview.set_fullscreen_content(self)
         self._motion_changed()
 

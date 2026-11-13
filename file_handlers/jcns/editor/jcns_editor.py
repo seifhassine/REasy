@@ -112,9 +112,9 @@ class JcnsEditor(QWidget):
         for pane in (self.left, self.center, self.right):
             for keys, slot in ((QKeySequence.Undo, document.undo_stack.undo),
                                (QKeySequence.Redo, document.undo_stack.redo), ("Ctrl+D", self._duplicate)):
-                QShortcut(keys, pane, slot, context=Qt.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence.Delete, self.tree, self._delete, context=Qt.WidgetShortcut)
-        QShortcut(QKeySequence("Ins"), self.tree, self._add, context=Qt.WidgetShortcut)
+                QShortcut(keys, pane, slot).setContext(Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence.Delete, self.tree, self._delete).setContext(Qt.WidgetShortcut)
+        QShortcut(QKeySequence("Ins"), self.tree, self._add).setContext(Qt.WidgetShortcut)
         self._tab(0)
         self._show_joints()
 

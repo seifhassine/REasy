@@ -112,9 +112,9 @@ class BhvtEditor(QWidget):
         for keys, slot in ((QKeySequence.StandardKey.Undo, stack.undo), (QKeySequence.StandardKey.Redo, stack.redo),
                            (QKeySequence.StandardKey.Copy, canvas.copy), (QKeySequence.StandardKey.Paste, canvas.paste),
                            ("Ctrl+D", canvas.duplicate), ("Alt+Left", self._back), ("Alt+Right", self._forward)):
-            QShortcut(keys, self.splitter, slot, context=Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence.StandardKey.Delete, self.navigator.tree, canvas.delete,
-                  context=Qt.ShortcutContext.WidgetShortcut)
+            QShortcut(keys, self.splitter, slot).setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence.StandardKey.Delete, self.navigator.tree, canvas.delete).setContext(
+            Qt.ShortcutContext.WidgetShortcut)
 
     def _update(self) -> None:
         state, shown = self.state, self.views.currentIndex() == 0

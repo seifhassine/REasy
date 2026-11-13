@@ -43,7 +43,7 @@ class ContainerPane(QSplitter):
         self._refill = QTimer(self)
         self._refill.setSingleShot(True)
         self._refill.timeout.connect(self.fill)
-        QShortcut("F2", self.timelines, self._rename, context=Qt.ShortcutContext.WidgetShortcut)
+        QShortcut("F2", self.timelines, self._rename).setContext(Qt.ShortcutContext.WidgetShortcut)
         self.timelines.itemActivated.connect(self._activated)
         self.timelines.itemChanged.connect(self._renamed)
         self.holds.itemChanged.connect(self._targets_changed)
