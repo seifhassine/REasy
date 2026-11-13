@@ -4650,7 +4650,7 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
         Definition match = value_match(lines[index]);
         if (match.found()) defining[defined_name(lines[index], match)] = index;
     }
-    Numbered<std::vector<V>> carrier, native, prelude, replaced;
+    Numbered<std::vector<V>> carrier, native, prelude, replaced, unrenamed;
     Numbered<std::vector<std::pair<long long, V>>> stored;
     VMap<V> renamed, natives;
     std::vector<Ref> held;
@@ -5015,11 +5015,21 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
         if (read_line.get() != Py_None) {
             Ref lanes(attribute(item.site, "lanes"));
             Ref iterator(check(PyObject_GetIter(lanes.get())));
+            std::vector<V> names;
             while (PyObject *lane = PyIter_Next(iterator.get())) {
                 Ref owned(lane);
                 Ref parts(unpacked(lane, 2));
                 V value = python_item(item.results, plan_integer(PyTuple_GET_ITEM(parts.get(), 0)));
-                renamed[python_text(PyTuple_GET_ITEM(parts.get(), 1))] = value;
+                names.push_back(python_text(PyTuple_GET_ITEM(parts.get(), 1)));
+                renamed[names.back()] = value;
+            }
+            if (PyErr_Occurred()) throw Fail();
+            Ref kept_lines(attribute(item.site, "kept"));
+            Ref kept_iterator(check(PyObject_GetIter(kept_lines.get())));
+            while (PyObject *line = PyIter_Next(kept_iterator.get())) {
+                Ref owned(line);
+                std::vector<V> &kept_names = unrenamed.at(plan_integer(line) - start);
+                kept_names.insert(kept_names.end(), names.begin(), names.end());
             }
             if (PyErr_Occurred()) throw Fail();
             continue;
@@ -5110,6 +5120,7 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
         Ref records(attribute(PyTuple_GET_ITEM(edits.get(), edit_index), "records"));
         any_records = truth(records.get());
     }
+    std::vector<std::pair<size_t, std::vector<V> *>> exempt;
     result.clear();
     for (size_t index = 0; index < lines.size(); ++index) {
         long long key = static_cast<long long>(index);
@@ -5138,10 +5149,19 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
         if (std::vector<V> *added = native.find(key)) result.insert(result.end(), added->begin(), added->end());
         V line = lines[index];
         if (auto *values = stored.find(key)) line = with_arguments(line, *values, arena);
+        if (auto *names = unrenamed.find(key)) exempt.emplace_back(result.size(), names);
         result.push_back(line);
     }
-    if (!renamed.empty())
-        for (V &line : result) line = renamed_uses(line, renamed, arena);
+    auto next = exempt.begin();
+    for (size_t at = 0; at < result.size() && !renamed.empty(); ++at) {
+        if (next == exempt.end() || next->first != at) {
+            result[at] = renamed_uses(result[at], renamed, arena);
+            continue;
+        }
+        VMap<V> partial = renamed;
+        for (V name : *next++->second) partial.erase(name);
+        result[at] = renamed_uses(result[at], partial, arena);
+    }
 }
 
 PyObject *metadata_of(PyObject *metadata, const std::vector<V> &rows, PyObject *parse) {

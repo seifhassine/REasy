@@ -219,6 +219,7 @@ class _SpirvProduct:
     surface_plan: tuple = ()
     material_expressions: Mapping[int, str] = field(default_factory=dict)
     material_instances: str = ""
+    stage_sets: Mapping[str, int] = field(default_factory=dict)
 
     @property
     def source(self) -> str:
@@ -307,6 +308,7 @@ def _spirv_binding_plan(
     resources,
     native: SpirvReflection,
     resource_kinds: Mapping[str, str],
+    stage_sets: Mapping[str, int],
     *,
     used_names: frozenset[str] | None = None,
 ) -> dict[str, tuple[int, int, str, int]]:
@@ -323,6 +325,8 @@ def _spirv_binding_plan(
             "SPIR-V compiler retained undeclared resources: " + ", ".join(sorted(unknown))
         )
     sets = {int(item.descriptor_set) for item in native.descriptors}
+    if not sets and native.stage in stage_sets:
+        sets = {stage_sets[native.stage]}
     if not sets and not wanted:
         return {}
     if len(sets) != 1:
@@ -632,7 +636,7 @@ def _spirv_candidate_contract(
 
 def _compile_spirv_product(product: _SpirvProduct) -> _NativeCompileResult:
     assignments = _spirv_binding_plan(
-        product.logical_contract.resources, product.native, product.resource_kinds,
+        product.logical_contract.resources, product.native, product.resource_kinds, product.stage_sets,
     )
     bytecode = rebuild_spirv(
         product.ir, product.source_contract, product.logical_contract,
@@ -643,7 +647,7 @@ def _compile_spirv_product(product: _SpirvProduct) -> _NativeCompileResult:
     )
     reflected = reflect_spirv(bytecode, entry_point=product.entry_point)
     assignments = _spirv_binding_plan(
-        product.logical_contract.resources, product.native, product.resource_kinds,
+        product.logical_contract.resources, product.native, product.resource_kinds, product.stage_sets,
         used_names=frozenset(item.name.casefold() for item in reflected.descriptors),
     )
     by_id = {item.variable_id: assignments[item.name.casefold()] for item in reflected.descriptors}
@@ -1384,10 +1388,11 @@ def _stored_contract(text, digest: str) -> ShaderContract:
 
 
 def _program_key(digest: str, binary_format: str, semantics: MmtrProgramSemantics) -> str:
-    # Equal shaders of passes that draw for different purposes, that Drawing For names apart or that are handed
-    # different data build differently.
+    # Equal shaders of passes that draw for different purposes, that Drawing For names apart, whose edited pins differ
+    # or that are handed different data build differently.
     key = digest + ":" + binary_format + repr((semantics.purpose, semantics.drawn_for, semantics.surface_data,
-                                               semantics.vertex_values, semantics.added_outputs))
+                                               semantics.vertex_values, semantics.added_outputs,
+                                               semantics.edited_pins))
     if semantics.material_bound_elsewhere:
         key += repr((sorted(semantics.material_bound_elsewhere), semantics.name))
     if binary_format == "spirv-module":
@@ -2213,6 +2218,7 @@ class ReEngineShaderGraphProfile:
             contract.resources,
             native,
             _outer_resource_kinds(program, role),
+            document.profile.sdf_profile.spirv_stage_descriptor_sets,
         )
         assignment = plan.get(resource.name.casefold())
         if assignment is None:
@@ -2328,6 +2334,7 @@ class ReEngineShaderGraphProfile:
             candidate.resources,
             native,
             resource_kinds,
+            document.profile.sdf_profile.spirv_stage_descriptor_sets,
             used_names=native_names,
         )
         document._shader_contract_cache[cache_key] = candidate
@@ -2446,6 +2453,10 @@ class ReEngineShaderGraphProfile:
             changes["drawn_for"] = tuple(node.node_id for node in project.graph.nodes if node.kind == DRAWING_FOR_KIND
                                          and node.properties.get("programs")
                                          and drawing_for(node, changes["purpose"], target, semantics.name))
+        listed = _listed_pins(project, target, program, semantics.shader_role)
+        if edited := tuple(sorted(str(record["pin"]) for record, _link in _edited_channels(project)
+                                  if str(record["pin"]) in listed)):
+            changes["edited_pins"] = edited
         if semantics.shader_role in {"vertex", "pixel"}:
             changes["vertex_values"], changes["vertex_value_refusals"] = _vertex_values(
                 project, document, self, target, program)
@@ -2625,7 +2636,8 @@ class ReEngineShaderGraphProfile:
                                     _native_spirv(route.shader(semantics.shader_role)),
                                     _outer_resource_kinds(route, semantics.shader_role),
                                     expressions, textures, helpers, renamed, surface_plan, material_expressions,
-                                    self.instanced_material_buffer)
+                                    self.instanced_material_buffer,
+                                    stage_sets=document.profile.sdf_profile.spirv_stage_descriptor_sets)
             return product, adjusted, layout, semantic_key
         if recovered.ir_kind == "dxbc-sm5":
             texture_slots = {

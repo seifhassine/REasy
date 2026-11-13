@@ -671,6 +671,9 @@ def _carrier_source(
     elif not (contract.inputs or contract.resources or contract.constant_buffers
               or scalar_expressions or material_expressions):
         lines.append("}")
+    elif not (scalar_expressions or material_expressions or surface_plan
+              or any(item.register_class == "u" for item in resources)):
+        lines.append("}")
     else:
         sink = next((item for item in resources if item.register_class == "u"), None)
         if sink is None:

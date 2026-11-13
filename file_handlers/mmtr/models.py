@@ -63,6 +63,7 @@ class MmtrProgramSemantics:
     material_bound_elsewhere: frozenset = frozenset()
     drawn_for: tuple = ()
     engine_inputs: tuple = ((), ())
+    edited_pins: tuple = ()
 
 
 @dataclass(frozen=True, slots=True)

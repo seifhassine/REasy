@@ -21,7 +21,7 @@ class SdfStageLayout:
 class SdfTargetLayout:
     key: str
     display_name: str
-    selection_capability_bit: int | None
+    selection_capability_bits: tuple[int, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +95,7 @@ class SdfGameProfile:
     program_requirement_names: dict[int, str] = field(default_factory=dict)
     # Target indices that may hold the length-prefixed SPIR-V wrapper.
     spirv_target_indices: frozenset[int] = frozenset()
+    spirv_stage_descriptor_sets: dict[str, int] = field(default_factory=dict)
     # DXIL builds store mesh/amplification shaders in these legacy lanes.
     shader_role_stages: dict[str, frozenset[str]] = field(default_factory=dict)
     # Root-signature/static-sampler resources without SDF rows: (stage, name, register class, bind point, space).
@@ -119,7 +120,7 @@ class SdfGameProfile:
         return SdfTargetLayout(
             key=f"target-{index}",
             display_name=f"Target {index}",
-            selection_capability_bit=None,
+            selection_capability_bits=(),
         )
 
     def accepts_binner_control(self, value: int) -> bool:

@@ -112,6 +112,21 @@ struct Table {
     }
 };
 
+std::vector<std::vector<size_t>> root_tables(const std::vector<Table> &tables) {
+    std::vector<std::vector<size_t>> groups;
+    std::map<std::pair<bool, UINT>, size_t> shared;
+    for (size_t i = 0; i < tables.size(); ++i) {
+        if (!tables[i].count) {
+            groups.push_back({i});
+            continue;
+        }
+        auto [there, made] = shared.try_emplace({tables[i].kind == SAMPLER, tables[i].visibility}, groups.size());
+        if (made) groups.emplace_back();
+        groups[there->second].push_back(i);
+    }
+    return groups;
+}
+
 // For Shader Model 6.6 shaders that index the descriptor heap themselves.
 struct HeapEntry { UINT kind = 0, dimension = 0; Entry entry; bool null = false; };
 
@@ -1884,8 +1899,7 @@ struct Scene {
 
         Binding binding;
         std::vector<D3D12_DESCRIPTOR_RANGE1> ranges(tables.size());
-        std::vector<D3D12_ROOT_PARAMETER1> parameters(tables.size());
-        binding.starts.resize(tables.size());
+        std::vector<UINT> offsets(tables.size());
         UINT next[2] = {};
         for (size_t i = 0; i < tables.size(); ++i) {
             const Table &table = tables[i];
@@ -1899,13 +1913,8 @@ struct Scene {
             ranges[i].RegisterSpace = table.space;
             ranges[i].Flags = sampler ? D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE
                 : D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
-            parameters[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            parameters[i].DescriptorTable = {1, &ranges[i]};
-            parameters[i].ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(table.visibility);
 
             const Slots &block = blocks[sampler];
-            binding.starts[i] = {block.heap->GetGPUDescriptorHandleForHeapStart().ptr
-                                 + static_cast<UINT64>(block.first + next[sampler]) * increments[sampler]};
             UINT slots = table.slots();
             std::vector<const Entry *> placed(slots, nullptr);
             for (const Entry &entry : table.entries) {
@@ -1915,7 +1924,28 @@ struct Scene {
             for (UINT index = 0; index < slots && (!sampler || new_samplers); ++index) {
                 describe(step, table.kind, table.dimension, placed[index], slot(block, sampler, next[sampler] + index));
             }
+            offsets[i] = next[sampler];
             next[sampler] += slots;
+        }
+        const std::vector<std::vector<size_t>> groups = root_tables(tables);
+        std::vector<std::vector<D3D12_DESCRIPTOR_RANGE1>> grouped(groups.size());
+        std::vector<D3D12_ROOT_PARAMETER1> parameters(groups.size());
+        binding.starts.resize(groups.size());
+        for (size_t g = 0; g < groups.size(); ++g) {
+            const Table &first = tables[groups[g].front()];
+            bool sampler = first.kind == SAMPLER;
+            UINT base = UINT_MAX;
+            for (size_t i : groups[g]) base = std::min(base, offsets[i]);
+            for (size_t i : groups[g]) {
+                grouped[g].push_back(ranges[i]);
+                grouped[g].back().OffsetInDescriptorsFromTableStart = offsets[i] - base;
+            }
+            parameters[g].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            parameters[g].DescriptorTable = {static_cast<UINT>(grouped[g].size()), grouped[g].data()};
+            parameters[g].ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(first.visibility);
+            const Slots &block = blocks[sampler];
+            binding.starts[g] = {block.heap->GetGPUDescriptorHandleForHeapStart().ptr
+                                 + static_cast<UINT64>(block.first + base) * increments[sampler]};
         }
 
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC root_desc{};
@@ -1925,12 +1955,14 @@ struct Scene {
         // A shader that indexes the heaps on a path it never takes still needs the flags to make a pipeline.
         root_desc.Desc_1_1.Flags = flags | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED
             | D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
-        // Every parameter is a table of one range, so the flags, ranges and visibilities are the whole layout.
+        // Every parameter is a table, so the flags, each table's ranges and its visibility are the whole layout.
         std::string root_layout;
         add_part(root_layout, &root_desc.Desc_1_1.Flags, sizeof root_desc.Desc_1_1.Flags);
-        for (size_t i = 0; i < tables.size(); ++i) {
-            add_part(root_layout, &ranges[i], sizeof ranges[i]);
-            add_part(root_layout, &parameters[i].ShaderVisibility, sizeof parameters[i].ShaderVisibility);
+        for (size_t g = 0; g < groups.size(); ++g) {
+            const UINT count = parameters[g].DescriptorTable.NumDescriptorRanges;
+            add_part(root_layout, &count, sizeof count);
+            add_part(root_layout, grouped[g].data(), count * sizeof(D3D12_DESCRIPTOR_RANGE1));
+            add_part(root_layout, &parameters[g].ShaderVisibility, sizeof parameters[g].ShaderVisibility);
         }
         binding.root = kept->one(kept->roots, root_layout, [&] {
             ComPtr<ID3DBlob> blob, errors;
@@ -2600,7 +2632,7 @@ const char *invalid_job(const Job &job, const Scene &scene) {
     if (job.elements.size() > D3D12_IA_VERTEX_INPUT_STRUCTURE_ELEMENT_COUNT)
         return "vertex element count is out of range";
     if (job.vertex_buffers.size() > D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT) return "too many vertex buffers";
-    if (job.tables.size() > 64) return "too many descriptor tables";
+    if (root_tables(job.tables).size() > 64) return "too many descriptor tables";
     if (job.scissor.left >= job.scissor.right || job.scissor.top >= job.scissor.bottom
         || job.scissor.right > static_cast<LONG>(job.width) || job.scissor.bottom > static_cast<LONG>(job.height))
         return "the scissor rectangle lies outside the targets";
@@ -2655,7 +2687,7 @@ const char *invalid_compute_job(const ComputeJob &job, const Scene &scene) {
                 return "group count is out of range";
         }
     }
-    if (job.tables.size() > 64) return "too many descriptor tables";
+    if (root_tables(job.tables).size() > 64) return "too many descriptor tables";
     for (const Table &table : job.tables) {
         if (table.visibility != D3D12_SHADER_VISIBILITY_ALL) return "a compute shader's tables are visible to all";
     }

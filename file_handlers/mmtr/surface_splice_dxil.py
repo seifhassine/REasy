@@ -7,7 +7,7 @@ from functools import cached_property
 lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from file_handlers.sdf.shader_graph_math import value_width
 
-lazy from .native_loop_flow import reachable_blocks
+lazy from .native_loop_flow import dominator_sets, predecessor_map, reachable_blocks
 lazy from .profiles.re_engine_dxil_authoring import _SSA, _VALUE
 lazy from .surface_flow import NativeFlow, store_visits
 lazy from .material_region_read import per_build
@@ -38,10 +38,11 @@ class DxilSurfaceSite:
     # A Discard edit's site: a return's assembly line.
     exit: int | None = None
     # A texture-read edit's site: the read's line, result and extracted lanes. A projected position's: the completing
-    # line and each component's value.
+    # line, each component's value and the lines computing the rest of it from part of it.
     read: int | None = None
     texels: str = ""
     lanes: tuple[tuple[int, str], ...] = ()
+    kept: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,9 +104,9 @@ class _DxilPlanner:
             return DxilSurfaceEdit(f"REasySurface_{index}", edit.value_type, edit.expression, taps, tuple(sites),
                                    edit.material, output=(channel.semantic, channel.semantic_index))
         if edit.split.channel.scope == "position":
-            line, block, lanes = self.position_site(edit.split)
+            line, block, lanes, kept = self.position_site(edit.split)
             site = DxilSurfaceSite((), self.arguments(edit, block, line), material_address=self.material_address(
-                block, line + 1) if edit.material else "", read=line, lanes=lanes)
+                block, line + 1) if edit.material else "", read=line, lanes=lanes, kept=kept)
             return DxilSurfaceEdit(f"REasySurface_{index}", edit.value_type, edit.expression, taps, (site,),
                                    edit.material)
         sites = self.read_sites(edit) if edit.split.channel.scope == "read" else self.store_sites(edit)
@@ -148,8 +149,6 @@ class _DxilPlanner:
         blocks: dict[str, list] = {}
         for store in edit.split.stores:
             blocks.setdefault(store.site[1], []).append(store)
-        if edit.form == "value" and len(blocks) != 1:
-            raise ShaderGraphError("A packed channel must be stored in one place to change it before packing.")
         sites = []
         for block, stores in blocks.items():
             if edit.form == "stored":
@@ -171,9 +170,16 @@ class _DxilPlanner:
             stores.sort(key=lambda item: item.lane)
             tapped = self.arguments(edit, block)
             address = self.material_address(block, min(store.site[0] for store in stores)) if edit.material else ""
+            tail = edit.split.tail
+            if len(blocks) > 1:
+                tail, pending = set(), [store.value for store in stores]
+                while pending:
+                    if (value := pending.pop()) in edit.split.tail and value not in tail:
+                        tail.add(value)
+                        pending.extend(self.flow.values[value].operands)
             sites.append(DxilSurfaceSite(
                 (), tapped, tuple(self.native(item) for item in edit.split.frontier),
-                tuple(self.native(item) for item in sorted(edit.split.tail)),
+                tuple(self.native(item) for item in sorted(tail)),
                 tuple((store.site[0], self.native(store.value), store.site[2]) for store in stores), address))
         return sites
 
@@ -190,6 +196,19 @@ class _DxilPlanner:
         if block not in self._reaching:
             self._reaching[block] = reachable_blocks(block, self.block_flow[1])
         return self._reaching[block]
+
+    @cached_property
+    def dominators(self):
+        labels, successors = tuple(self.block_flow[0]), self.block_flow[1]
+        return dominator_sets(labels, predecessor_map(labels, successors), unreachable=True)
+
+    @cached_property
+    def value_blocks(self) -> dict[str, str]:
+        lines = self.assembly.splitlines()
+        _metadata, begin, end, statements = _entry(lines)
+        blocks = {begin + 1 + index: block for block, index, _text in statements}
+        return {match["result"]: blocks[index] for index in range(begin, end)
+                if index in blocks and (match := _VALUE.match(lines[index]))}
 
     @cached_property
     def reads(self):
@@ -232,7 +251,7 @@ class _DxilPlanner:
                                    "This pass reads several material records where the channel is stored.")
         return min(next(iter(records.values())))[1]
 
-    def position_site(self, split) -> tuple[int, str, tuple[tuple[int, str], ...]]:
+    def position_site(self, split) -> tuple[int, str, tuple[tuple[int, str], ...], tuple[int, ...]]:
         lines = self.assembly.splitlines()
         _metadata, begin, end, statements = _entry(lines)
         blocks = {begin + 1 + index: block for block, index, _text in statements}
@@ -244,15 +263,30 @@ class _DxilPlanner:
         # Phis open their block together, so the new value follows the last.
         while (match := _VALUE.match(lines[last + 1])) and lines[last + 1][match.end():].lstrip().startswith("phi "):
             last += 1
-        if len({blocks.get(defined[name]) for name in names}) != 1:
+        if any(blocks.get(defined[name]) not in self.dominators[blocks[last]] for name in names):
             raise ShaderGraphError("This pass computes its position in several blocks, so it cannot be changed in "
                                    "one place.")
-        for index in range(begin, last + 1):
+
+        def operands(index):
             match = _VALUE.match(lines[index])
-            if set(names) & set(_SSA.findall(lines[index][match.end():] if match else lines[index])):
+            return match, set(_SSA.findall(lines[index][match.end():] if match else lines[index]))
+
+        parts, derived, feeding, pending, kept = set(names), set(), set(), list(names), []
+        while pending:
+            found = operands(defined[pending.pop()])[1] & defined.keys()
+            pending.extend(found - feeding)
+            feeding |= found
+        for index in range(begin, end):
+            match, read = operands(index)
+            if read & (derived | (parts if index <= last else set())) and (
+                    index > last or match is None or match["result"] not in parts | feeding):
                 raise ShaderGraphError("This pass uses its position before it is complete, so it cannot be "
                                        "changed in one place.")
-        return last, blocks[last], tuple(enumerate(names))
+            if index <= last and match is not None and read & (parts | derived) and match["result"] not in parts:
+                derived.add(match["result"])
+            if index <= last and read & parts:
+                kept.append(index)
+        return last, blocks[last], tuple(enumerate(names)), tuple(kept)
 
     def tap_arguments(self, tap, block, read=None, visit=(0, 1)) -> list[str]:
         if tap.split.channel.scope == "position":
@@ -266,17 +300,28 @@ class _DxilPlanner:
                 raise ShaderGraphError("A texture as read can only be changed where the texture is read.")
             return list(_TEXELS)
         if tap.form == "value":
-            if any(store.site[1] != block for store in tap.split.stores):
+            names = [self.native(item) for item in tap.split.frontier]
+            if any(store.site[1] != block for store in tap.split.stores) and not all(
+                    self.value_blocks.get(name) in self.dominators[block] for name in names):
                 raise ShaderGraphError("An edit reads a channel the shader stores in another place.")
-            return [self.native(item) for item in tap.split.frontier]
+            return names
         # The edit's visit of its block (index, count) reads the tap's visit of that index, or its only one.
         found = store_visits(store for store in tap.split.stores if store.site[1] == block)
         if len(found) == visit[1] > 1:
             found = [found[visit[0]]]
-        if len(found) != 1 or len(found[0]) != len(tap.split.channel.lanes):
+        lanes = {store.lane: store for store in found[0]} if len(found) == 1 else {}
+        here = {self.native(store.value) for store in lanes.values() if store.value is not None}
+        for lane in (set(tap.split.channel.lanes) - lanes.keys()) if len(found) < 2 else ():
+            stores = [store for store in tap.split.stores if store.lane == lane]
+            values = {self.native(store.value) if store.value is not None else store.constant for store in stores}
+            defined = self.value_blocks.get(next(iter(values))) if len(values) == 1 else None
+            if len(values) == 1 and (stores[0].value is None or values <= here
+                                     or defined not in (None, block) and defined in self.dominators[block]):
+                lanes[lane] = stores[0]
+        if len(lanes) != len(tap.split.channel.lanes):
             raise ShaderGraphError("An edit reads a channel that is not stored where the edited channel is.")
-        stores = sorted(found[0], key=lambda item: item.lane)
-        return [self.native(store.value) if store.value is not None else store.constant for store in stores]
+        return [self.native(store.value) if store.value is not None else store.constant
+                for store in sorted(lanes.values(), key=lambda item: item.lane)]
 
 
 def surface_helper_source(plan, parameters: list[tuple[str, str]], registers: dict) -> tuple[list[str], list]:

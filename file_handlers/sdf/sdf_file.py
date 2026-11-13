@@ -274,7 +274,7 @@ class _SdfParser:
                     index=target_index,
                     key=target_layout.key,
                     display_name=target_layout.display_name,
-                    selection_capability_bit=target_layout.selection_capability_bit,
+                    selection_capability_bits=target_layout.selection_capability_bits,
                     programs=programs,
                 )
             )

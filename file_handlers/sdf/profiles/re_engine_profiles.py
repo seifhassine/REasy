@@ -119,15 +119,15 @@ RESOURCE_TYPE_NAMES = {
 }
 
 
-def _targets(count: int) -> tuple[SdfTargetLayout, ...]:
-    names = (
-        ("baseline", "Baseline", None),
-        ("gen2", "GraphicsFeatures::Gen2", 28),
-        ("gen3", "GraphicsFeatures::Gen3", 29),
-        ("gen4", "GraphicsFeatures::Gen4", 30),
-        ("gen5", "GraphicsFeatures::Gen5", 31),
-    )
-    return tuple(SdfTargetLayout(*entry) for entry in names[:count])
+_GENERATIONS = {28: "Gen2", 29: "Gen3", 30: "Gen4", 31: "Gen5", 35: "Gen6"}
+_SELECTIONS = ((28,), (29,), (30,), (31,))
+
+
+def _targets(count: int, selections: tuple[tuple[int, ...], ...]) -> tuple[SdfTargetLayout, ...]:
+    return (SdfTargetLayout("baseline", "Baseline", ()),) + tuple(
+        SdfTargetLayout(_GENERATIONS[bits[0]].lower(),
+                        " | ".join(f"GraphicsFeatures::{_GENERATIONS[bit]}" for bit in bits), bits)
+        for bits in selections[:count - 1])
 
 
 _BINDLESS = 0x02
@@ -199,11 +199,13 @@ def _profile(
     aliases: tuple[str, ...],
     versions: tuple[int, ...],
     target_count: int,
+    target_selections: tuple[tuple[int, ...], ...] = _SELECTIONS,
     record_size: int = 0x108,
     header_layout: str = "uniform",
     rasterizer_binner_control: int = 0,
     requirements: dict[int, str] | None = None,
     spirv_target_indices: tuple[int, ...] = (),
+    spirv_stage_descriptor_sets: dict[str, int] | None = None,
     resource_types: dict[str, dict[int, str]] | None = None,
     meshlet_stages: str = "",
     root_slots: str = "",
@@ -233,7 +235,7 @@ def _profile(
                 PROGRAM_LAYOUT_0X110 if record_size == 0x110 else PROGRAM_LAYOUT_0X108
             ),
             stages=STAGES,
-            targets=_targets(target_count),
+            targets=_targets(target_count, target_selections),
             semantic_names=dict(SEMANTIC_NAMES),
             **_game_tables(game),
             resource_type_names=_merged_types(RESOURCE_TYPE_NAMES, resource_types),
@@ -251,6 +253,7 @@ def _profile(
             rasterizer_binner_control=rasterizer_binner_control,
             program_requirement_names=dict(requirements or {}),
             spirv_target_indices=frozenset(spirv_target_indices),
+            spirv_stage_descriptor_sets=dict(spirv_stage_descriptor_sets or {}),
             shader_role_stages=(
                 {
                     "hull": frozenset(("hull", "mesh")),
@@ -305,6 +308,7 @@ RE_RT_SDF_PROFILE = _profile(
     rasterizer_binner_control=1,
     requirements=_requirements(),
     spirv_target_indices=(4,),
+    spirv_stage_descriptor_sets={"vertex": 0, "compute": 0, "pixel": 1, "domain": 3},
     resource_types={
         # BVH is an acceleration structure in native compute/DXR targets; the Vulkan
         # target types Texture2DMS composites as 0x08.
@@ -342,6 +346,7 @@ RE8_SDF_PROFILE = _profile(
     rasterizer_binner_control=1,
     requirements=_requirements(),
     spirv_target_indices=(4,),
+    spirv_stage_descriptor_sets={"vertex": 0, "compute": 0, "pixel": 1, "hull": 2, "domain": 3},
     resource_types={
         "shader_resource": {
             0x00: "raytracing-acceleration-structure-srv",
@@ -457,7 +462,8 @@ MHWS_SDF_PROFILE = _profile(
     display_name="Monster Hunter Wilds",
     aliases=("MHWILDS", "MonsterHunterWilds"),
     versions=(240906211, 250206176),
-    target_count=4,
+    target_count=5,
+    target_selections=((28,), (29,), (30,), (31, 35)),
     record_size=0x110,
     rasterizer_binner_control=3,
     requirements=_requirements(late=True, typed_uav=True, stencil=True),

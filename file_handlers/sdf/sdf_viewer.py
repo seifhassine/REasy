@@ -335,7 +335,7 @@ class SdfViewer(QWidget):
             self.target_selector.clear()
             for target in document.targets:
                 label = target.display_name
-                if target.selection_capability_bit is None:
+                if not target.selection_capability_bits:
                     label += self.tr(" · baseline")
                 self.target_selector.addItem(label, target.index)
                 combo_index = self.target_selector.count() - 1
@@ -343,9 +343,9 @@ class SdfViewer(QWidget):
                     combo_index,
                     (
                         self.tr("Default hardware feature set")
-                        if target.selection_capability_bit is None
+                        if not target.selection_capability_bits
                         else self.tr("Selected by graphics capability bit {bit}").format(
-                            bit=target.selection_capability_bit
+                            bit=" | ".join(map(str, target.selection_capability_bits))
                         )
                     ),
                     Qt.ItemDataRole.ToolTipRole,

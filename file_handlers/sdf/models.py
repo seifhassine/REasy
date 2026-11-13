@@ -478,7 +478,7 @@ class SdfTarget:
     index: int
     key: str
     display_name: str
-    selection_capability_bit: int | None
+    selection_capability_bits: tuple[int, ...]
     programs: tuple[SdfProgram, ...] | LazyPrograms
     # Each program name's indices in ``programs``.
     program_indices: dict[str, tuple[int, ...]] = field(init=False, repr=False, compare=False)
