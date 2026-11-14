@@ -30,23 +30,10 @@ REasy opens, edits and repacks the files used by Capcom's RE Engine. It covers R
 
 The interface is available in English, Chinese, Russian and Spanish.
 
-## What it does
-
-- **SCN, PFB and USER editing** for every RSZ version since RE7. Copy and paste GameObjects, components and array items between files, save GameObjects as templates, or grab templates other people shared from the community browser.
-- **3D viewer** for meshes and scenes, with a Game lighting mode that draws them with their real shaders.
-- **Mesh conversion** between games, and a Blender round trip.
-- **Material editing**, from MDF values down to master materials (MMTR) as a node graph.
-- **Hair strand editing** for RE9 and Pragmata.
-- **PAK tools**: fast extraction (whole archives or single files, with regex search) and packing.
-- **Projects**: build a mod and export it as a PAK or a Fluffy Mod Manager zip (*File > New Project (Create Mod)...*).
-- **Search** across folders for text, numbers, GUIDs or RSZ field values.
-- **Diff viewer** for SCN, PFB and USER files, and a detector for RSZ files outdated by game updates (*Tools*).
-- **AI assistant** (optional) using DeepSeek or a local OpenAI-compatible server such as LM Studio. It can browse projects, tabs and PAKs and edit MDF and MSG files. Your messages and the editor context it asks for are sent to the provider you pick.
-
 ## Supported files
 
-- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR,  SDFTEX (baked from a mesh), DDS (to TEX), SDF, MESH, TEX, MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, CLIP, TML, UCURVE, DLGTML, GUI, BNK, PCK, WEL, WCC and other headless sound files, hair strands
-- **View:** FOL, STMESH, GCF, IFT, OFT, light probes (in SCN scenes)
+- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR, SDF, SDFTEX (baked from a mesh), MESH, TEX (import DDS, PNG and TGA; export by lane), MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, JCNS, CLIP, MOTCLIP, TML, UCURVE, DLGTML, BHVT, FSM, FSMV2, MOTFSM, MOTFSM2, TMLFSM2, GUI, GCF, IFT, OFT, BNK, PCK, WEL, WCC and other headless sound files, hair strands
+- **View:** FOL, STMESH, RTEX, light probes (in SCN scenes)
 - **Other:** PAK through *Tools > PAK Browser*, MOV in your default video player
 
 <details>
