@@ -7,6 +7,8 @@ import math
 import re
 import uuid
 
+from PySide6.QtCore import QCoreApplication
+
 lazy from file_handlers.clip.model import walk_nodes
 lazy from file_handlers.clip.rules import PropertyType
 from file_handlers.document_commands import ReplaceContents, SetFields
@@ -31,6 +33,8 @@ from .scene import normalize_gui_resource_path
 from .serializer import encode_special, encode_value
 from .states import object_node
 
+translate = QCoreApplication.translate
+
 
 def checked(document: GuiEditDocument, kind: PropertyType, value, name: str):
     layout = gui_layout(document.gui.version)
@@ -38,7 +42,7 @@ def checked(document: GuiEditDocument, kind: PropertyType, value, name: str):
     if isinstance(value, (list, tuple)):
         value = [f32(float(item)) if layout.payloads.get(storage, "").endswith("f") else item for item in value]
         if any(type(item) is float and not math.isfinite(item) for item in value):
-            raise GuiEditError(document.tr("{0}: a component is not a finite number").format(name))
+            raise GuiEditError(translate("GuiEditDocument", "{0}: a component is not a finite number").format(name))
     elif kind == PropertyType.F32 and type(value) in (int, float):
         value = f32(float(value))
     try:
@@ -50,7 +54,7 @@ def checked(document: GuiEditDocument, kind: PropertyType, value, name: str):
 
 def check_name(document: GuiEditDocument, name: str) -> None:
     if not name or "/" in name or "\\" in name or "\0" in name:
-        raise GuiEditError(document.tr("A name cannot be empty or hold a slash."))
+        raise GuiEditError(translate("GuiEditDocument", "A name cannot be empty or hold a slash."))
 
 
 def _ranked(document: GuiEditDocument, obj: GuiObject, held: list[GuiProperty],
@@ -80,11 +84,11 @@ def set_value(document: GuiEditDocument, obj: GuiObject, name: str, value) -> No
     authoring, prop = document.authoring, obj.property(name)
     field = authoring.field(obj.type_name, name)
     if prop is None and field is None:
-        raise GuiEditError(document.tr("{0} has no property {1}.").format(obj.type_name, name))
+        raise GuiEditError(translate("GuiEditDocument", "{0} has no property {1}.").format(obj.type_name, name))
     value = checked(document, prop.type if prop is not None else field.type, value, name)
     if prop is not None and prop.value == value:
         return
-    text = document.tr("Set {0}").format(name)
+    text = translate("GuiEditDocument", "Set {0}").format(name)
     rules = any(other.when is not None and other.when[0] == name for other in authoring.fields(obj.type_name))
     if prop is not None and not rules:
         document.push(SetFields(document, [(prop, {"value": value})], text))
@@ -101,7 +105,7 @@ def set_value(document: GuiEditDocument, obj: GuiObject, name: str, value) -> No
 
 def set_override(document: GuiEditDocument, path: str, type_name: str, name: str, kind: PropertyType, value) -> None:
     gui, value = document.gui, checked(document, kind, value, name)
-    text = document.tr("Override {0}").format(name)
+    text = translate("GuiEditDocument", "Override {0}").format(name)
     held = next((item for item in gui.bindings if item.target_path == path and item.property.name == name), None)
     if held is not None:
         if held.property.value != value:
@@ -116,13 +120,13 @@ def set_override(document: GuiEditDocument, path: str, type_name: str, name: str
 def remove_overrides(document: GuiEditDocument, bindings: list[GuiBinding]) -> None:
     gui, doomed = document.gui, {id(item) for item in bindings}
     document.push(ReplaceContents(document, gui, "bindings", [item for item in gui.bindings if id(item) not in doomed],
-                                  document.tr("Remove Override")))
+                                  translate("GuiEditDocument", "Remove Override")))
 
 
 def _single(document: GuiEditDocument, values) -> tuple:
     found = tuple(f32(float(item)) for item in values)
     if not all(map(math.isfinite, found)):
-        raise GuiEditError(document.tr("A number of the content is not finite."))
+        raise GuiEditError(translate("GuiEditDocument", "A number of the content is not finite."))
     return found
 
 
@@ -137,10 +141,10 @@ def set_payload(document: GuiEditDocument, obj: GuiObject, payload) -> None:
     try:
         encode_special(gui_layout(document.gui.version), obj.type_name, payload)
     except (GuiWriteError, GuiFormatError) as error:
-        raise GuiEditError(document.tr("{0}: {1}").format(obj.name, error)) from error
+        raise GuiEditError(translate("GuiEditDocument", "{0}: {1}").format(obj.name, error)) from error
     if payload != obj.special_data:
         document.push(SetFields(document, [(obj, {"special_data": payload})],
-                                document.tr("Edit {0}").format(obj.name)))
+                                translate("GuiEditDocument", "Edit {0}").format(obj.name)))
 
 
 def new_payload(document: GuiEditDocument, type_name: str):
@@ -211,46 +215,47 @@ def add_object(document: GuiEditDocument, symbol: GuiSymbol, type_name: str, ind
                prototype: GuiSymbol | None = None) -> GuiObject:
     authoring = document.authoring
     if type_name not in authoring.palette:
-        raise GuiEditError(document.tr("{0} is not a class this game's GUI files hold.").format(type_name))
+        raise GuiEditError(translate("GuiEditDocument", "{0} is not a class this game's GUI files hold.")
+                           .format(type_name))
     if prototype is not None and (not authoring.is_control(type_name) or prototype.type_name != type_name):
-        raise GuiEditError(document.tr("A {0} cannot hold symbol {1}.").format(type_name.rsplit(".", 1)[-1],
-                                                                             prototype.name))
+        raise GuiEditError(translate("GuiEditDocument", "A {0} cannot hold symbol {1}.")
+                           .format(type_name.rsplit(".", 1)[-1], prototype.name))
     local = prototype is not None and prototype in document.gui.symbols
     if local and document.structure.contains(prototype, symbol):
-        raise GuiEditError(document.tr("{0} holds {1}: it cannot be placed inside it.")
+        raise GuiEditError(translate("GuiEditDocument", "{0} holds {1}: it cannot be placed inside it.")
                            .format(prototype.name, symbol.name))
     obj = new_object(document, symbol, type_name, prototype.guid if prototype is not None else ZERO_GUID)
-    with document.macro(document.tr("Add {0}").format(obj.name)):
-        _insert(document, symbol, [obj], index, document.tr("Add {0}").format(obj.name))
+    with document.macro(translate("GuiEditDocument", "Add {0}").format(obj.name)):
+        _insert(document, symbol, [obj], index, translate("GuiEditDocument", "Add {0}").format(obj.name))
     return obj
 
 
 def add_symbol(document: GuiEditDocument, type_name: str, name: str | None = None) -> GuiSymbol:
     gui, authoring = document.gui, document.authoring
     if not authoring.is_control(type_name):
-        raise GuiEditError(document.tr("A {0} holds no symbol.").format(type_name.rsplit(".", 1)[-1]))
+        raise GuiEditError(translate("GuiEditDocument", "A {0} holds no symbol.").format(type_name.rsplit(".", 1)[-1]))
     symbol = GuiSymbol(new_guid(_used_guids(document)),
                        name or authoring.free_name("symbol", {item.name for item in gui.symbols}), type_name)
     check_name(document, symbol.name)
     document.push(ReplaceContents(document, gui, "symbols", [*gui.symbols, symbol],
-                                  document.tr("Add {0}").format(symbol.name)))
+                                  translate("GuiEditDocument", "Add {0}").format(symbol.name)))
     return symbol
 
 
 def add_control(document: GuiEditDocument, symbol: GuiSymbol, type_name: str,
                 index: int | None = None) -> GuiObject:
-    with document.macro(document.tr("Add {0}").format(type_name.rsplit(".", 1)[-1])):
+    with document.macro(translate("GuiEditDocument", "Add {0}").format(type_name.rsplit(".", 1)[-1])):
         return add_object(document, symbol, type_name, index, add_symbol(document, type_name))
 
 
 def remove_objects(document: GuiEditDocument, objects: list[GuiObject]) -> None:
     gui, structure = document.gui, document.structure
     if any(obj is gui.root_object for obj in objects):
-        raise GuiEditError(document.tr("The root object cannot be removed."))
+        raise GuiEditError(translate("GuiEditDocument", "The root object cannot be removed."))
     doomed = {id(obj) for obj in objects}
     lost = {id(binding) for obj in objects for binding, _path in structure.through(obj)}
-    text = document.tr("Remove {0}").format(objects[0].name) if len(objects) == 1 else \
-        document.tr("Remove {0} Objects").format(len(objects))
+    text = translate("GuiEditDocument", "Remove {0}").format(objects[0].name) if len(objects) == 1 else \
+        translate("GuiEditDocument", "Remove {0} Objects").format(len(objects))
     with document.macro(text):
         if lost:
             document.push(ReplaceContents(document, gui, "bindings",
@@ -272,10 +277,11 @@ def rename_object(document: GuiEditDocument, obj: GuiObject, name: str) -> None:
     structure, old = document.structure, obj.name
     owner = structure.owner.get(id(obj))
     if owner is not None and any(other.name == name for other in owner.objects if other is not obj):
-        raise GuiEditError(document.tr("{0} already holds an object named {1}.").format(owner.name, name))
+        raise GuiEditError(translate("GuiEditDocument", "{0} already holds an object named {1}.")
+                           .format(owner.name, name))
     moved = [(binding, f"{path.rsplit('/', 1)[0]}/{name}{binding.target_path[len(path):]}")
              for binding, path in structure.through(obj)] if obj is not document.gui.root_object else []
-    text = document.tr("Rename {0}").format(old)
+    text = translate("GuiEditDocument", "Rename {0}").format(old)
     with document.macro(text):
         document.push(SetFields(document, [(obj, {"name": name}),
                                            *((binding, {"target_path": path}) for binding, path in moved)], text))
@@ -290,16 +296,17 @@ def move_objects(document: GuiEditDocument, objects: list[GuiObject], symbol: Gu
     gui, structure = document.gui, document.structure
     moving = {id(obj) for obj in objects}
     if any(obj is gui.root_object or id(obj) not in structure.owner for obj in objects):
-        raise GuiEditError(document.tr("The root object cannot be moved."))
+        raise GuiEditError(translate("GuiEditDocument", "The root object cannot be moved."))
     for obj in objects:
         inner = structure.symbol_of(obj)
         if inner is not None and structure.contains(inner, symbol):
-            raise GuiEditError(document.tr("{0} cannot be moved into itself.").format(obj.name))
+            raise GuiEditError(translate("GuiEditDocument", "{0} cannot be moved into itself.").format(obj.name))
     names = [obj.name for obj in symbol.objects if id(obj) not in moving] + [obj.name for obj in objects]
     if len(set(names)) != len(names):
-        raise GuiEditError(document.tr("{0} already holds an object of that name.").format(symbol.name))
-    text = document.tr("Move {0}").format(objects[0].name) if len(objects) == 1 else \
-        document.tr("Move {0} Objects").format(len(objects))
+        raise GuiEditError(translate("GuiEditDocument", "{0} already holds an object of that name.")
+                           .format(symbol.name))
+    text = translate("GuiEditDocument", "Move {0}").format(objects[0].name) if len(objects) == 1 else \
+        translate("GuiEditDocument", "Move {0} Objects").format(len(objects))
     held = list(symbol.objects)
     at = len(held) if index is None else max(0, min(index, len(held)))
     at -= sum(1 for obj in held[:at] if id(obj) in moving)
@@ -341,15 +348,17 @@ def move_objects(document: GuiEditDocument, objects: list[GuiObject], symbol: Gu
 def set_symbol(document: GuiEditDocument, obj: GuiObject, symbol: GuiSymbol | None, twin: bool = False) -> None:
     gui, structure = document.gui, document.structure
     if not document.authoring.is_control(obj.type_name):
-        raise GuiEditError(document.tr("A {0} holds no symbol.").format(obj.type_name.rsplit(".", 1)[-1]))
+        raise GuiEditError(translate("GuiEditDocument", "A {0} holds no symbol.")
+                           .format(obj.type_name.rsplit(".", 1)[-1]))
     if obj is gui.root_object:
-        raise GuiEditError(document.tr("The root object always holds the file's first symbol."))
+        raise GuiEditError(translate("GuiEditDocument", "The root object always holds the file's first symbol."))
     owner = structure.owner.get(id(obj))
     if symbol is not None and symbol in gui.symbols and owner is not None and structure.contains(symbol, owner):
-        raise GuiEditError(document.tr("{0} holds {1}: it cannot be placed inside it.").format(symbol.name, owner.name))
+        raise GuiEditError(translate("GuiEditDocument", "{0} holds {1}: it cannot be placed inside it.")
+                           .format(symbol.name, owner.name))
     below = set() if twin else {id(binding) for binding, path in structure.through(obj)
                                 if binding.target_path != path}
-    text = document.tr("Set Symbol of {0}").format(obj.name)
+    text = translate("GuiEditDocument", "Set Symbol of {0}").format(obj.name)
     with document.macro(text):
         if below:
             document.push(ReplaceContents(document, gui, "bindings",
@@ -361,11 +370,11 @@ def set_symbol(document: GuiEditDocument, obj: GuiObject, symbol: GuiSymbol | No
 def remove_symbol(document: GuiEditDocument, symbol: GuiSymbol) -> None:
     gui, uses = document.gui, document.structure.uses.get(symbol.guid, ())
     if symbol is gui.symbols[0]:
-        raise GuiEditError(document.tr("The root symbol cannot be removed."))
+        raise GuiEditError(translate("GuiEditDocument", "The root symbol cannot be removed."))
     if uses:
-        raise GuiEditError(document.tr("{0} is placed {1} times: remove those objects first.")
+        raise GuiEditError(translate("GuiEditDocument", "{0} is placed {1} times: remove those objects first.")
                            .format(symbol.name, len(uses)))
-    text = document.tr("Remove {0}").format(symbol.name)
+    text = translate("GuiEditDocument", "Remove {0}").format(symbol.name)
     doomed = {id(item) for item in (*symbol.objects, *symbol.animations)}
     with document.macro(text):
         document.push(ReplaceContents(document, gui, "symbols", [item for item in gui.symbols if item is not symbol],
@@ -380,7 +389,7 @@ def rename_symbol(document: GuiEditDocument, symbol: GuiSymbol, name: str) -> No
     check_name(document, name)
     if name == symbol.name:
         return
-    old, text = symbol.name, document.tr("Rename {0}").format(symbol.name)
+    old, text = symbol.name, translate("GuiEditDocument", "Rename {0}").format(symbol.name)
     with document.macro(text):
         document.push(SetFields(document, [(symbol, {"name": name})], text))
         for animation in symbol.animations:
@@ -416,7 +425,7 @@ def duplicate_symbol(document: GuiEditDocument, symbol: GuiSymbol, name: str | N
     clone.name = name or document.authoring.free_name("copy", {item.name for item in gui.symbols},
                                                        stem=re.sub(r"\d+$", "", symbol.name))
     renew(clone, used)
-    text = document.tr("Add {0}").format(clone.name)
+    text = translate("GuiEditDocument", "Add {0}").format(clone.name)
     with document.macro(text):
         document.push(ReplaceContents(document, gui, "symbols", [*gui.symbols, clone], text))
         document.push(ReplaceContents(document, gui, "objects", [*gui.objects, *clone.objects], text))
@@ -425,7 +434,7 @@ def duplicate_symbol(document: GuiEditDocument, symbol: GuiSymbol, name: str | N
 
 
 def make_unique(document: GuiEditDocument, obj: GuiObject, symbol: GuiSymbol) -> GuiSymbol:
-    with document.macro(document.tr("Make {0} Unique").format(obj.name)):
+    with document.macro(translate("GuiEditDocument", "Make {0} Unique").format(obj.name)):
         clone = duplicate_symbol(document, symbol)
         set_symbol(document, obj, clone, True)
     return clone
@@ -434,12 +443,13 @@ def make_unique(document: GuiEditDocument, obj: GuiObject, symbol: GuiSymbol) ->
 def add_import(document: GuiEditDocument, path: str) -> None:
     gui, key = document.gui, path.casefold()
     if not key.endswith(".gui") or normalize_gui_resource_path(path) != key:
-        raise GuiEditError(document.tr("{0} is not a GUI file's path as the game writes it: UI/GUI/.../name.gui.")
+        raise GuiEditError(translate("GuiEditDocument", "{0} is not a GUI file's path as the game writes it: "
+                                                        "UI/GUI/.../name.gui.")
                            .format(path))
     if any(normalize_gui_resource_path(item) == key for item in gui.imported_gui_paths):
-        raise GuiEditError(document.tr("{0} is already imported.").format(path))
+        raise GuiEditError(translate("GuiEditDocument", "{0} is already imported.").format(path))
     document.push(ReplaceContents(document, gui, "imported_gui_paths", [*gui.imported_gui_paths, path],
-                                  document.tr("Import {0}").format(path.rsplit("/", 1)[-1])))
+                                  translate("GuiEditDocument", "Import {0}").format(path.rsplit("/", 1)[-1])))
 
 
 def _brings(workspace, paths: list[str], guid: uuid.UUID) -> bool:
@@ -453,7 +463,7 @@ def remove_import(document: GuiEditDocument, path: str) -> None:
     used = [obj.name for obj in gui.objects if workspace is not None and gui.symbol(obj.prototype_guid) is None
             and _brings(workspace, [path], obj.prototype_guid) and not _brings(workspace, kept, obj.prototype_guid)]
     if used:
-        raise GuiEditError(document.tr("{0} places a symbol of {1}: remove it or give it another symbol first.")
-                           .format(used[0], path.rsplit("/", 1)[-1]))
+        raise GuiEditError(translate("GuiEditDocument", "{0} places a symbol of {1}: remove it or give it another "
+                                                        "symbol first.").format(used[0], path.rsplit("/", 1)[-1]))
     document.push(ReplaceContents(document, gui, "imported_gui_paths", kept,
-                                  document.tr("Remove Import {0}").format(path.rsplit("/", 1)[-1])))
+                                  translate("GuiEditDocument", "Remove Import {0}").format(path.rsplit("/", 1)[-1])))

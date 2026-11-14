@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import copy
 
+from PySide6.QtCore import QCoreApplication
+
 lazy from file_handlers.clip import edits as clip_edits
 lazy from file_handlers.clip.evaluation import NUMERIC_TYPES
 lazy from file_handlers.clip.model import Key, Node, Property, ResourceKind, Timeline
@@ -18,6 +20,8 @@ from .rules import gui_layout
 from .states import UNSET, clip_root
 from .storage import nodes
 
+translate = QCoreApplication.translate
+
 
 def add_state(document: GuiEditDocument, symbol: GuiSymbol, name: str | None = None) -> GuiAnimation:
     gui, names = document.gui, document.authoring.names
@@ -28,7 +32,7 @@ def add_state(document: GuiEditDocument, symbol: GuiSymbol, name: str | None = N
     guid = new_guid(_used_guids(document))
     clip = Timeline(gui_layout(gui.version).clip_version, ResourceKind.MOT_CLIP, UNSET, guid.bytes_le, [],
                     [clip_root(symbol, guid.bytes_le)])
-    animation, text = GuiAnimation(guid, name, False, clip), document.tr("Add State {0}").format(name)
+    animation, text = GuiAnimation(guid, name, False, clip), translate("GuiEditDocument", "Add State {0}").format(name)
     with document.macro(text):
         document.push(ReplaceContents(document, symbol, "animations", [*symbol.animations, animation], text))
         document.push(ReplaceContents(document, gui, "animations", [*gui.animations, animation], text))
@@ -37,8 +41,8 @@ def add_state(document: GuiEditDocument, symbol: GuiSymbol, name: str | None = N
 
 def remove_states(document: GuiEditDocument, animations: list[GuiAnimation]) -> None:
     gui, doomed = document.gui, {id(item) for item in animations}
-    text = document.tr("Remove State {0}").format(animations[0].name) if len(animations) == 1 else \
-        document.tr("Remove {0} States").format(len(animations))
+    text = translate("GuiEditDocument", "Remove State {0}").format(animations[0].name) if len(animations) == 1 else \
+        translate("GuiEditDocument", "Remove {0} States").format(len(animations))
     cut = [(item, {"transition": None}) for item in gui.animations
            if id(item) not in doomed and item.transition is not None and id(item.transition) in doomed]
     with document.macro(text):
@@ -56,20 +60,22 @@ def rename_state(document: GuiEditDocument, animation: GuiAnimation, name: str) 
     check_name(document, name)
     if name != animation.name:
         document.push(SetFields(document, [(animation, {"name": name})],
-                                document.tr("Rename State {0}").format(animation.name)))
+                                translate("GuiEditDocument", "Rename State {0}").format(animation.name)))
 
 
 def set_loop(document: GuiEditDocument, animation: GuiAnimation, loop: bool) -> None:
     if bool(loop) != animation.loop:
-        document.push(SetFields(document, [(animation, {"loop": bool(loop)})], document.tr("Set Loop")))
+        document.push(SetFields(document, [(animation, {"loop": bool(loop)})],
+                                translate("GuiEditDocument", "Set Loop")))
 
 
 def set_transition(document: GuiEditDocument, animation: GuiAnimation, target: GuiAnimation | None) -> None:
     symbol = document.structure.state_symbol(animation)
     if target is not None and target not in symbol.animations:
-        raise GuiEditError(document.tr("A state can only continue in a state of its own symbol."))
+        raise GuiEditError(translate("GuiEditDocument", "A state can only continue in a state of its own symbol."))
     if target is not animation.transition:
-        document.push(SetFields(document, [(animation, {"transition": target})], document.tr("Set Next State")))
+        document.push(SetFields(document, [(animation, {"transition": target})],
+                                translate("GuiEditDocument", "Set Next State")))
 
 
 def move_state(document: GuiEditDocument, animation: GuiAnimation, index: int) -> None:
@@ -78,7 +84,7 @@ def move_state(document: GuiEditDocument, animation: GuiAnimation, index: int) -
     held.insert(max(0, min(index, len(held))), animation)
     if held != symbol.animations:
         document.push(ReplaceContents(document, symbol, "animations", held,
-                                      document.tr("Move State {0}").format(animation.name)))
+                                      translate("GuiEditDocument", "Move State {0}").format(animation.name)))
 
 
 def node_of(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject) -> Node | None:
@@ -91,8 +97,9 @@ def node_of(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject) 
 def track_node(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject) -> Node:
     found = node_of(document, animation, obj)
     if found is None:
-        raise GuiEditError(document.tr("{0} is not an object this state animates: a state animates the objects of "
-                                       "its symbol, and of two with one name the first.").format(obj.name))
+        raise GuiEditError(translate(
+            "GuiEditDocument", "{0} is not an object this state animates: a state animates the objects of its symbol, "
+            "and of two with one name the first.").format(obj.name))
     return found
 
 
@@ -110,8 +117,9 @@ def can_animate(document: GuiEditDocument, obj: GuiObject, name: str) -> bool:
 
 def _animated(document: GuiEditDocument, obj: GuiObject, name: str):
     if not can_animate(document, obj, name):
-        raise GuiEditError(document.tr("{0} cannot be animated: no file of the game animates such a property, or the "
-                                       "object's other values rule it out.").format(name))
+        raise GuiEditError(translate(
+            "GuiEditDocument", "{0} cannot be animated: no file of the game animates such a property, or the object's "
+            "other values rule it out.").format(name))
     return document.authoring.field(obj.type_name, name)
 
 
@@ -120,8 +128,8 @@ def add_track(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject
     field = _animated(document, obj, name)
     node = track_node(document, animation, obj)
     if any(track.name == name for track in node.properties):
-        raise GuiEditError(document.tr("{0} is already animated in this state.").format(name))
-    clip, text = document.clip(animation), document.tr("Animate {0}").format(name)
+        raise GuiEditError(translate("GuiEditDocument", "{0} is already animated in this state.").format(name))
+    clip, text = document.clip(animation), translate("GuiEditDocument", "Animate {0}").format(name)
     with document.macro(text):
         if obj.property(name) is None:
             set_value(document, obj, name, field.default)
@@ -139,7 +147,7 @@ def add_track(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject
 def add_member(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject, track: Property,
                member: str) -> Property:
     field = _animated(document, obj, track.name)
-    clip, text = document.clip(animation), document.tr("Animate {0}.{1}").format(track.name, member)
+    clip, text = document.clip(animation), translate("GuiEditDocument", "Animate {0}.{1}").format(track.name, member)
     place = [name for name, _kind in property_type(track.type).members].index(member)
     with document.macro(text):
         if obj.property(track.name) is None:
@@ -155,7 +163,7 @@ def _first_key(clip, track: Property, value, text: str, mode: int | None) -> Non
 
 
 def remove_items(document: GuiEditDocument, animation: GuiAnimation, items: list) -> None:
-    clip, text = document.clip(animation), document.tr("Remove Keys")
+    clip, text = document.clip(animation), translate("GuiEditDocument", "Remove Keys")
     doomed = {id(item) for item in items}
     doomed.update(id(track) for item in items if isinstance(item, Node) for track in item.properties)
 
@@ -183,8 +191,8 @@ def remove_items(document: GuiEditDocument, animation: GuiAnimation, items: list
 
 def add_keys(document: GuiEditDocument, animation: GuiAnimation, tracks: list[Property], frame: float) -> list[Key]:
     if frame < 0.0:
-        raise GuiEditError(document.tr("A key cannot lie before frame 0."))
-    clip, text, found = document.clip(animation), document.tr("Add Key"), []
+        raise GuiEditError(translate("GuiEditDocument", "A key cannot lie before frame 0."))
+    clip, text, found = document.clip(animation), translate("GuiEditDocument", "Add Key"), []
     with document.macro(text):
         for track in tracks:
             key = next((held for held in track.keys if held.frame == frame), None)
@@ -201,24 +209,25 @@ def set_key_frame(document: GuiEditDocument, animation: GuiAnimation, key: Key, 
     clip = document.clip(animation)
     track = clip.owner(key, Property)
     if frame < 0.0:
-        raise GuiEditError(document.tr("A key cannot lie before frame 0."))
+        raise GuiEditError(translate("GuiEditDocument", "A key cannot lie before frame 0."))
     if any(held is not key and held.frame == frame for held in track.keys):
-        raise GuiEditError(document.tr("{0} already holds a key at frame {1:g}.").format(track.name, frame))
+        raise GuiEditError(translate("GuiEditDocument", "{0} already holds a key at frame {1:g}.")
+                           .format(track.name, frame))
     if frame != key.frame:
-        clip_edits.set_fields(clip, key, document.tr("Move Key"), frame=float(frame))
+        clip_edits.set_fields(clip, key, translate("GuiEditDocument", "Move Key"), frame=float(frame))
 
 
 def set_key_value(document: GuiEditDocument, animation: GuiAnimation, track: Property, key: Key, value) -> None:
     value = checked(document, PropertyType(track.type), value, track.name)
     if value != key.value:
-        clip_edits.set_fields(document.clip(animation), key, document.tr("Set Key"), value=value)
+        clip_edits.set_fields(document.clip(animation), key, translate("GuiEditDocument", "Set Key"), value=value)
 
 
 def key_value(document: GuiEditDocument, animation: GuiAnimation, track: Property, frame: float, shown, value,
               stored):
     names = [name for name, _kind in property_type(track.type).members]
     held = {child.name: child for child in track.children}
-    with document.macro(document.tr("Key {0}").format(track.name)):
+    with document.macro(translate("GuiEditDocument", "Key {0}").format(track.name)):
         for leaf, was, now in [(held[name], shown[at], value[at]) for at, name in enumerate(names) if name in held] \
                 if names else [(track, shown, value)]:
             if now != was:
@@ -228,12 +237,13 @@ def key_value(document: GuiEditDocument, animation: GuiAnimation, track: Propert
 
 def set_key_control(document: GuiEditDocument, animation: GuiAnimation, key: Key, control: tuple) -> None:
     if control != key.control:
-        clip_edits.set_fields(document.clip(animation), key, document.tr("Set Tangent"), control=control)
+        clip_edits.set_fields(document.clip(animation), key, translate("GuiEditDocument", "Set Tangent"),
+                              control=control)
 
 
 def paste_keys(document: GuiEditDocument, animation: GuiAnimation, track: Property, keys: list[Key],
                start: float) -> list[Key]:
-    clip, text = document.clip(animation), document.tr("Paste Keys")
+    clip, text = document.clip(animation), translate("GuiEditDocument", "Paste Keys")
     with document.macro(text):
         pasted = clip_edits.paste_keys(clip, track, keys, start)
         taken = {key.frame for key in pasted}
@@ -245,10 +255,11 @@ def paste_keys(document: GuiEditDocument, animation: GuiAnimation, track: Proper
 
 def paste_tracks(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObject,
                  tracks: list[Property]) -> list[Property]:
-    node, clip, text = track_node(document, animation, obj), document.clip(animation), document.tr("Paste Tracks")
+    node, clip = track_node(document, animation, obj), document.clip(animation)
+    text = translate("GuiEditDocument", "Paste Tracks")
     for track in tracks:
         if int(_animated(document, obj, track.name).type) != track.type:
-            raise GuiEditError(document.tr("{0} of {1} is not the type of the copied track.")
+            raise GuiEditError(translate("GuiEditDocument", "{0} of {1} is not the type of the copied track.")
                                .format(track.name, obj.name))
     made, held = copy.deepcopy(tracks), {track.name: track for track in node.properties}
     with document.macro(text):
@@ -276,6 +287,6 @@ def interpolations(document: GuiEditDocument, animation: GuiAnimation, keys: lis
 
 def set_interpolation(document: GuiEditDocument, animation: GuiAnimation, keys: list[Key], code: int) -> None:
     if code not in interpolations(document, animation, keys):
-        raise GuiEditError(document.tr("No state of the game's files moves such a value that way."))
+        raise GuiEditError(translate("GuiEditDocument", "No state of the game's files moves such a value that way."))
     if any(key.interpolation != code for key in keys):
         clip_edits.set_interpolation(document.clip(animation), keys, code)

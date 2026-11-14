@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 import copy
 
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QUndoCommand
 
 lazy from file_handlers.uvar.expression_nodes import expression_parameter_names
@@ -26,6 +27,8 @@ from .rules import attribute_bit, motion_fsm_rules, motion_fsm_v1_rules
 from .sections import signed
 from .structure import Structure, Transition
 
+translate = QCoreApplication.translate
+
 
 def _used_ids(document: BhvtDocument, structure: Structure) -> set[int]:
     model = structure.model
@@ -44,7 +47,7 @@ def add_child(document: BhvtDocument, model: Tree | Hfsm, parent, name: str | No
 
 def add_transition(document: BhvtDocument, model: Tree | Hfsm, container, source, target,
                    condition: str | None = None) -> Transition:
-    structure, text = Structure(model), document.tr("Add transition")
+    structure, text = Structure(model), translate("BhvtDocument", "Add transition")
     kind = source if source in ("start", "any") else "link" if structure.hfsm else "state"
     spec, new_id = structure.kinds[kind], _new_id(_used_ids(document, structure))
     if structure.hfsm:
@@ -77,7 +80,7 @@ def add_transition(document: BhvtDocument, model: Tree | Hfsm, container, source
 
 
 def remove_transitions(document: BhvtDocument, model: Tree | Hfsm, transitions: list[Transition]) -> None:
-    structure, text, gone = Structure(model), document.tr("Remove transition"), {}
+    structure, text, gone = Structure(model), translate("BhvtDocument", "Remove transition"), {}
     for transition in transitions:
         gone.setdefault((transition.kind, transition.owner), set()).add(transition.index)
     _push(document, (_hfsm_removal if structure.hfsm else _tree_removal)(document, structure, gone, {}, text), text)
@@ -113,7 +116,7 @@ def remove_items(document: BhvtDocument, model: Tree | Hfsm, nodes: list, transi
     structure, chosen = Structure(model), {id(node) for node in nodes}
     roots = [node for node in structure.preorder() if id(node) in chosen and node is not structure.root
              and not any(id(item) in chosen for item in structure.path(node)[:-1])]
-    with document.macro(document.tr("Delete")):
+    with document.macro(translate("BhvtDocument", "Delete")):
         if transitions:
             remove_transitions(document, model, transitions)
         for node in roots:
@@ -138,7 +141,7 @@ def add_callback_object(document: BhvtDocument, tree: Tree, node) -> tuple[str, 
 
 
 def set_target(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, target) -> None:
-    structure, text = Structure(model), document.tr("Retarget transition")
+    structure, text = Structure(model), translate("BhvtDocument", "Retarget transition")
     spec = structure.kinds[transition.kind]
     if structure.hfsm:
         set_fields(document, structure.rows(transition.kind, transition.owner)[transition.index], text,
@@ -152,7 +155,7 @@ def set_target(document: BhvtDocument, model: Tree | Hfsm, transition: Transitio
 
 
 def set_source(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, source) -> Transition:
-    structure, text = Structure(model), document.tr("Reconnect transition")
+    structure, text = Structure(model), translate("BhvtDocument", "Reconnect transition")
     if structure.hfsm:
         set_fields(document, structure.rows("link", transition.owner)[transition.index], text,
                    **{structure.kinds["link"]["source"]: source.id})
@@ -172,7 +175,7 @@ def set_source(document: BhvtDocument, model: Tree | Hfsm, transition: Transitio
 
 
 def move_transition(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, to: int) -> Transition:
-    structure, text = Structure(model), document.tr("Reorder transition")
+    structure, text = Structure(model), translate("BhvtDocument", "Reorder transition")
     if structure.hfsm:
         holder, field = structure.holder(transition.kind, transition.owner), structure.kinds[transition.kind]["rows"]
         rows = list(getattr(holder, field))
@@ -193,7 +196,7 @@ def move_transition(document: BhvtDocument, model: Tree | Hfsm, transition: Tran
 
 def set_transition_value(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, role: str,
                          value) -> None:
-    structure, text = Structure(model), document.tr("Edit transition")
+    structure, text = Structure(model), translate("BhvtDocument", "Edit transition")
     if structure.hfsm:
         set_fields(document, structure.rows(transition.kind, transition.owner)[transition.index], text,
                    **{role: value})
@@ -206,7 +209,7 @@ def set_transition_value(document: BhvtDocument, model: Tree | Hfsm, transition:
 
 def set_condition(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, type_name: str | None,
                   created=None) -> None:
-    structure, text = Structure(model), document.tr("Set condition")
+    structure, text = Structure(model), translate("BhvtDocument", "Set condition")
     if not structure.hfsm:
         set_reference(document, model, transition.owner, structure.kinds[transition.kind]["condition"],
                       transition.index, type_name, created, text)
@@ -233,7 +236,7 @@ def set_condition(document: BhvtDocument, model: Tree | Hfsm, transition: Transi
 
 def add_event(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, type_name: str,
               created=None) -> None:
-    structure, text = Structure(model), document.tr("Add event")
+    structure, text = Structure(model), translate("BhvtDocument", "Add event")
     if not structure.hfsm:
         field = structure.kinds[transition.kind].get("events")
         if not structure.holds(transition.owner, field):
@@ -248,7 +251,7 @@ def add_event(document: BhvtDocument, model: Tree | Hfsm, transition: Transition
 
 
 def remove_event(document: BhvtDocument, model: Tree | Hfsm, transition: Transition, position: int) -> None:
-    structure, text = Structure(model), document.tr("Remove event")
+    structure, text = Structure(model), translate("BhvtDocument", "Remove event")
     if not structure.hfsm:
         remove_reference(document, model, transition.owner, structure.kinds[transition.kind]["events"], position,
                          transition.index, text)
@@ -268,7 +271,7 @@ def move_event(document: BhvtDocument, model: Tree | Hfsm, transition: Transitio
 
 
 def set_entry(document: BhvtDocument, model: Tree | Hfsm, container, child) -> None:
-    structure, text = Structure(model), document.tr("Set entry state")
+    structure, text = Structure(model), translate("BhvtDocument", "Set entry state")
     if structure.hfsm:
         set_fields(document, container, text, default_start_child_id=child.id)
         return
@@ -301,7 +304,7 @@ def _map(fsm, transition_id: int | None) -> Record | None:
 
 
 def set_blending(document: BhvtDocument, model: Tree | Hfsm, transition_id: int, **values) -> None:
-    text = document.tr("Edit blending")
+    text = translate("BhvtDocument", "Edit blending")
     if isinstance(model, Hfsm):
         entry = motion_entry(document, model)
         record = next((item for item in entry.transitions if item.id == transition_id), None)
@@ -348,7 +351,7 @@ def move_node(document: BhvtDocument, model: Tree | Hfsm, node, parent, index: i
 
 
 def _move_tree_node(document: BhvtDocument, structure: Structure, node, old, parent, index: int) -> None:
-    tree, rules, text = structure.model, structure.rules, document.tr("Move node")
+    tree, rules, text = structure.model, structure.rules, translate("BhvtDocument", "Move node")
     group = group_of(rules.node, vars(old), "children")
     at = next(at for at, key in enumerate(zip(old.children, old.children_ex)) if key == (node.id, node.ex_id))
     row = tuple(vars(old)[name][at] for name in group)
@@ -371,7 +374,7 @@ def _move_tree_node(document: BhvtDocument, structure: Structure, node, old, par
 
 
 def _move_state(document: BhvtDocument, structure: Structure, state, old, parent, index: int) -> None:
-    hfsm, rules, text = structure.model, structure.rules, document.tr("Move state")
+    hfsm, rules, text = structure.model, structure.rules, translate("BhvtDocument", "Move state")
     if old is parent:
         at = next(at for at, child in enumerate(old.children) if child is state)
         children, attributes = list(old.children), list(old.selector.state_attributes)

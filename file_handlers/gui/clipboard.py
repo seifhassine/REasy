@@ -6,6 +6,8 @@ import copy
 import re
 import uuid
 
+from PySide6.QtCore import QCoreApplication
+
 lazy from file_handlers.clip.model import ResourceKind, Timeline
 from file_handlers.document_commands import ReplaceContents
 
@@ -20,6 +22,8 @@ from .state_edits import node_of
 from .states import UNSET, clip_root, shape
 from .storage import nodes
 from .structure import join
+
+translate = QCoreApplication.translate
 
 _held: bytes | None = None
 
@@ -36,7 +40,7 @@ def held() -> bytes | None:
 def copied(document: GuiEditDocument, objects: list[GuiObject]) -> bytes:
     gui, structure = document.gui, document.structure
     if any(obj is gui.root_object for obj in objects):
-        raise GuiEditError(document.tr("The root object cannot be copied."))
+        raise GuiEditError(translate("GuiEditDocument", "The root object cannot be copied."))
     reached: dict[uuid.UUID, GuiSymbol] = {}
     queue = [inner for obj in objects if (inner := structure.symbol_of(obj)) is not None]
     while queue:
@@ -96,18 +100,20 @@ def paste(document: GuiEditDocument, data: bytes, symbol: GuiSymbol, index: int 
     try:
         fragment = parse_gui(data, "clipboard")
     except GuiFormatError as error:
-        raise GuiEditError(document.tr("The clipboard holds no GUI objects: {0}").format(error)) from error
+        raise GuiEditError(translate("GuiEditDocument", "The clipboard holds no GUI objects: {0}")
+                           .format(error)) from error
     if fragment.version != gui.version:
-        raise GuiEditError(document.tr("The copied objects are of GUI version {0}; this file is {1}.")
+        raise GuiEditError(translate("GuiEditDocument", "The copied objects are of GUI version {0}; this file is {1}.")
                            .format(fragment.version, gui.version))
     top = fragment.symbols[0].objects
     added = [item for item in fragment.symbols[1:] if item.guid not in structure.symbols]
     known = {**{item.guid: item for item in added}, **structure.symbols}
     for obj in top:
         if obj.type_name not in authoring.palette:
-            raise GuiEditError(document.tr("{0} is not a class this game's GUI files hold.").format(obj.type_name))
+            raise GuiEditError(translate("GuiEditDocument", "{0} is not a class this game's GUI files hold.")
+                               .format(obj.type_name))
         if _reaches(obj, symbol.guid, known):
-            raise GuiEditError(document.tr("{0} holds {1}: it cannot be pasted inside it.")
+            raise GuiEditError(translate("GuiEditDocument", "{0} holds {1}: it cannot be pasted inside it.")
                                .format(obj.name, symbol.name))
     used, taken, first = _used_guids(document), {obj.name for obj in symbol.objects}, {}
     for item in added:
@@ -118,8 +124,8 @@ def paste(document: GuiEditDocument, data: bytes, symbol: GuiSymbol, index: int 
         if obj.name in taken:
             obj.name = authoring.free_name("copy", taken, stem=re.sub(r"\d+$", "", obj.name))
         taken.add(obj.name)
-    text = document.tr("Paste {0}").format(top[0].name) if len(top) == 1 else \
-        document.tr("Paste {0} Objects").format(len(top))
+    text = translate("GuiEditDocument", "Paste {0}").format(top[0].name) if len(top) == 1 else \
+        translate("GuiEditDocument", "Paste {0} Objects").format(len(top))
     with document.macro(text):
         if added:
             document.push(ReplaceContents(document, gui, "symbols", [*gui.symbols, *added], text))

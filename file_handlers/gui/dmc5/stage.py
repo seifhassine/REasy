@@ -35,8 +35,7 @@ _UNBOUNDED = ("via.gui.Mesh", "via.gui.Effect")
 _INPUT = ("Interactive", "HitVisible")
 
 
-def _tr(text: str) -> str:
-    return QCoreApplication.translate("GuiStage", text)
+translate = QCoreApplication.translate
 
 
 class Dmc5GuiStage:
@@ -257,46 +256,56 @@ class Dmc5GuiStage:
                 raise ValueError(value)
             put("moment", value)
 
-        timed = [Field(_tr("Timeline frame"), "float",
+        timed = [Field(translate("GuiStage", "Timeline frame"), "float",
                        lambda: self.world["moment"] if self.moment is None else self.moment, moment,
-                       tooltip=_tr("The frame of the game's timeline that moves this view's camera, shows or hides "
-                                   "the view and sets its lights: the game plays it from {0} to {1}, and so does "
-                                   "Try.").format(moves.start, moves.end))] if moves else []
-        chosen = [Field(_tr("Placement"), "enum", lambda: self.placement, lambda value: put("placement", value),
-                        {at: item["name"] for at, item in enumerate(places)},
-                        _tr("The game shows this file's parts inside these GUIs: its view is drawn as theirs.")
-                        if parts else _tr("Where the game puts this view: it is in more than one place."))
+                       tooltip=translate("GuiStage", "The frame of the game's timeline that moves this view's camera, "
+                                                     "shows or hides the view and sets its lights: the game plays it "
+                                                     "from {0} to {1}, and so does Try.")
+                       .format(moves.start, moves.end))] if moves else []
+        chosen = [Field(translate("GuiStage", "Placement"), "enum", lambda: self.placement,
+                        lambda value: put("placement", value), {at: item["name"] for at, item in enumerate(places)},
+                        translate("GuiStage", "The game shows this file's parts inside these GUIs: its view is drawn "
+                                              "as theirs.") if parts else
+                        translate("GuiStage", "Where the game puts this view: it is in more than one place."))
                   ] if len(places) > 1 or parts else []
         return [
-            Field(_tr("Shown"), "enum", lambda: int(self.in_game), lambda value: put("in_game", bool(value)),
-                  {1: _tr("As the game shows it"), 0: _tr("The file alone")},
-                  _tr("As the game shows it: with what the game's scenes hold for this file, which the file does "
-                      "not name: where they put its view, its camera, lights and timeline, their GUI "
-                      "component's segment and the message files they add. The file alone: only what the file "
-                      "and the game's GUI config name.")),
+            Field(translate("GuiStage", "Shown"), "enum", lambda: int(self.in_game),
+                  lambda value: put("in_game", bool(value)),
+                  {1: translate("GuiStage", "As the game shows it"), 0: translate("GuiStage", "The file alone")},
+                  translate("GuiStage", "As the game shows it: with what the game's scenes hold for this file, which "
+                                        "the file does not name: where they put its view, its camera, lights and "
+                                        "timeline, their GUI component's segment and the message files they add. The "
+                                        "file alone: only what the file and the game's GUI config name.")),
             *chosen, *timed,
-            Field(_tr("Output"), "row", lambda: None, tooltip=_tr("The size of the window the GUI is drawn into."),
+            Field(translate("GuiStage", "Output"), "row", lambda: None,
+                  tooltip=translate("GuiStage", "The size of the window the GUI is drawn into."),
                   options={"fields": [Field("", "int", lambda: self.output_size[0], lambda value: side(0, value)),
                                       Field("x", "int", lambda: self.output_size[1], lambda value: side(1, value))]}),
-            Field(_tr("Safe area"), "float", lambda: self.safe_area_ratio, ratio,
-                  tooltip=_tr("GUISystem.SafeAreaRatio: the part of the screen elements with SafeAreaAdjust keep to. "
-                              "The game sets it; a file does not hold it.")),
-            Field(_tr("Language"), "enum", lambda: self.language, lambda value: put("language", value), languages,
-                  _tr("The language messages are shown in. The game sets it; a file does not hold it.")),
-            Field(_tr("Input"), "enum", lambda: int(not self.icon_context.keyboard_mode),
+            Field(translate("GuiStage", "Safe area"), "float", lambda: self.safe_area_ratio, ratio,
+                  tooltip=translate("GuiStage", "GUISystem.SafeAreaRatio: the part of the screen elements with "
+                                                "SafeAreaAdjust keep to. The game sets it; a file does not hold it.")),
+            Field(translate("GuiStage", "Language"), "enum", lambda: self.language,
+                  lambda value: put("language", value), languages,
+                  translate("GuiStage", "The language messages are shown in. The game sets it; a file does not "
+                                        "hold it.")),
+            Field(translate("GuiStage", "Input"), "enum", lambda: int(not self.icon_context.keyboard_mode),
                   lambda value: put("icon_context", replace(self.icon_context, keyboard_mode=value == 0)),
-                  {0: _tr("Keyboard"), 1: _tr("Gamepad")}, _tr("The device whose button icons texts show.")),
-            Field(_tr("Pointer"), "enum", lambda: self._profile.enum("MouseSelectType").get(self.pointer, 0),
-                  lambda value: put("pointer", pointers.get(value, "")), {0: _tr("As the file says"), **pointers},
-                  _tr("How lists take the pointer in Try (MouseSelectType). A script can set it while the game "
-                      "runs; a click on the selected item decides it.")),
+                  {0: translate("GuiStage", "Keyboard"), 1: translate("GuiStage", "Gamepad")},
+                  translate("GuiStage", "The device whose button icons texts show.")),
+            Field(translate("GuiStage", "Pointer"), "enum",
+                  lambda: self._profile.enum("MouseSelectType").get(self.pointer, 0),
+                  lambda value: put("pointer", pointers.get(value, "")),
+                  {0: translate("GuiStage", "As the file says"), **pointers},
+                  translate("GuiStage", "How lists take the pointer in Try (MouseSelectType). A script can set it "
+                                        "while the game runs; a click on the selected item decides it.")),
         ]
 
     def sources(self) -> list[tuple[str, str, str]]:
         world, labels = self._dependencies.world, {
-            "placement": _tr("Placement"), "camera": _tr("Camera"), "timeline": _tr("Timeline"),
-            "lights": _tr("Lights"), "segment": _tr("Segment"), "messages": _tr("Added messages"),
-            "commands": _tr("Key commands")}
+            "placement": translate("GuiStage", "Placement"), "camera": translate("GuiStage", "Camera"),
+            "timeline": translate("GuiStage", "Timeline"), "lights": translate("GuiStage", "Lights"),
+            "segment": translate("GuiStage", "Segment"), "messages": translate("GuiStage", "Added messages"),
+            "commands": translate("GuiStage", "Key commands")}
         found = {**({} if self.world is None else world.behind(self.world)),
                  **{role: files for role, files in world.asked.items() if self.in_game or role == "commands"}}
         return [(label, path, world.found(path)) for role, label in labels.items() for path in found.get(role, ())]
@@ -333,30 +342,37 @@ class Dmc5GuiStage:
         profile, root = self._profile, self.scene.root
         view, found = root.render_properties, []
         if self._scripted:
-            found.append((root.path, _tr("{0} values are set as a script may set them: the GUI does not load so")
+            found.append((root.path,
+                          translate("GuiStage", "{0} values are set as a script may set them: the GUI does not load so")
                           .format(self._scripted)))
         if self.flat:
-            found.append((root.path, _tr("a world view is drawn flat: it follows the game's camera")
+            found.append((root.path, translate("GuiStage", "a world view is drawn flat: it follows the game's camera")
                           if not view["UseGUICamera"] else
-                          _tr("a GUI camera view is drawn flat: where the game puts this file is not known")
+                          translate("GuiStage", "a GUI camera view is drawn flat: where the game puts this file is "
+                                                "not known")
                           if self.in_game else
-                          _tr("a GUI camera view is drawn flat: the file alone does not say where the game puts it")))
+                          translate("GuiStage", "a GUI camera view is drawn flat: the file alone does not say where "
+                                                "the game puts it")))
         if self._window:
-            found.append((root.path, _tr("the view's size is one unit: the frame is the game's screen size around "
-                                         "its origin, widened to hold what it shows")))
+            found.append((root.path,
+                          translate("GuiStage", "the view's size is one unit: the frame is the game's screen size "
+                                                "around its origin, widened to hold what it shows")))
         if not self._shown():
-            found.append((root.path, _tr("the game does not draw this view at this frame of its timeline")))
+            found.append((root.path,
+                          translate("GuiStage", "the game does not draw this view at this frame of its timeline")))
         if not view["Overlay"]:
-            found.append((root.path, _tr("the game's post-processing after this view is not drawn (its Detonemap "
-                                         "undoes the tonemap's exposure and range)")
+            found.append((root.path, translate("GuiStage", "the game's post-processing after this view is not drawn "
+                                                           "(its Detonemap undoes the tonemap's exposure and range)")
                           if view["Detonemap"] and not view["UseGUICamera"] else
-                          _tr("the game's exposure, tonemap and post-processing after this view are not drawn")))
+                          translate("GuiStage", "the game's exposure, tonemap and post-processing after this view are "
+                                                "not drawn")))
         if profile.enum_label(view, "ReprojectionType") != "Default":
-            found.append((root.path, _tr("the view's reprojection pass is not drawn")))
+            found.append((root.path, translate("GuiStage", "the view's reprojection pass is not drawn")))
         segment = profile.control_fields["segment"]
-        return found + [(node.path, _tr("its segment is not followed: no game file holds this GUI, so the GUI's "
-                                        "own segment is not known") if self.in_game else
-                         _tr("its segment is not followed: the file alone does not hold the GUI's own segment"))
+        return found + [(node.path, translate("GuiStage", "its segment is not followed: no game file holds this GUI, "
+                                                          "so the GUI's own segment is not known") if self.in_game else
+                         translate("GuiStage", "its segment is not followed: the file alone does not hold the GUI's "
+                                               "own segment"))
                         for node in self.scene.nodes if root.segment is None
                         and profile.enum_label(node.render_properties, segment, "Segment") != "Keep"]
 

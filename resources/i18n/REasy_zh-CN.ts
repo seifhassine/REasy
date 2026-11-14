@@ -2569,12 +2569,12 @@ Skipped: {count} (missing, invalid or oversized names)</source>
 <context>
     <name>BaseRangeInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1818"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1820"/>
         <source>Min</source>
         <translation>最小值</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1818"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1820"/>
         <source>Max</source>
         <translation>最大值</translation>
     </message>
@@ -2718,84 +2718,578 @@ Value: {value}</source>
     </message>
 </context>
 <context>
+    <name>BhvtDocument</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/clipboard.py" line="157"/>
+        <location filename="../../file_handlers/bhvt/clipboard.py" line="280"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="42"/>
+        <source>Add layer</source>
+        <translation>添加层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="57"/>
+        <source>Remove layer</source>
+        <translation>移除层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="59"/>
+        <source>{0} is the only layer of the file</source>
+        <translation>{0} 是该文件唯一的层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="68"/>
+        <source>A name is not empty and holds no NUL</source>
+        <translation>名称不能为空，也不能包含 NUL</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="70"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="79"/>
+        <source>Add timeline</source>
+        <translation>添加时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="86"/>
+        <source>Remove timeline</source>
+        <translation>移除时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="93"/>
+        <source>Add hold point</source>
+        <translation>添加等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="100"/>
+        <source>Remove hold point</source>
+        <translation>移除等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/container_edits.py" line="106"/>
+        <source>Hold point layers</source>
+        <translation>等待点的层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/document.py" line="28"/>
+        <source> (and {0} more)</source>
+        <translation>（另有 {0} 项）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="327"/>
+        <source>Add node</source>
+        <translation>添加节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="345"/>
+        <source>Set selector</source>
+        <translation>设置选择器</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="361"/>
+        <source>Set object</source>
+        <translation>设置对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="371"/>
+        <location filename="../../file_handlers/bhvt/edits.py" line="531"/>
+        <source>Add object</source>
+        <translation>添加对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="383"/>
+        <source>Remove object</source>
+        <translation>移除对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="408"/>
+        <source>Remove node</source>
+        <translation>移除节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="422"/>
+        <source>Node attributes</source>
+        <translation>节点属性</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="427"/>
+        <source>Add state</source>
+        <translation>添加状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="479"/>
+        <source>Remove state</source>
+        <translation>移除状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="539"/>
+        <location filename="../../file_handlers/bhvt/edits.py" line="579"/>
+        <source>Add action</source>
+        <translation>添加动作</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="548"/>
+        <source>Remove action</source>
+        <translation>移除动作</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/edits.py" line="564"/>
+        <source>Move action</source>
+        <translation>移动动作</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="50"/>
+        <source>Add transition</source>
+        <translation>添加过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="83"/>
+        <source>Remove transition</source>
+        <translation>移除过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="119"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="144"/>
+        <source>Retarget transition</source>
+        <translation>更改过渡目标</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="158"/>
+        <source>Reconnect transition</source>
+        <translation>重新连接过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="178"/>
+        <source>Reorder transition</source>
+        <translation>调整过渡顺序</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="199"/>
+        <source>Edit transition</source>
+        <translation>编辑过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="212"/>
+        <source>Set condition</source>
+        <translation>设置条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="239"/>
+        <source>Add event</source>
+        <translation>添加事件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="254"/>
+        <source>Remove event</source>
+        <translation>移除事件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="274"/>
+        <source>Set entry state</source>
+        <translation>设置入口状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="307"/>
+        <source>Edit blending</source>
+        <translation>编辑混合</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="354"/>
+        <source>Move node</source>
+        <translation>移动节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/graph_edits.py" line="377"/>
+        <source>Move state</source>
+        <translation>移动状态</translation>
+    </message>
+</context>
+<context>
+    <name>BhvtEditor</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="75"/>
+        <source>Back (Alt+Left)</source>
+        <translation>后退 (Alt+Left)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="76"/>
+        <source>Forward (Alt+Right)</source>
+        <translation>前进 (Alt+Right)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="77"/>
+        <source>Undo (Ctrl+Z)</source>
+        <translation>撤销 (Ctrl+Z)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="78"/>
+        <source>Redo (Ctrl+Y)</source>
+        <translation>重做 (Ctrl+Y)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="79"/>
+        <source>Add a state, or a child of the selected node</source>
+        <translation>添加状态，或所选节点的子节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="80"/>
+        <source>Node</source>
+        <translation>节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="81"/>
+        <source>Add a transition from the selected state</source>
+        <translation>从所选状态添加过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="82"/>
+        <source>Transition</source>
+        <translation>过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="83"/>
+        <source>Delete (Del)</source>
+        <translation>删除 (Del)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="84"/>
+        <source>Copy (Ctrl+C)</source>
+        <translation>复制 (Ctrl+C)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="85"/>
+        <source>Paste (Ctrl+V)</source>
+        <translation>粘贴 (Ctrl+V)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="86"/>
+        <source>Arrange</source>
+        <translation>排列</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="87"/>
+        <source>Fit (F)</source>
+        <translation>适应 (F)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="88"/>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="144"/>
+        <source>Search nodes</source>
+        <translation>搜索节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="91"/>
+        <source>Errors: the file cannot be saved until they are fixed</source>
+        <translation>错误：修复之前无法保存该文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="95"/>
+        <source>Raw data: every section, table and embedded file</source>
+        <translation>原始数据：所有段、表和嵌入文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/bhvt_editor.py" line="96"/>
+        <source>Raw</source>
+        <translation>原始</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="36"/>
+        <source>{0} entries</source>
+        <translation>{0} 个条目</translation>
+    </message>
+</context>
+<context>
+    <name>BhvtValidation</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="79"/>
+        <source>{0} object {1} is a {2}, which is not a {3}</source>
+        <translation>{0} 的对象 {1} 是 {2}，而不是 {3}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="83"/>
+        <source>{0} holds {1} user data of {2}</source>
+        <translation>{0} 包含 {1} 份 {2} 的用户数据</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="94"/>
+        <source>{0} nodes share the id {1}</source>
+        <translation>{0} 个节点共用 id {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="99"/>
+        <source>{0} lists a child that does not exist ({1})</source>
+        <translation>{0} 列出了不存在的子节点（{1}）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="105"/>
+        <source>The first node is not the root (id 0)</source>
+        <translation>第一个节点不是根节点（id 0）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="111"/>
+        <source>{0} is a child of {1} nodes</source>
+        <translation>{0} 是 {1} 个节点的子节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="114"/>
+        <source>{0} has no parent</source>
+        <translation>{0} 没有父节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="116"/>
+        <location filename="../../file_handlers/bhvt/validation.py" line="257"/>
+        <source>{0} has a NUL in its name</source>
+        <translation>{0} 的名称中含有 NUL</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="118"/>
+        <source>{0} runs a reference tree without a path</source>
+        <translation>{0} 运行了一个没有路径的引用树</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="124"/>
+        <source>A variable expression calls a condition object this tree does not hold</source>
+        <translation>变量表达式调用了此树中不存在的条件对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="132"/>
+        <source>{0}: {1} are not the same length</source>
+        <translation>{0}：{1} 的长度不一致</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="139"/>
+        <source>{0}: {1} names object {2}, which does not exist</source>
+        <translation>{0}：{1} 指向不存在的对象 {2}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="143"/>
+        <source>{0}: action {1} has no object</source>
+        <translation>{0}：动作 {1} 没有对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="147"/>
+        <source>{0} has children but no selector</source>
+        <translation>{0} 有子节点但没有选择器</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="155"/>
+        <source>{0}: a transition goes to a node that does not exist</source>
+        <translation>{0}：有过渡指向不存在的节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="158"/>
+        <source>{0}: a transition goes to {1}, which is not a state</source>
+        <translation>{0}：有过渡指向 {1}，但它不是状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="162"/>
+        <source>{0} has states but no entry state</source>
+        <translation>{0} 有状态但没有入口状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="165"/>
+        <source>{0} has states but no FSM selector</source>
+        <translation>{0} 有状态但没有 FSM 选择器</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="172"/>
+        <source>The blending maps are not in transition id order, or repeat an id</source>
+        <translation>混合映射未按过渡 id 排序，或有重复的 id</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="177"/>
+        <source>A blending map names a preset that does not exist</source>
+        <translation>某个混合映射指向不存在的预设</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="181"/>
+        <source>The presets use {0} extra records, the file holds {1}</source>
+        <translation>预设使用了 {0} 条额外记录，而文件中有 {1} 条</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="188"/>
+        <source>The game reads {0} of the {1} FSMs of this file: layer {2} is never read</source>
+        <translation>游戏只读取此文件 {1} 个 FSM 中的 {0} 个：层 {2} 永远不会被读取</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="194"/>
+        <source>The blending records of layer {0} are not in id order, or repeat an id</source>
+        <translation>层 {0} 的混合记录未按 id 排序，或有重复的 id</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="202"/>
+        <source>{0} layers share the id {1}</source>
+        <translation>{0} 个层共用 id {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="204"/>
+        <source>{0} timelines share the id {1}</source>
+        <translation>{0} 条时间轴共用 id {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="206"/>
+        <source>{0} hold points share the id {1}</source>
+        <translation>{0} 个等待点共用 id {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="216"/>
+        <source>{0} plays a timeline this file does not hold</source>
+        <translation>{0} 播放了此文件中不存在的时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="221"/>
+        <source>{0} reaches a hold point this file does not hold</source>
+        <translation>{0} 到达了此文件中不存在的等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="226"/>
+        <source>Hold point {0} waits for a layer this file does not hold</source>
+        <translation>等待点 {0} 等待的层在此文件中不存在</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="229"/>
+        <source>Hold point {0} waits for {1}, where no action reaches it</source>
+        <translation>等待点 {0} 等待 {1}，但那里没有动作到达它</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="239"/>
+        <source>{0} states share the id {1}</source>
+        <translation>{0} 个状态共用 id {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="243"/>
+        <source>{0} condition records share the id {1}</source>
+        <translation>{0} 条条件记录共用 id {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="248"/>
+        <source>Condition {0} names an object that does not exist</source>
+        <translation>条件 {0} 指向不存在的对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="260"/>
+        <source>{0} has states but its entry state is not one of them</source>
+        <translation>{0} 有状态，但其入口状态不在其中</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="265"/>
+        <source>{0}: action {1} has no object of its own</source>
+        <translation>{0}：动作 {1} 没有自己的对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="272"/>
+        <source>{0}: a transition joins states that are not its children</source>
+        <translation>{0}：有过渡连接了不属于其子级的状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="275"/>
+        <source>{0}: a start transition goes to a state that does not exist</source>
+        <translation>{0}：有起始过渡指向不存在的状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="280"/>
+        <source>{0}: a transition runs an event that does not exist</source>
+        <translation>{0}：有过渡运行了不存在的事件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="283"/>
+        <source>{0}: a transition has no condition and is never taken</source>
+        <translation>{0}：有过渡没有条件，永远不会触发</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/validation.py" line="286"/>
+        <source>The states use {0} actions, the action block holds {1}</source>
+        <translation>状态使用了 {0} 个动作，而动作块中有 {1} 个</translation>
+    </message>
+</context>
+<context>
     <name>BlendImportReview</name>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="98"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="113"/>
         <source>Import from Blender</source>
         <translation>从 Blender 导入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="104"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="119"/>
         <source>Apply Blender modifiers (armatures excepted)</source>
         <translation>应用 Blender 修改器（骨架除外）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="106"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="121"/>
         <source>Imports what the viewport shows in rest pose. Shape keys are evaluated through the same modifiers.</source>
         <translation>导入视口在静止姿势下显示的内容。形态键通过相同的修改器求值。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="108"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="123"/>
         <source>Recompute normals of moved vertices from geometry</source>
         <translation>根据几何体重新计算已移动顶点的法线</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="110"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="125"/>
         <source>Blender keeps custom normals fixed when vertices move, and modifiers such as Mirror copy them unchanged. This recomputes smooth normals for moved vertices and keeps hard edges.</source>
         <translation>顶点移动时，Blender 会保持自定义法线不变，而镜像等修改器会原样复制它们。此选项为已移动的顶点重新计算平滑法线，并保留硬边。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="112"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="127"/>
         <source>Unweighted objects bend with the surface they sit on (unrigged clothing)</source>
         <translation>无权重对象随其所在表面弯曲（未绑定的服装）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="114"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="129"/>
         <source>Off: an object without weights moves rigidly with the joint nearest its centre, as accessories should. On: each of its vertices copies the weights of the nearest vertex of the mesh.</source>
         <translation>关闭：无权重的对象随最靠近其中心的关节刚性移动，配饰正应如此。开启：其每个顶点复制网格中最近顶点的权重。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="122"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="137"/>
         <source>Allow the reported data loss</source>
         <translation>允许报告的数据丢失</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="126"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="141"/>
         <source>Import</source>
         <translation>导入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="136"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="151"/>
         <source>Reading the Blender scene…</source>
         <translation>正在读取 Blender 场景…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="141"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="156"/>
         <source>Building the mesh…</source>
         <translation>正在构建网格…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="148"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="163"/>
         <source>No edits found. The mesh is identical to the exported one.</source>
         <translation>未发现任何编辑。该网格与导出的网格完全相同。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="150"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="165"/>
         <source>Changes:</source>
         <translation>更改：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="150"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="165"/>
         <source>none</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="152"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="167"/>
         <source>Needs your approval:</source>
         <translation>需要你确认：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="172"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="187"/>
         <source>The scene cannot be imported:</source>
         <translation>无法导入该场景：</translation>
     </message>
@@ -2848,80 +3342,84 @@ Value: {value}</source>
         <translation>Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="194"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="209"/>
         <source>The mesh&apos;s editor tab was not found</source>
         <translation>未找到该网格的编辑器标签页</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="198"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="213"/>
         <source>The imported mesh could not be opened</source>
         <translation>无法打开导入的网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="207"/>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="215"/>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="226"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="222"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="230"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="241"/>
         <source>Save the new mesh</source>
         <translation>保存新网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="208"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="223"/>
         <source>Meshes (*{suffix})</source>
         <translation>网格 (*{suffix})</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="215"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="230"/>
         <source>This mesh keeps part of its geometry in a streaming file, which belongs under natives/&lt;platform&gt;/streaming/. Save the mesh below a natives/&lt;platform&gt;/ folder.</source>
         <translation>此网格的部分几何体保存在流式文件中，该文件应位于 natives/&lt;platform&gt;/streaming/ 下。请将网格保存在 natives/&lt;platform&gt;/ 文件夹下。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="263"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="278"/>
         <source>Bone mapping</source>
         <translation>骨骼映射</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="263"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="278"/>
         <source>The bone mapping remembered for this skeleton could not be read; the suggested mapping is shown.</source>
         <translation>无法读取为此骨架记住的骨骼映射；将显示建议的映射。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="302"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="318"/>
         <source>Import from Blender</source>
         <translation>从 Blender 导入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="303"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="101"/>
         <source>Blender scenes (*.blend)</source>
         <translation>Blender 场景 (*.blend)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="307"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="319"/>
         <source>Reading the Blender scene…</source>
         <translation>正在读取 Blender 场景…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="310"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="325"/>
+        <source>Mesh</source>
+        <translation>网格</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="331"/>
         <source>The scene has no visible mesh objects.</source>
         <translation>场景中没有可见的网格对象。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="312"/>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="357"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="377"/>
         <source>Blender import failed</source>
         <translation>Blender 导入失败</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="319"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="338"/>
         <source>The open mesh</source>
         <translation>已打开的网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="339"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="359"/>
         <source>This .blend was exported from a different mesh version (.{version}). Import it anyway?</source>
         <translation>此 .blend 是从不同的网格版本（.{version}）导出的。仍要导入吗？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="342"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="362"/>
         <source>Different mesh</source>
         <translation>不同的网格</translation>
     </message>
@@ -2929,7 +3427,7 @@ Value: {value}</source>
 <context>
     <name>BoneMappingDialog</name>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="184"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="185"/>
         <source>Map the model&apos;s bones</source>
         <translation>映射模型的骨骼</translation>
     </message>
@@ -2939,100 +3437,115 @@ Value: {value}</source>
         <translation>映射 Action 的骨骼</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="188"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="184"/>
+        <source>Map the armature&apos;s bones</source>
+        <translation>映射骨架的骨骼</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="189"/>
+        <source>Each bone of the armature follows the joint of {reference} it maps to, found by body part, then by name; bones without a joint follow their parents.</source>
+        <translation>骨架的每根骨骼都跟随其映射到的 {reference} 关节（先按身体部位、再按名称查找）；没有关节的骨骼跟随其父骨骼。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="191"/>
         <source>Each bone of the armature drives the joint of {reference} it maps to, found by body part, then by name; joints without a bone follow their parents. Rows needing a look: keyed bones without a joint.</source>
         <translation>骨架中的每根骨骼驱动其映射到的 {reference} 的关节（先按身体部位、再按名称查找）；没有骨骼的关节跟随其父级。需要检查的行：有关键帧但没有关节的骨骼。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="191"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="194"/>
         <source>Each bone or vertex group of the model sends its weights to a joint of {reference}. Rows needing a look: guesses by position, weighted bones without a joint, and bones far from their joint&apos;s rest position.</source>
         <translation>模型的每根骨骼或顶点组将其权重传给 {reference} 的一个关节。需要检查的行：按位置猜测的、有权重但没有关节的骨骼，以及远离其关节静止位置的骨骼。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="193"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="196"/>
         <source>the reference</source>
         <translation>参考网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="200"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="203"/>
         <source>Filter by bone or joint name</source>
         <translation>按骨骼或关节名称筛选</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="201"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="204"/>
         <source>Only rows to review</source>
         <translation>仅显示待检查的行</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="229"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="232"/>
         <source>Load mapping…</source>
         <translation>加载映射…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="230"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="233"/>
         <source>Save mapping…</source>
         <translation>保存映射…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="235"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="238"/>
+        <source>Export with this mapping</source>
+        <translation>使用此映射导出</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="239"/>
         <source>Import with this mapping</source>
         <translation>使用此映射导入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="261"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="265"/>
         <source>{mapped} of {total} mapped</source>
         <translation>已映射 {mapped}/{total}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="263"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="267"/>
         <source>body parts: {source} onto {target}</source>
         <translation>身体部位：{source} 映射到 {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="266"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="270"/>
         <source>{count} by position</source>
         <translation>按位置 {count} 个</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="268"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="272"/>
         <source>{count} keyed bones without a joint</source>
         <translation>有关键帧但没有关节的骨骼 {count} 个</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="270"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="274"/>
         <source>{count} weighted unmapped ({merged} merged, {added} added, {dropped} dropped)</source>
         <translation>有权重但未映射 {count} 个（合并 {merged}，添加 {added}，丢弃 {dropped}）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="273"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="277"/>
         <source>{count} far from their joint</source>
         <translation>远离其关节 {count} 个</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="277"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="281"/>
         <source>Load bone mapping</source>
         <translation>加载骨骼映射</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="278"/>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="292"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="282"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="296"/>
         <source>Bone mappings (*.json)</source>
         <translation>骨骼映射 (*.json)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="284"/>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="287"/>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="298"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="288"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="291"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="302"/>
         <source>Bone mapping</source>
         <translation>骨骼映射</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="288"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="292"/>
         <source>Applied the saved mapping to {count} rows.</source>
         <translation>已将保存的映射应用到 {count} 行。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="291"/>
+        <location filename="../../file_handlers/mesh/bone_mapping_dialog.py" line="295"/>
         <source>Save bone mapping</source>
         <translation>保存骨骼映射</translation>
     </message>
@@ -3405,12 +3918,12 @@ Value: {value}</source>
 <context>
     <name>BoundsInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1002"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1004"/>
         <source>Min:</source>
         <translation>最小值：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1003"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1005"/>
         <source>Max:</source>
         <translation>最大值：</translation>
     </message>
@@ -3429,19 +3942,37 @@ Value: {value}</source>
     </message>
 </context>
 <context>
+    <name>Canvas</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/canvas.py" line="106"/>
+        <source>No preview: {0}</source>
+        <translation>无预览：{0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/canvas.py" line="112"/>
+        <source>{0}% · Ctrl+Wheel zooms · Middle-drag pans</source>
+        <translation>{0}% · Ctrl+滚轮缩放 · 中键拖动平移</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/canvas.py" line="270"/>
+        <source>Move</source>
+        <translation>移动</translation>
+    </message>
+</context>
+<context>
     <name>CapsuleInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="2526"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="2529"/>
         <source>Start:</source>
         <translation>起点：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="2526"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="2529"/>
         <source>End:</source>
         <translation>终点：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="2526"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="2529"/>
         <source>Radius:</source>
         <translation>半径：</translation>
     </message>
@@ -3629,298 +4160,163 @@ material information on collision shapes for backward compatibility.</source>
 <context>
     <name>ChangelogDialog</name>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="105"/>
-        <location filename="../../ui/changelog_dialog.py" line="123"/>
+        <location filename="../../ui/changelog_dialog.py" line="113"/>
+        <location filename="../../ui/changelog_dialog.py" line="131"/>
         <source>What’s new in REasy v{version}</source>
         <translation>REasy v{version} 新功能</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="124"/>
+        <location filename="../../ui/changelog_dialog.py" line="132"/>
         <source>Thanks for updating! Here are the highlights:</source>
         <translation>感谢更新！以下是本次亮点：</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="144"/>
-        <source>&lt;b&gt;Motion editing:&lt;/b&gt; .mot, .motlist, .mottree and .motpack files open in a new motion editor in every supported game except RE7 (non-RT), MH Stories 3, Onimusha 2, Kunitsu-Gami and Dead Rising Deluxe Remaster: edit keys as curves, motion trees as a graph, and preview motions on a character.</source>
-        <translation>&lt;b&gt;动作编辑：&lt;/b&gt;.mot、.motlist、.mottree 和 .motpack 文件会在新的动作编辑器中打开，支持除 RE7（非 RT）、MH Stories 3、Onimusha 2、Kunitsu-Gami 和 Dead Rising Deluxe Remaster 之外的所有受支持游戏：可将关键帧作为曲线编辑、将动作树作为图表编辑，并在角色上预览动作。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="152"/>
+        <source>&lt;b&gt;Behavior trees and state machines:&lt;/b&gt; .bhvt, .fsmv2, .motfsm2, .tmlfsm2, .fsm and .motfsm files can now be edited in a graph editor.</source>
+        <translation>&lt;b&gt;行为树与状态机：&lt;/b&gt;现在可以在图编辑器中编辑 .bhvt、.fsmv2、.motfsm2、.tmlfsm2、.fsm 和 .motfsm 文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="149"/>
-        <source>Motions can be exported to Blender and imported back, even onto another game&apos;s characters: bones are matched by body part and each game&apos;s joint axes are lined up.</source>
-        <translation>动作可以导出到 Blender 并导回，甚至可以导到另一款游戏的角色上：骨骼按身体部位匹配，并对齐各游戏的关节轴。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="153"/>
-        <source>Prefabs that use motion banks or lists have a new Motion tab that plays their motions on the character, with facial blend shapes, wrinkles and joint constraints.</source>
-        <translation>使用动作 Bank 或列表的预制体新增“动作”选项卡，可在角色上播放其动作，并带有面部混合形状、皱纹和关节约束。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="155"/>
+        <source>Added Tools &gt; New Texture… to create textures from PNG, TGA or DDS images.</source>
+        <translation>新增“工具 &gt; 新建纹理…”，可从 PNG、TGA 或 DDS 图像创建纹理。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="157"/>
-        <source>Characters are now assembled from the files that list their parts, such as costume presets, montages and armor lists, so scenes, prefabs and these files show whole characters in 3D.</source>
-        <translation>现在会根据列出角色部件的文件（如服装预设、蒙太奇和护甲列表）组装角色，因此场景、预制体和这些文件都能以 3D 显示完整角色。</translation>
+        <source>TEX lanes (roughness, normal, cavity…) are now named in the viewer and can be exported and imported as separate images.</source>
+        <translation>TEX 分量（粗糙度、法线、空腔…）现在会在查看器中显示名称，并可作为单独的图像导出和导入。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="161"/>
-        <source>The Project Browser has a new Catalogue view listing the game&apos;s characters; double-click one to open it on its Motion tab.</source>
-        <translation>项目浏览器新增“角色目录”视图，列出游戏的角色；双击某个角色即可在其“动作”选项卡中打开。</translation>
+        <source>Motions can now be exported onto an existing armature in a .blend, or together with the previewed meshes.</source>
+        <translation>现在可以将动作导出到 .blend 中已有的骨架上，或与预览中的网格一起导出。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="165"/>
-        <source>&lt;b&gt;Joint constraints:&lt;/b&gt; .jcns files can now be edited joint by joint, with the constraints shown live on a character and their driver curves editable.</source>
-        <translation>&lt;b&gt;关节约束：&lt;/b&gt;现在可以逐个关节编辑 .jcns 文件，约束会实时显示在角色上，其驱动器曲线也可编辑。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="167"/>
+        <source>&lt;b&gt;GUI editor:&lt;/b&gt; rebuilt for DMC5 with a hierarchy, state timeline, canvas editing and undo.</source>
+        <translation>&lt;b&gt;GUI 编辑器：&lt;/b&gt;为 DMC5 重新打造，提供层级结构、状态时间轴、画布编辑和撤销。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="169"/>
-        <source>Added DLGTML dialogue timeline editing for MH Wilds and Onimusha: Way of the Sword.</source>
-        <translation>新增对 MH Wilds 和 Onimusha: Way of the Sword 的 DLGTML 对话时间轴编辑。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="170"/>
+        <source>GUI previews now render on the GPU like the game, including meshes, masks, materials, text effects and blur.</source>
+        <translation>GUI 预览现在像游戏一样在 GPU 上渲染，包括网格、遮罩、材质、文字效果和模糊。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="172"/>
-        <source>&lt;b&gt;Scene features panel:&lt;/b&gt; scenes show game-specific options over the 3D view: SF6 costume colors (pick a part, change its colors and save the edited files to your project), the costume, preset or outfit each spawner uses, and RE4&apos;s campaign state.</source>
-        <translation>&lt;b&gt;场景功能面板：&lt;/b&gt;场景会在 3D 视图上方显示特定于游戏的选项：SF6 服装颜色（选取部件、更改其颜色并将编辑后的文件保存到项目中）、每个生成器使用的服装、预设或套装，以及 RE4 的战役状态。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="174"/>
+        <source>Added a GUI Try mode for testing menus and lists, plus preview options for screen size, language and input device.</source>
+        <translation>新增 GUI“试用”模式，用于测试菜单和列表；另有屏幕尺寸、语言和输入设备等预览选项。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="177"/>
-        <source>&lt;b&gt;Game lighting:&lt;/b&gt; shell fur is now drawn in RE4, Dragon&apos;s Dogma 2, MH Wilds and RE9, skin uses each game&apos;s own subsurface scattering profiles, face wrinkles work in RE2 RT, RE3, RE3 RT and RE7 RT, and meshes with blend shapes are drawn the game&apos;s way in RE3, RE3 RT and RE8.</source>
-        <translation>&lt;b&gt;游戏光照：&lt;/b&gt;现在会在 RE4、Dragon&apos;s Dogma 2、MH Wilds 和 RE9 中绘制壳层毛发，皮肤使用各游戏自身的次表面散射配置文件，面部皱纹可在 RE2 RT、RE3、RE3 RT 和 RE7 RT 中使用，带混合形状的网格在 RE3、RE3 RT 和 RE8 中按游戏的方式绘制。</translation>
+        <source>TEX import now supports TGA, and textures can be exported as PNG or TGA.</source>
+        <translation>TEX 导入现已支持 TGA，纹理也可导出为 PNG 或 TGA。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="182"/>
-        <source>RE4 scenes now start the way the game starts them: start-up scripts show or hide objects for the chosen campaign state; lights, fans and pendulums animate over time; and volume decals and water are drawn.</source>
-        <translation>RE4 场景现在以游戏自身的方式启动：启动脚本会根据所选战役状态显示或隐藏对象；灯光、风扇和钟摆会随时间播放动画；体积贴花和水面也会被绘制。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="178"/>
+        <source>Blender motion export now only includes the selected motions.</source>
+        <translation>导出动作到 Blender 时，现在只包含所选动作。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="187"/>
-        <source>&lt;b&gt;Effect from Material:&lt;/b&gt; the master material editor can copy an effect, such as a dissolve or Fresnel, from another material into the one you are editing (Add &gt; Effect from Material…).</source>
-        <translation>&lt;b&gt;从材质提取效果：&lt;/b&gt;主材质编辑器可以将其他材质中的效果（如溶解或菲涅耳）复制到你正在编辑的材质中（添加 &gt; 从材质提取效果…）。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="180"/>
+        <source>Blender mesh export now orients bones like RE Mesh Editor, so exported motions work on armatures from either tool.</source>
+        <translation>Blender 网格导出现在按 RE Mesh Editor 的方式确定骨骼朝向，因此导出的动作可用于这两种工具生成的骨架。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="191"/>
-        <source>Sound bank editing can now create HIRC objects, edit object lists and dialogue event decision trees, and remove media.</source>
-        <translation>声音库编辑现在可以创建 HIRC 对象、编辑对象列表和对话事件决策树，以及移除媒体。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="184"/>
+        <source>Most RE Mesh Editor and older Noesis exports that REasy refused now open with a warning, and are fixed on save.</source>
+        <translation>REasy 此前拒绝的大多数 RE Mesh Editor 导出和旧版 Noesis 导出现在会附带警告打开，并在保存时修正。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="195"/>
-        <source>TEX images can now be replaced with PNG files, compressed with mipmaps the way the game&apos;s own textures are.</source>
-        <translation>现在可以用 PNG 文件替换 TEX 图像，并按游戏自身纹理的方式压缩并生成 mipmap。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="188"/>
+        <source>Timeline curves and motion preview tracks now evaluate keys the way each game does.</source>
+        <translation>时间轴曲线和动作预览轨道现在按各游戏自身的方式计算关键帧。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="198"/>
-        <source>MDF texture paths now autocomplete from the game&apos;s file list.</source>
-        <translation>MDF 纹理路径现在会根据游戏的文件列表自动补全。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="190"/>
+        <source>The Project Browser now shows file type icons and greys out unsupported files.</source>
+        <translation>项目浏览器现在会显示文件类型图标，并将不支持的文件显示为灰色。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="199"/>
-        <source>Hovering over a tab shows a preview of its contents; 3D tabs show their last frame.</source>
-        <translation>将鼠标悬停在选项卡上会显示其内容的预览；3D 选项卡显示其最后一帧。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="194"/>
+        <source>Updated RSZ dumps for Dragon&apos;s Dogma 2 and MH Wilds, and fixed FSM types in the RE Resistance and non-RT RE2 and RE3 dumps.</source>
+        <translation>更新了 Dragon&apos;s Dogma 2 和 MH Wilds 的 RSZ 转储，并修正了 RE Resistance 以及非 RT 版 RE2、RE3 转储中的 FSM 类型。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="201"/>
-        <source>RSZ fields holding flag enums now show each set flag by name and can be toggled from a checklist.</source>
-        <translation>包含标志枚举的 RSZ 字段现在会按名称显示每个已设置的标志，并可通过复选列表切换。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="200"/>
+        <source>Fixed UVAR range variables showing as vectors and expression links being misread. UVAR files also now save in the game&apos;s layout.</source>
+        <translation>修复了 UVAR 范围变量显示为向量以及表达式连接被误读的问题。UVAR 文件现在也会按游戏的布局保存。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="203"/>
-        <source>RE7 RT meshes can now be edited and saved.</source>
-        <translation>现在可以编辑和保存 RE7 RT 的网格。</translation>
+        <source>Fixed array copy/paste in scenes and prefabs with a 3D or Motion tab.</source>
+        <translation>修复了带有 3D 或“动作”选项卡的场景和预制体中数组复制/粘贴的问题。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="204"/>
+        <source>Fixed motion and JCNS editor shortcuts firing window-wide or not at all.</source>
+        <translation>修复了动作编辑器和 JCNS 编辑器的快捷键在整个窗口范围内触发或完全不触发的问题。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="205"/>
-        <source>RCOL files from MH Wilds and Onimusha: Way of the Sword can now be opened and edited, and their stripped names are shown where REasy can recover them.</source>
-        <translation>现在可以打开和编辑 MH Wilds 和 Onimusha: Way of the Sword 的 RCOL 文件，并在 REasy 能够恢复的地方显示其被剥离的名称。</translation>
+        <source>Fixed some master material pin edits being refused or built wrong.</source>
+        <translation>修复了部分主材质端口编辑被拒绝或生成错误的问题。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="206"/>
+        <source>Fixed sound bank Connect Child offering no music children for music containers.</source>
+        <translation>修复了声音库中“连接子对象”没有为音乐容器提供音乐子对象的问题。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="207"/>
+        <source>Fixed some dropdowns, like the 3D view&apos;s Shading and Wireframe, opening too short.</source>
+        <translation>修复了部分下拉列表（如 3D 视图的“着色”和“线框”）展开过短的问题。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="208"/>
-        <source>Render texture files (.rtex) can now be viewed.</source>
-        <translation>现在可以查看渲染纹理文件（.rtex）。</translation>
+        <source>Fixed clipped buttons in the mod export dialog.</source>
+        <translation>修复了模组导出对话框中按钮被截断的问题。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="209"/>
-        <source>Added support for many more headless RSZ files, such as WCBK, AMIX, WFA, WMS and WTOT.</source>
-        <translation>新增对更多无头 RSZ 文件的支持，例如 WCBK、AMIX、WFA、WMS 和 WTOT。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="213"/>
-        <source>&lt;b&gt;Timeline editor:&lt;/b&gt; CLIP, TML and UCURVE files open in a rebuilt editor with a dope sheet, curves, undo and checks that stop invalid files from being saved.</source>
-        <translation>&lt;b&gt;时间轴编辑器：&lt;/b&gt;CLIP、TML 和 UCURVE 文件会在重建的编辑器中打开，提供摄影表、曲线、撤销功能，以及阻止保存无效文件的检查。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="217"/>
-        <source>&lt;b&gt;Sound property pages:&lt;/b&gt; every sound object and bank chunk is now edited in Wwise-style property pages instead of a raw field list.</source>
-        <translation>&lt;b&gt;声音属性页：&lt;/b&gt;每个声音对象和声音库数据块现在都在 Wwise 风格的属性页中编辑，而不再使用原始字段列表。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="220"/>
-        <source>Master materials (MMTR) now open and build several times faster.</source>
-        <translation>主材质（MMTR）的打开和构建速度现在提升了数倍。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="222"/>
-        <source>The MDF editor is much faster with large materials and now opens on its Overview tab.</source>
-        <translation>MDF 编辑器处理大型材质时快得多，并且现在默认打开“概览”选项卡。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="225"/>
-        <source>The PAK Browser shows large file lists much faster, and updating its file list no longer freezes the window.</source>
-        <translation>PAK 浏览器显示大型文件列表的速度快得多，更新其文件列表时窗口也不再卡住。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="229"/>
-        <source>Node highlighting in SCN, PFB and USER files moved from the Highlight menu to a brush button in the file&apos;s toolbar, with color presets and custom colors.</source>
-        <translation>SCN、PFB 和 USER 文件中的节点高亮已从“高亮”菜单移至文件工具栏中的画笔按钮，并提供预设颜色和自定义颜色。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="233"/>
-        <source>MDF shading types now use each game&apos;s own names, and material flags follow each MDF version&apos;s own layout, with a raw value field for every bit.</source>
-        <translation>MDF 着色类型现在使用各游戏自己的名称，材质标志遵循各 MDF 版本自己的布局，并为每个位提供原始值字段。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="237"/>
-        <source>Pasting materials or importing MDF templates from another game or version now converts their shading types and material flags by name.</source>
-        <translation>从其他游戏或版本粘贴材质或导入 MDF 模板时，现在会按名称转换其着色类型和材质标志。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="241"/>
-        <source>When opening a master material, the MDF files offered now say whether each comes from the project, a PAK, system files or disk.</source>
-        <translation>打开主材质时，提供的 MDF 文件现在会注明各自来自项目、PAK、系统文件还是磁盘。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="244"/>
-        <source>Freecam keys in the scene viewer now take priority over window shortcuts.</source>
-        <translation>场景查看器中的自由相机按键现在优先于窗口快捷键。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="246"/>
-        <source>When Wwise cannot create its project, REasy now explains how to fix it, such as moving REasy out of protected folders.</source>
-        <translation>当 Wwise 无法创建其项目时，REasy 现在会说明解决方法，例如将 REasy 移出受保护的文件夹。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="252"/>
-        <source>Selecting objects in a scene&apos;s list no longer moves the camera unless the new focus button in the scene header is on.</source>
-        <translation>在场景列表中选择对象时，除非开启了场景标题栏中新的聚焦按钮，否则相机不再移动。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="256"/>
-        <source>Improved RSZ dumps for Dragon&apos;s Dogma 2, DMC5, MH Wilds, Onimusha: Way of the Sword, Pragmata, RE2 RT, RE3 RT, RE4, RE7 RT and RE8 (credit to @kagenocookie for the Dragon&apos;s Dogma 2 update).</source>
-        <translation>改进了 Dragon&apos;s Dogma 2、DMC5、MH Wilds、Onimusha: Way of the Sword、Pragmata、RE2 RT、RE3 RT、RE4、RE7 RT 和 RE8 的 RSZ 转储（感谢 @kagenocookie 提供 Dragon&apos;s Dogma 2 的更新）。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="259"/>
-        <source>Updated enums for every supported game, and the Dragon&apos;s Dogma 2 file list.</source>
-        <translation>更新了所有受支持游戏的枚举，以及 Dragon&apos;s Dogma 2 的文件列表。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="261"/>
-        <source>The About dialog now links the REasy Wiki, maintained by BrewedVFX, and plays music with a volume slider.</source>
-        <translation>“关于”对话框现在链接到由 BrewedVFX 维护的 REasy 维基，并播放音乐，附带音量滑块。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="265"/>
-        <source>REasy now shows a message and stops if REasy.exe is started outside its folder, away from its resources.</source>
-        <translation>如果 REasy.exe 在其文件夹之外、远离其资源的位置启动，REasy 现在会显示一条消息并停止运行。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="271"/>
-        <source>Fixed 3D views failing on Windows 10 with a root signature error: REasy now offers to download Microsoft&apos;s Direct3D 12 runtime when Windows&apos; own is too old.</source>
-        <translation>修复了 3D 视图在 Windows 10 上因根签名错误而失败的问题：当 Windows 自带的 Direct3D 12 运行时过旧时，REasy 现在会提供下载 Microsoft 的 Direct3D 12 运行时。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="274"/>
-        <source>Fixed MH Wilds meshes and materials previewing black after the game&apos;s latest update.</source>
-        <translation>修复了 MH Wilds 的网格和材质在游戏最新更新后预览显示为黑色的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="276"/>
-        <source>Fixed the start of sounds being cut off on some audio devices, such as Bluetooth headsets.</source>
-        <translation>修复了在部分音频设备（如蓝牙耳机）上声音开头被截断的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="278"/>
-        <source>Fixed the RCOL 3D view drawing nothing with Game lighting on.</source>
-        <translation>修复了开启“游戏光照”时 RCOL 3D 视图不绘制任何内容的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="280"/>
-        <source>Fixed the Project Browser&apos;s width and folder trees resetting when switching between project and scene tabs.</source>
-        <translation>修复了在项目选项卡和场景选项卡之间切换时项目浏览器的宽度和文件夹树被重置的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="284"/>
-        <source>Fixed long breadcrumb paths and the hidden home page stopping the window from being made smaller.</source>
-        <translation>修复了较长的面包屑路径和隐藏的主页导致窗口无法缩小的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="286"/>
-        <source>Fixed collapsed RSZ nodes showing the wrong contents after a paste.</source>
-        <translation>修复了折叠的 RSZ 节点在粘贴后显示错误内容的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="288"/>
-        <source>Fixed RSZ tree ID labels and Advanced Information going stale, and scene picks selecting the wrong node, after objects were added or removed.</source>
-        <translation>修复了添加或删除对象后 RSZ 树的 ID 标签和“高级信息”过时，以及在场景中拾取时选中错误节点的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="291"/>
-        <source>Fixed the hair strand editor&apos;s panel squeezing its controls.</source>
-        <translation>修复了头发发丝编辑器面板挤压其控件的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="292"/>
-        <source>Fixed UVS files not updating their cutout flag when cutout UVs were added or removed.</source>
-        <translation>修复了添加或删除裁切 UV 时 UVS 文件未更新其裁切标志的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="294"/>
-        <source>Fixed some dialogs and panels, such as mesh conversion and the material function editor, staying in memory after being closed.</source>
-        <translation>修复了部分对话框和面板（如网格转换和材质函数编辑器）关闭后仍驻留在内存中的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="298"/>
-        <source>Fixed the UVS editor, MDF template manager, scene preview and RSZ CSV extractor getting stuck after an error or a cancelled operation.</source>
-        <translation>修复了 UVS 编辑器、MDF 模板管理器、场景预览和 RSZ CSV 提取器在出错或操作取消后卡住的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="301"/>
-        <source>Fixed the File List Generator misreading very long numbers in file names.</source>
-        <translation>修复了文件列表生成器误读文件名中超长数字的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="317"/>
+        <location filename="../../ui/changelog_dialog.py" line="224"/>
         <source>Star on GitHub</source>
         <translation>在 GitHub 上加星</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="323"/>
+        <location filename="../../ui/changelog_dialog.py" line="228"/>
+        <source>Support REasy</source>
+        <translation>支持 REasy</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="233"/>
         <source>View release notes…</source>
         <translation>查看发行说明…</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="325"/>
+        <location filename="../../ui/changelog_dialog.py" line="235"/>
         <source>Let’s go!</source>
         <translation>开始吧！</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="343"/>
+        <location filename="../../ui/changelog_dialog.py" line="253"/>
         <source>New</source>
         <translation>新增</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="344"/>
+        <location filename="../../ui/changelog_dialog.py" line="254"/>
         <source>Updated</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="345"/>
+        <location filename="../../ui/changelog_dialog.py" line="255"/>
         <source>Improved</source>
         <translation>改进</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="346"/>
+        <location filename="../../ui/changelog_dialog.py" line="256"/>
         <source>Fixed</source>
         <translation>修复</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="347"/>
+        <location filename="../../ui/changelog_dialog.py" line="257"/>
         <source>Planned</source>
         <translation>计划</translation>
     </message>
@@ -4026,57 +4422,57 @@ material information on collision shapes for backward compatibility.</source>
 <context>
     <name>CharacterMotions</name>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="375"/>
+        <location filename="../../file_handlers/motion/preview.py" line="381"/>
         <source>Filter opened lists</source>
         <translation>筛选已打开的列表</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="379"/>
+        <location filename="../../file_handlers/motion/preview.py" line="385"/>
         <source>Keep this motion playing on its layer while you pick another for a different layer</source>
         <translation>在你为其他层选择另一个动作时，让此动作继续在其层上播放</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="380"/>
+        <location filename="../../file_handlers/motion/preview.py" line="386"/>
         <source>Pin</source>
         <translation>固定</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="381"/>
+        <location filename="../../file_handlers/motion/preview.py" line="387"/>
         <source>Stop the pinned motions</source>
         <translation>停止已固定的动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="381"/>
+        <location filename="../../file_handlers/motion/preview.py" line="387"/>
         <source>Unpin</source>
         <translation>取消固定</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="387"/>
+        <location filename="../../file_handlers/motion/preview.py" line="393"/>
         <source>Motion</source>
         <translation>动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="387"/>
+        <location filename="../../file_handlers/motion/preview.py" line="393"/>
         <source>Frames</source>
         <translation>帧数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="430"/>
+        <location filename="../../file_handlers/motion/preview.py" line="436"/>
         <source>No motion banks found</source>
         <translation>未找到动作 Bank</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="445"/>
+        <location filename="../../file_handlers/motion/preview.py" line="451"/>
         <source>(mirrored)</source>
         <translation>（镜像）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="445"/>
+        <location filename="../../file_handlers/motion/preview.py" line="451"/>
         <source>(reversed)</source>
         <translation>（倒放）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="451"/>
+        <location filename="../../file_handlers/motion/preview.py" line="457"/>
         <source>Not held by this list: from its base list or a referenced file</source>
         <translation>不在此列表中：来自其基础列表或引用的文件</translation>
     </message>
@@ -4084,7 +4480,7 @@ material information on collision shapes for backward compatibility.</source>
 <context>
     <name>CharacterPicker</name>
     <message>
-        <location filename="../../file_handlers/motion/preview.py" line="344"/>
+        <location filename="../../file_handlers/motion/preview.py" line="350"/>
         <source>Prefab, character file or scene to preview on</source>
         <translation>用于预览的预制体、角色文件或场景</translation>
     </message>
@@ -4255,6 +4651,19 @@ material information on collision shapes for backward compatibility.</source>
         <location filename="../../file_handlers/clip/editor/clip_editor.py" line="465"/>
         <source>Delete</source>
         <translation>删除</translation>
+    </message>
+</context>
+<context>
+    <name>ColorEdit</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/values.py" line="150"/>
+        <source>Choose the colour</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/values.py" line="164"/>
+        <source>Colour</source>
+        <translation>颜色</translation>
     </message>
 </context>
 <context>
@@ -4760,6 +5169,97 @@ Downloads: {downloads}</source>
         <location filename="../../file_handlers/pyside/component_selector.py" line="128"/>
         <source>Showing first {matches} matches out of {total} components</source>
         <translation>正在显示 {total} 个组件中的前 {matches} 个匹配项</translation>
+    </message>
+</context>
+<context>
+    <name>ContainerPane</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="29"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="29"/>
+        <source>Frames</source>
+        <translation>帧数</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="30"/>
+        <source>Waits for</source>
+        <translation>等待的层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="30"/>
+        <source>Reached by</source>
+        <translation>到达的节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="33"/>
+        <source>Add a timeline</source>
+        <translation>添加时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="33"/>
+        <source>Timeline</source>
+        <translation>时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="34"/>
+        <source>Rename the selected timeline (F2)</source>
+        <translation>重命名所选时间轴 (F2)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="35"/>
+        <source>Remove the selected timeline</source>
+        <translation>移除所选时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="36"/>
+        <source>Open the selected timeline in the clip editor</source>
+        <translation>在剪辑编辑器中打开所选时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="37"/>
+        <source>Hold points</source>
+        <translation>等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="38"/>
+        <source>Add a hold point: the layers it waits for go on together, once each has reached it</source>
+        <translation>添加等待点：它等待的各层都到达后，再一起继续</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="39"/>
+        <source>Hold point</source>
+        <translation>等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="40"/>
+        <source>Remove the selected hold point</source>
+        <translation>移除所选等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="121"/>
+        <source>No action of this layer reaches the hold point: the layers that reach it wait</source>
+        <translation>此层没有动作到达该等待点：到达它的层会一直等待</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/containers.py" line="124"/>
+        <source>not a layer of this file</source>
+        <translation>不是此文件的层</translation>
+    </message>
+</context>
+<context>
+    <name>Crumbs</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/crumbs.py" line="45"/>
+        <source>Choose the graph</source>
+        <translation>选择图</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/crumbs.py" line="67"/>
+        <source>Search graphs</source>
+        <translation>搜索图</translation>
     </message>
 </context>
 <context>
@@ -5279,14 +5779,6 @@ Voxel: {:.7g} · Decoded range: {:.7g} to {:.7g} · Grid center: {}</source>
     </message>
 </context>
 <context>
-    <name>Dmc5GuiCanvas</name>
-    <message>
-        <location filename="../../file_handlers/gui/dmc5/preview_widget.py" line="702"/>
-        <source>{zoom}% · Ctrl+Wheel to zoom · Middle-drag to pan</source>
-        <translation>{zoom}% · Ctrl+滚轮缩放 · 中键拖动平移</translation>
-    </message>
-</context>
-<context>
     <name>DockTitleBar</name>
     <message>
         <location filename="../../ui/project_manager/dock_chrome.py" line="37"/>
@@ -5305,6 +5797,74 @@ Voxel: {:.7g} · Decoded range: {:.7g} to {:.7g} · Grid center: {}</source>
         <location filename="../../ui/project_manager/pak_status_dialog.py" line="27"/>
         <source>Starting…</source>
         <translation>正在启动…</translation>
+    </message>
+</context>
+<context>
+    <name>EditorState</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/state.py" line="78"/>
+        <source>Hold point {0}</source>
+        <translation>等待点 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/state.py" line="107"/>
+        <source>Layer {0}</source>
+        <translation>层 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="234"/>
+        <source>Set {0}</source>
+        <translation>设置 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="270"/>
+        <source>Two objects share this name: rename one before giving it a value of its own.</source>
+        <translation>有两个对象使用此名称：请先重命名其中一个，再为其设置自己的值。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="278"/>
+        <source>Resize {0}</source>
+        <translation>调整 {0} 的大小</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="285"/>
+        <source>This is the symbol itself: place it in a file to give it values.</source>
+        <translation>这是元件本身：将其放置到文件中才能为其设置值。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="287"/>
+        <source>{0} is placed {1} times in this symbol: open the symbol that holds it, or edit one placement from the file&apos;s own view.</source>
+        <translation>{0} 在此元件中放置了 {1} 次：请打开包含它的元件，或在文件自身的视图中编辑其中一处放置。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="289"/>
+        <source>{0} belongs to {1}: open that file to change it, or edit this placement from the file&apos;s own view.</source>
+        <translation>{0} 属于 {1}：请打开该文件进行修改，或在文件自身的视图中编辑此处放置。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="294"/>
+        <source>The root object stays where it is.</source>
+        <translation>根对象保持在原位。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="296"/>
+        <source>{0} belongs to {1}: open that file to change it.</source>
+        <translation>{0} 属于 {1}：请打开该文件进行修改。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="299"/>
+        <source>{0} is part of a symbol placed {1} times: open the symbol alone to change every placement.</source>
+        <translation>{0} 属于一个放置了 {1} 次的元件：请单独打开该元件以修改所有放置。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="306"/>
+        <source>{0} places no symbol of this file: nothing can be put in it.</source>
+        <translation>{0} 未放置此文件的任何元件：无法向其中放入内容。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/state.py" line="309"/>
+        <source>{0} is placed several times: open the symbol alone to change every placement.</source>
+        <translation>{0} 被放置了多次：请单独打开该元件以修改所有放置。</translation>
     </message>
 </context>
 <context>
@@ -6748,6 +7308,1079 @@ Save before reloading?</source>
     </message>
 </context>
 <context>
+    <name>GraphCanvas</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="348"/>
+        <source>Missing object</source>
+        <translation>缺少对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="350"/>
+        <source>+{0} more</source>
+        <translation>还有 {0} 个</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="363"/>
+        <source>States: {0}</source>
+        <translation>状态：{0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="371"/>
+        <source>default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="374"/>
+        <source>never</source>
+        <translation>从不</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="382"/>
+        <source>Entry</source>
+        <translation>入口</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="382"/>
+        <source>Where this state machine starts: a wire from here goes to a state it can start in</source>
+        <translation>此状态机的起点：从这里连出的线指向它可以开始的状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="384"/>
+        <source>Any state</source>
+        <translation>任意状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="384"/>
+        <source>Stands for every state of this machine: a wire from here is a transition it can take whichever state it is in</source>
+        <translation>代表此状态机的所有状态：从这里连出的线是无论处于哪个状态都可以进行的过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="569"/>
+        <source>Condition: search classes</source>
+        <translation>条件：搜索类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="574"/>
+        <source>Add transition</source>
+        <translation>添加过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="630"/>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="679"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="678"/>
+        <source>Open</source>
+        <translation>打开</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="680"/>
+        <source>Add child</source>
+        <translation>添加子节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="680"/>
+        <source>Add state here</source>
+        <translation>在此添加状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="681"/>
+        <source>Add node</source>
+        <translation>添加节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="682"/>
+        <source>Add transition...</source>
+        <translation>添加过渡...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="683"/>
+        <source>Set as entry state</source>
+        <translation>设为入口状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="684"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="685"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="686"/>
+        <source>Duplicate</source>
+        <translation>复制副本</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="687"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="689"/>
+        <source>Arrange</source>
+        <translation>排列</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/canvas.py" line="689"/>
+        <source>Fit</source>
+        <translation>适应</translation>
+    </message>
+</context>
+<context>
+    <name>GroupTable</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="208"/>
+        <source>Add rows</source>
+        <translation>添加行</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="213"/>
+        <source>Remove rows</source>
+        <translation>移除行</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="228"/>
+        <source>Edit {0}</source>
+        <translation>编辑 {0}</translation>
+    </message>
+</context>
+<context>
+    <name>GuiEditDocument</name>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="43"/>
+        <source>The root object cannot be copied.</source>
+        <translation>无法复制根对象。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="103"/>
+        <source>The clipboard holds no GUI objects: {0}</source>
+        <translation>剪贴板中没有 GUI 对象：{0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="106"/>
+        <source>The copied objects are of GUI version {0}; this file is {1}.</source>
+        <translation>复制的对象属于 GUI 版本 {0}，而此文件为 {1}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="113"/>
+        <location filename="../../file_handlers/gui/edits.py" line="218"/>
+        <source>{0} is not a class this game&apos;s GUI files hold.</source>
+        <translation>{0} 不是此游戏的 GUI 文件中包含的类。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="116"/>
+        <source>{0} holds {1}: it cannot be pasted inside it.</source>
+        <translation>{0} 包含 {1}：不能粘贴到其内部。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="127"/>
+        <source>Paste {0}</source>
+        <translation>粘贴 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/clipboard.py" line="128"/>
+        <source>Paste {0} Objects</source>
+        <translation>粘贴 {0} 个对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/document.py" line="44"/>
+        <source> (and {0} more)</source>
+        <translation>（另有 {0} 项）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="45"/>
+        <source>{0}: a component is not a finite number</source>
+        <translation>{0}：某个分量不是有限数</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="57"/>
+        <source>A name cannot be empty or hold a slash.</source>
+        <translation>名称不能为空，也不能包含斜杠。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="87"/>
+        <source>{0} has no property {1}.</source>
+        <translation>{0} 没有属性 {1}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="91"/>
+        <source>Set {0}</source>
+        <translation>设置 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="108"/>
+        <source>Override {0}</source>
+        <translation>覆盖 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="123"/>
+        <source>Remove Override</source>
+        <translation>移除覆盖</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="129"/>
+        <source>A number of the content is not finite.</source>
+        <translation>内容中的某个数字不是有限数。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="144"/>
+        <source>{0}: {1}</source>
+        <translation>{0}：{1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="147"/>
+        <source>Edit {0}</source>
+        <translation>编辑 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="221"/>
+        <source>A {0} cannot hold symbol {1}.</source>
+        <translation>{0} 不能包含元件 {1}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="225"/>
+        <location filename="../../file_handlers/gui/edits.py" line="357"/>
+        <source>{0} holds {1}: it cannot be placed inside it.</source>
+        <translation>{0} 包含 {1}：不能放置到其内部。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="228"/>
+        <location filename="../../file_handlers/gui/edits.py" line="229"/>
+        <location filename="../../file_handlers/gui/edits.py" line="241"/>
+        <location filename="../../file_handlers/gui/edits.py" line="247"/>
+        <location filename="../../file_handlers/gui/edits.py" line="428"/>
+        <source>Add {0}</source>
+        <translation>添加 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="236"/>
+        <location filename="../../file_handlers/gui/edits.py" line="351"/>
+        <source>A {0} holds no symbol.</source>
+        <translation>{0} 不包含元件。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="254"/>
+        <source>The root object cannot be removed.</source>
+        <translation>无法移除根对象。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="257"/>
+        <location filename="../../file_handlers/gui/edits.py" line="377"/>
+        <source>Remove {0}</source>
+        <translation>移除 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="258"/>
+        <source>Remove {0} Objects</source>
+        <translation>移除 {0} 个对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="280"/>
+        <source>{0} already holds an object named {1}.</source>
+        <translation>{0} 中已有名为 {1} 的对象。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="284"/>
+        <location filename="../../file_handlers/gui/edits.py" line="392"/>
+        <source>Rename {0}</source>
+        <translation>重命名 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="299"/>
+        <source>The root object cannot be moved.</source>
+        <translation>无法移动根对象。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="303"/>
+        <source>{0} cannot be moved into itself.</source>
+        <translation>无法将 {0} 移入其自身。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="306"/>
+        <source>{0} already holds an object of that name.</source>
+        <translation>{0} 中已有同名对象。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="308"/>
+        <source>Move {0}</source>
+        <translation>移动 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="309"/>
+        <source>Move {0} Objects</source>
+        <translation>移动 {0} 个对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="354"/>
+        <source>The root object always holds the file&apos;s first symbol.</source>
+        <translation>根对象始终包含文件的第一个元件。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="361"/>
+        <source>Set Symbol of {0}</source>
+        <translation>设置 {0} 的元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="373"/>
+        <source>The root symbol cannot be removed.</source>
+        <translation>无法移除根元件。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="375"/>
+        <source>{0} is placed {1} times: remove those objects first.</source>
+        <translation>{0} 被放置了 {1} 次：请先移除这些对象。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="437"/>
+        <source>Make {0} Unique</source>
+        <translation>将 {0} 设为独立</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="446"/>
+        <source>{0} is not a GUI file&apos;s path as the game writes it: UI/GUI/.../name.gui.</source>
+        <translation>{0} 不是游戏写法的 GUI 文件路径：UI/GUI/.../name.gui。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="450"/>
+        <source>{0} is already imported.</source>
+        <translation>{0} 已导入。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="452"/>
+        <source>Import {0}</source>
+        <translation>导入 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="466"/>
+        <source>{0} places a symbol of {1}: remove it or give it another symbol first.</source>
+        <translation>{0} 放置了 {1} 中的元件：请先移除它或为其指定其他元件。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/edits.py" line="469"/>
+        <source>Remove Import {0}</source>
+        <translation>移除导入 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="35"/>
+        <source>Add State {0}</source>
+        <translation>添加状态 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="44"/>
+        <source>Remove State {0}</source>
+        <translation>移除状态 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="45"/>
+        <source>Remove {0} States</source>
+        <translation>移除 {0} 个状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="63"/>
+        <source>Rename State {0}</source>
+        <translation>重命名状态 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="69"/>
+        <source>Set Loop</source>
+        <translation>设置循环</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="75"/>
+        <source>A state can only continue in a state of its own symbol.</source>
+        <translation>状态只能接续到其所属元件的状态。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="78"/>
+        <source>Set Next State</source>
+        <translation>设置下一个状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="87"/>
+        <source>Move State {0}</source>
+        <translation>移动状态 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="100"/>
+        <source>{0} is not an object this state animates: a state animates the objects of its symbol, and of two with one name the first.</source>
+        <translation>{0} 不是此状态所动画的对象：状态为其元件中的对象制作动画，同名的两个对象中只动画第一个。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="120"/>
+        <source>{0} cannot be animated: no file of the game animates such a property, or the object&apos;s other values rule it out.</source>
+        <translation>无法为 {0} 制作动画：游戏的文件中没有为此类属性制作动画的，或该对象的其他值排除了这种可能。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="131"/>
+        <source>{0} is already animated in this state.</source>
+        <translation>{0} 已在此状态中制作了动画。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="132"/>
+        <source>Animate {0}</source>
+        <translation>为 {0} 制作动画</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="150"/>
+        <source>Animate {0}.{1}</source>
+        <translation>为 {0}.{1} 制作动画</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="166"/>
+        <source>Remove Keys</source>
+        <translation>移除关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="194"/>
+        <location filename="../../file_handlers/gui/state_edits.py" line="212"/>
+        <source>A key cannot lie before frame 0.</source>
+        <translation>关键帧不能位于第 0 帧之前。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="195"/>
+        <source>Add Key</source>
+        <translation>添加关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="214"/>
+        <source>{0} already holds a key at frame {1:g}.</source>
+        <translation>{0} 在第 {1:g} 帧已有关键帧。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="217"/>
+        <source>Move Key</source>
+        <translation>移动关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="223"/>
+        <source>Set Key</source>
+        <translation>设置关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="230"/>
+        <source>Key {0}</source>
+        <translation>为 {0} 设置关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="240"/>
+        <source>Set Tangent</source>
+        <translation>设置切线</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="246"/>
+        <source>Paste Keys</source>
+        <translation>粘贴关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="259"/>
+        <source>Paste Tracks</source>
+        <translation>粘贴轨道</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="262"/>
+        <source>{0} of {1} is not the type of the copied track.</source>
+        <translation>{1} 的 {0} 与复制的轨道类型不同。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/state_edits.py" line="290"/>
+        <source>No state of the game&apos;s files moves such a value that way.</source>
+        <translation>游戏文件中没有任何状态以这种方式改变此类值。</translation>
+    </message>
+</context>
+<context>
+    <name>GuiEditor</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="85"/>
+        <source>Back to the whole file</source>
+        <translation>返回整个文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="89"/>
+        <source>The symbol alone: its own objects and states, as every control that places it gets them</source>
+        <translation>单独的元件：其自身的对象和状态，即每个放置它的控件所得到的内容</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="100"/>
+        <source>Undo (Ctrl+Z)</source>
+        <translation>撤销 (Ctrl+Z)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="101"/>
+        <source>Redo (Ctrl+Y)</source>
+        <translation>重做 (Ctrl+Y)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="102"/>
+        <source>Add an object, or place a symbol, in the selected control</source>
+        <translation>在所选控件中添加对象或放置元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="103"/>
+        <source>Object</source>
+        <translation>对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="104"/>
+        <source>Delete (Del)</source>
+        <translation>删除 (Del)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="105"/>
+        <source>Copy (Ctrl+C)</source>
+        <translation>复制 (Ctrl+C)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="106"/>
+        <source>Paste (Ctrl+V)</source>
+        <translation>粘贴 (Ctrl+V)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="107"/>
+        <source>Fit the screen (F)</source>
+        <translation>适应屏幕 (F)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="108"/>
+        <source>Outline every object</source>
+        <translation>为所有对象显示轮廓</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="111"/>
+        <source>Use the GUI as the game does: states run, and the pointer and the game&apos;s keys move its lists. The pointer edits nothing meanwhile.</source>
+        <translation>像游戏一样使用 GUI：状态会运行，指针和游戏按键会移动其列表。在此期间指针不会编辑任何内容。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="113"/>
+        <source>Try</source>
+        <translation>试用</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="116"/>
+        <source>What the game sets and a file does not hold: window size, safe area, language, input device</source>
+        <translation>由游戏设置、文件中不包含的内容：窗口大小、安全区域、语言、输入设备</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="118"/>
+        <source>Preview</source>
+        <translation>预览</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="121"/>
+        <source>What the preview does not draw as the game does</source>
+        <translation>预览中与游戏绘制方式不同的内容</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="124"/>
+        <source>Errors: the file cannot be saved until they are fixed</source>
+        <translation>错误：修复之前无法保存该文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="178"/>
+        <source>new object</source>
+        <translation>新对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="179"/>
+        <source>symbol of this file</source>
+        <translation>此文件的元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="190"/>
+        <source>Add an object or place a symbol</source>
+        <translation>添加对象或放置元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="241"/>
+        <source>Select objects of one control to duplicate them.</source>
+        <translation>请选择同一控件中的对象以复制它们。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="256"/>
+        <source>Add...</source>
+        <translation>添加...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="257"/>
+        <source>Open Symbol Alone</source>
+        <translation>单独打开元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="259"/>
+        <source>Make Unique</source>
+        <translation>设为独立</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="260"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="261"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="262"/>
+        <source>Paste Inside</source>
+        <translation>粘贴到内部</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="263"/>
+        <source>Duplicate</source>
+        <translation>复制副本</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="264"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/gui_editor.py" line="306"/>
+        <source>Not drawn as the game does</source>
+        <translation>绘制方式与游戏不同</translation>
+    </message>
+</context>
+<context>
+    <name>GuiPickers</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/pickers.py" line="28"/>
+        <source>Search the game&apos;s {0} files</source>
+        <translation>搜索游戏的 {0} 文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/pickers.py" line="34"/>
+        <source>Search the game&apos;s messages by name or text</source>
+        <translation>按名称或文本搜索游戏的消息</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/pickers.py" line="39"/>
+        <source>Choose one of the game&apos;s files</source>
+        <translation>选择游戏的某个文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/pickers.py" line="42"/>
+        <source>Choose one of the game&apos;s messages</source>
+        <translation>选择游戏的某条消息</translation>
+    </message>
+</context>
+<context>
+    <name>GuiStage</name>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="652"/>
+        <source>the items show what the item they are copied from holds: the game&apos;s script fills them</source>
+        <translation>这些项显示的是其复制来源项的内容：由游戏脚本填充</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="655"/>
+        <source>its items are not made: the game leaves a grid&apos;s ItemOffset unset when it stores none</source>
+        <translation>未生成其项：网格未存储任何项时，游戏不会设置其 ItemOffset</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="662"/>
+        <source>lists are moved by the gamepad, which the preview does not read</source>
+        <translation>列表由手柄移动，而预览不读取手柄</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="668"/>
+        <source>the keys the player bound to this list&apos;s input are not known</source>
+        <translation>玩家为此列表的输入绑定的按键未知</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="671"/>
+        <source>this list takes the pointer as {0} here; the file says {1}</source>
+        <translation>此列表在这里按 {0} 处理指针；文件中为 {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="836"/>
+        <source>no frame is drawn</source>
+        <translation>未绘制任何帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/interaction.py" line="839"/>
+        <source>its text size is not known, so the pointer misses it ({0})</source>
+        <translation>其文本大小未知，因此指针无法命中它（{0}）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="259"/>
+        <source>Timeline frame</source>
+        <translation>时间轴帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="261"/>
+        <source>The frame of the game&apos;s timeline that moves this view&apos;s camera, shows or hides the view and sets its lights: the game plays it from {0} to {1}, and so does Try.</source>
+        <translation>游戏时间轴中移动此视图相机、显示或隐藏此视图并设置其灯光的帧：游戏从 {0} 播放到 {1}，“试用”模式也是如此。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="265"/>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="305"/>
+        <source>Placement</source>
+        <translation>放置位置</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="267"/>
+        <source>The game shows this file&apos;s parts inside these GUIs: its view is drawn as theirs.</source>
+        <translation>游戏会在这些 GUI 中显示此文件的部件：其视图按它们的视图绘制。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="269"/>
+        <source>Where the game puts this view: it is in more than one place.</source>
+        <translation>游戏放置此视图的位置：它位于多个地方。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="272"/>
+        <source>Shown</source>
+        <translation>显示方式</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="274"/>
+        <source>As the game shows it</source>
+        <translation>按游戏中的显示</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="274"/>
+        <source>The file alone</source>
+        <translation>仅文件本身</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="275"/>
+        <source>As the game shows it: with what the game&apos;s scenes hold for this file, which the file does not name: where they put its view, its camera, lights and timeline, their GUI component&apos;s segment and the message files they add. The file alone: only what the file and the game&apos;s GUI config name.</source>
+        <translation>按游戏中的显示：包含游戏场景为此文件提供、而文件本身未指明的内容——它们放置其视图的位置、其相机、灯光和时间轴、它们的 GUI 组件的段，以及它们添加的消息文件。仅文件本身：只包含文件和游戏 GUI 配置所指明的内容。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="280"/>
+        <source>Output</source>
+        <translation>输出</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="281"/>
+        <source>The size of the window the GUI is drawn into.</source>
+        <translation>绘制 GUI 的窗口大小。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="284"/>
+        <source>Safe area</source>
+        <translation>安全区域</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="285"/>
+        <source>GUISystem.SafeAreaRatio: the part of the screen elements with SafeAreaAdjust keep to. The game sets it; a file does not hold it.</source>
+        <translation>GUISystem.SafeAreaRatio：带有 SafeAreaAdjust 的元素所限定的屏幕区域。由游戏设置，文件中不包含此值。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="287"/>
+        <source>Language</source>
+        <translation>语言</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="289"/>
+        <source>The language messages are shown in. The game sets it; a file does not hold it.</source>
+        <translation>显示消息所用的语言。由游戏设置，文件中不包含此值。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="291"/>
+        <source>Input</source>
+        <translation>输入</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="293"/>
+        <source>Keyboard</source>
+        <translation>键盘</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="293"/>
+        <source>Gamepad</source>
+        <translation>手柄</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="294"/>
+        <source>The device whose button icons texts show.</source>
+        <translation>文本中显示其按键图标的设备。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="295"/>
+        <source>Pointer</source>
+        <translation>指针</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="298"/>
+        <source>As the file says</source>
+        <translation>按文件设置</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="299"/>
+        <source>How lists take the pointer in Try (MouseSelectType). A script can set it while the game runs; a click on the selected item decides it.</source>
+        <translation>在“试用”模式下列表如何处理指针（MouseSelectType）。脚本可在游戏运行时设置它；它决定单击所选项时的行为。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="305"/>
+        <source>Camera</source>
+        <translation>相机</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="306"/>
+        <source>Timeline</source>
+        <translation>时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="306"/>
+        <source>Lights</source>
+        <translation>灯光</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="307"/>
+        <source>Segment</source>
+        <translation>段</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="307"/>
+        <source>Added messages</source>
+        <translation>添加的消息</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="308"/>
+        <source>Key commands</source>
+        <translation>按键命令</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="346"/>
+        <source>{0} values are set as a script may set them: the GUI does not load so</source>
+        <translation>有 {0} 个值按脚本可能的方式设置：GUI 加载时并非如此</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="349"/>
+        <source>a world view is drawn flat: it follows the game&apos;s camera</source>
+        <translation>世界视图按平面绘制：它跟随游戏相机</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="351"/>
+        <source>a GUI camera view is drawn flat: where the game puts this file is not known</source>
+        <translation>GUI 相机视图按平面绘制：不清楚游戏把此文件放在何处</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="354"/>
+        <source>a GUI camera view is drawn flat: the file alone does not say where the game puts it</source>
+        <translation>GUI 相机视图按平面绘制：仅凭文件无法得知游戏把它放在何处</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="358"/>
+        <source>the view&apos;s size is one unit: the frame is the game&apos;s screen size around its origin, widened to hold what it shows</source>
+        <translation>视图大小为一个单位：画框为以其原点为中心的游戏屏幕大小，并扩大到能容纳其显示内容</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="362"/>
+        <source>the game does not draw this view at this frame of its timeline</source>
+        <translation>游戏在其时间轴的此帧不绘制此视图</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="364"/>
+        <source>the game&apos;s post-processing after this view is not drawn (its Detonemap undoes the tonemap&apos;s exposure and range)</source>
+        <translation>未绘制此视图之后的游戏后期处理（其 Detonemap 会撤销色调映射的曝光和范围）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="367"/>
+        <source>the game&apos;s exposure, tonemap and post-processing after this view are not drawn</source>
+        <translation>未绘制此视图之后游戏的曝光、色调映射和后期处理</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="370"/>
+        <source>the view&apos;s reprojection pass is not drawn</source>
+        <translation>未绘制视图的重投影通道</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="372"/>
+        <source>its segment is not followed: no game file holds this GUI, so the GUI&apos;s own segment is not known</source>
+        <translation>未遵循其段：没有游戏文件包含此 GUI，因此 GUI 自身的段未知</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/dmc5/stage.py" line="374"/>
+        <source>its segment is not followed: the file alone does not hold the GUI&apos;s own segment</source>
+        <translation>未遵循其段：仅凭文件不包含 GUI 自身的段</translation>
+    </message>
+</context>
+<context>
+    <name>GuiValidation</name>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="54"/>
+        <source>The root object must name the file&apos;s first symbol: the game builds the GUI from that symbol.</source>
+        <translation>根对象必须指向文件的第一个元件：游戏从该元件构建 GUI。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="56"/>
+        <source>objects</source>
+        <translation>对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="57"/>
+        <source>symbols</source>
+        <translation>元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="58"/>
+        <source>states</source>
+        <translation>状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="60"/>
+        <source>Two {0} share a GUID.</source>
+        <translation>有两个{0}使用同一个 GUID。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="64"/>
+        <source>{0} symbols are named &quot;{1}&quot;: a script that creates one by name gets the first.</source>
+        <translation>有 {0} 个元件名为“{1}”：按名称创建元件的脚本会得到第一个。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="70"/>
+        <source>&quot;{0}&quot; belongs to no symbol: the game never creates it.</source>
+        <translation>“{0}”不属于任何元件：游戏永远不会创建它。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="74"/>
+        <source>Symbol &quot;{0}&quot; is not placed in this file; another file or a script can still create it.</source>
+        <translation>元件“{0}”未放置在此文件中；其他文件或脚本仍可创建它。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="81"/>
+        <source>A symbol has no name.</source>
+        <translation>有元件没有名称。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="85"/>
+        <source>&quot;{0}&quot; holds {1} objects named &quot;{2}&quot;: the game finds only the first by name.</source>
+        <translation>“{0}”包含 {1} 个名为“{2}”的对象：游戏按名称只能找到第一个。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="90"/>
+        <source>Symbol &quot;{0}&quot; contains itself.</source>
+        <translation>元件“{0}”包含其自身。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="95"/>
+        <source>A state of &quot;{0}&quot; has no name.</source>
+        <translation>“{0}”的某个状态没有名称。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="98"/>
+        <source>State &quot;{0}&quot; of &quot;{1}&quot; continues in a state of another symbol.</source>
+        <translation>“{1}”的状态“{0}”接续到了其他元件的状态。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="103"/>
+        <source>State &quot;{0}&quot; of &quot;{1}&quot;: {2}</source>
+        <translation>“{1}”的状态“{0}”：{2}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="109"/>
+        <source>State &quot;{0}&quot; of &quot;{1}&quot; animates &quot;{2}&quot;, which the symbol does not hold.</source>
+        <translation>“{1}”的状态“{0}”为“{2}”制作了动画，但该元件不包含它。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="118"/>
+        <source>State &quot;{0}&quot; of &quot;{1}&quot;, {2}.{3}</source>
+        <translation>“{1}”的状态“{0}”，{2}.{3}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="121"/>
+        <source>{0}: a member the type does not have.</source>
+        <translation>{0}：该类型没有此成员。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="126"/>
+        <source>{0}: the class has no such property.</source>
+        <translation>{0}：该类没有此属性。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="129"/>
+        <source>{0}: the track is {1}, the property {2}.</source>
+        <translation>{0}：轨道为 {1}，属性为 {2}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="133"/>
+        <source>{0}: the object stores no value, so the property is not reset when a state starts.</source>
+        <translation>{0}：对象未存储值，因此状态开始时不会重置该属性。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="137"/>
+        <source>{0}: the first key is not at frame 0.</source>
+        <translation>{0}：第一个关键帧不在第 0 帧。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="145"/>
+        <source>&quot;{0}&quot;: a name cannot be empty or hold &quot;/&quot;.</source>
+        <translation>“{0}”：名称不能为空，也不能包含“/”。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="149"/>
+        <source>&quot;{0}&quot; names a symbol, but a {1} holds none.</source>
+        <translation>“{0}”指向一个元件，但 {1} 不包含元件。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="153"/>
+        <source>&quot;{0}&quot; is a {1}, its symbol &quot;{2}&quot; a {3}.</source>
+        <translation>“{0}”是 {1}，而其元件“{2}”是 {3}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="159"/>
+        <source>&quot;{0}&quot; names a symbol that cannot be checked: an imported file was not found or cannot be read.</source>
+        <translation>“{0}”指向的元件无法检查：未找到某个导入的文件或无法读取。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="162"/>
+        <source>&quot;{0}&quot; names a symbol neither this file nor its imports hold: the game does not create the GUI.</source>
+        <translation>“{0}”指向的元件既不在此文件中，也不在其导入中：游戏不会创建该 GUI。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="176"/>
+        <source>&quot;{0}&quot;.{1} is stored as {2}; the game&apos;s files store {3}.</source>
+        <translation>“{0}”.{1} 存储为 {2}；游戏的文件存储为 {3}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="179"/>
+        <source>&quot;{0}&quot;.{1}: &quot;{2}&quot; is not a value of {3}; the game reads it as 0.</source>
+        <translation>“{0}”.{1}：“{2}”不是 {3} 的值；游戏将其读取为 0。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="201"/>
+        <source>{0} is overridden twice.</source>
+        <translation>{0} 被覆盖了两次。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="211"/>
+        <source>The override of {0} names no object: the game skips it.</source>
+        <translation>{0} 的覆盖未指向任何对象：游戏会跳过它。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="215"/>
+        <source>The override of {0} is written for a {1}; the object is a {2}.</source>
+        <translation>{0} 的覆盖是为 {1} 编写的；而该对象是 {2}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="220"/>
+        <source>The override of {0} is {1}; the property is {2}.</source>
+        <translation>{0} 的覆盖为 {1}；属性为 {2}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="227"/>
+        <source>{0} is imported {1} times.</source>
+        <translation>{0} 被导入了 {1} 次。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="230"/>
+        <source>An imported file cannot be read: {0} (imported by {1}): {2}</source>
+        <translation>无法读取导入的文件：{0}（由 {1} 导入）：{2}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/validation.py" line="231"/>
+        <source>An imported file was not found: {0} (imported by {1}).</source>
+        <translation>未找到导入的文件：{0}（由 {1} 导入）。</translation>
+    </message>
+</context>
+<context>
     <name>GuidConverter</name>
     <message>
         <location filename="../../ui/guid_converter.py" line="18"/>
@@ -6874,11 +8507,127 @@ Save before reloading?</source>
     </message>
 </context>
 <context>
+    <name>Header</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="129"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="130"/>
+        <source>Class</source>
+        <translation>类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="137"/>
+        <source>Choose the symbol this control places</source>
+        <translation>选择此控件放置的元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="140"/>
+        <source>Open the symbol alone</source>
+        <translation>单独打开元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="141"/>
+        <source>Make unique: give this control a copy of the symbol, kept in this file, so changes stay here</source>
+        <translation>设为独立：为此控件提供一份保存在此文件中的元件副本，使更改只作用于此处</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="147"/>
+        <source>Symbol</source>
+        <translation>元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="165"/>
+        <source>this file</source>
+        <translation>此文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="168"/>
+        <source>No symbol</source>
+        <translation>无元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="173"/>
+        <source>Search symbols</source>
+        <translation>搜索元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="189"/>
+        <source>Not found</source>
+        <translation>未找到</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="190"/>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="196"/>
+        <source>The symbol itself. Its objects and states are shared by every control that places it.</source>
+        <translation>元件本身。其对象和状态由所有放置它的控件共享。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="198"/>
+        <source>Placed {0} times through a shared symbol. A value set here is kept for this placement only; open the symbol to change every placement.</source>
+        <translation>通过共享元件放置了 {0} 次。在此设置的值仅保留在此处放置；打开该元件可修改所有放置。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="200"/>
+        <source>From {0}. A value set here is kept in this file, for this placement only.</source>
+        <translation>来自 {0}。在此设置的值保存在此文件中，仅用于此处放置。</translation>
+    </message>
+</context>
+<context>
     <name>HexBytesInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1211"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1213"/>
         <source>[Error displaying data]</source>
         <translation>[显示数据时出错]</translation>
+    </message>
+</context>
+<context>
+    <name>Hierarchy</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="77"/>
+        <source>States: {0}</source>
+        <translation>状态：{0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="88"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="62"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="62"/>
+        <source>Class</source>
+        <translation>类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="72"/>
+        <source>Shown or hidden in the preview. A click shows or hides it there as a script may; a second click gives it back to the file. The file is not changed.</source>
+        <translation>在预览中显示或隐藏。单击可像脚本那样在预览中显示或隐藏它；再次单击则恢复为文件中的设置。文件不会被修改。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="84"/>
+        <source>The symbol itself, shown alone</source>
+        <translation>元件本身，单独显示</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="86"/>
+        <source>From {0}: values set here are kept in this file</source>
+        <translation>来自 {0}：在此设置的值保存在此文件中</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="88"/>
+        <source>Placed {0} times: its symbol is shared</source>
+        <translation>放置了 {0} 次：其元件是共享的</translation>
     </message>
 </context>
 <context>
@@ -7039,10 +8788,246 @@ Save before reloading?</source>
         <translation>剪辑</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="137"/>
+        <source>Missing object</source>
+        <translation>缺少对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="152"/>
+        <source>Search classes</source>
+        <translation>搜索类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="164"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="178"/>
+        <source>Tags</source>
+        <translation>标签</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="180"/>
+        <source>Remove tag</source>
+        <translation>移除标签</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="183"/>
+        <source>Search tags, or Enum.Member</source>
+        <translation>搜索标签，或 Enum.Member</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="187"/>
+        <source>Add tag</source>
+        <translation>添加标签</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="194"/>
+        <source>to {0}</source>
+        <translation>到 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="217"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="351"/>
+        <source>Search states</source>
+        <translation>搜索状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="228"/>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="416"/>
+        <source>States</source>
+        <translation>状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="228"/>
+        <source>Children</source>
+        <translation>子节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="248"/>
+        <source>Edit node</source>
+        <translation>编辑节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="249"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="315"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="255"/>
+        <source>Priority</source>
+        <translation>优先级</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="258"/>
+        <source>Branch</source>
+        <translation>分支</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="261"/>
+        <source>Reference tree</source>
+        <translation>引用树</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="266"/>
+        <source>Entered when</source>
+        <translation>进入条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="268"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="285"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="390"/>
+        <source>Always: no condition</source>
+        <translation>始终：无条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="271"/>
+        <source>Selector</source>
+        <translation>选择器</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="277"/>
+        <source>Selector callers</source>
+        <translation>选择器调用者</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="282"/>
+        <source>Callers run when</source>
+        <translation>调用者运行条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="290"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="324"/>
+        <source>Actions</source>
+        <translation>动作</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="295"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="329"/>
+        <source>Transitions</source>
+        <translation>过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="299"/>
+        <source>Entry states</source>
+        <translation>入口状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="299"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="334"/>
+        <source>From any state</source>
+        <translation>来自任意状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="301"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="46"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="53"/>
         <source>Node</source>
         <translation>节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="301"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="335"/>
+        <source>State</source>
+        <translation>状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="314"/>
+        <source>Edit state</source>
+        <translation>编辑状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="320"/>
+        <source>Entry state</source>
+        <translation>入口状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="321"/>
+        <source>Set entry state</source>
+        <translation>设置入口状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="333"/>
+        <source>Entry transitions</source>
+        <translation>入口过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="340"/>
+        <source>Any state</source>
+        <translation>任意状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="385"/>
+        <source>Condition</source>
+        <translation>条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="389"/>
+        <source>{0}, made by name</source>
+        <translation>{0}，按名称创建</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="390"/>
+        <source>Never taken: no condition</source>
+        <translation>永不触发：无条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="395"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="398"/>
+        <source>Edit condition</source>
+        <translation>编辑条件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="403"/>
+        <source>Events</source>
+        <translation>事件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="411"/>
+        <source>Transition</source>
+        <translation>过渡</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="418"/>
+        <source>Blending</source>
+        <translation>混合</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="419"/>
+        <source>Preset</source>
+        <translation>预设</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="420"/>
+        <source>An edit gives a transition that shares its preset one of its own</source>
+        <translation>编辑时，共用预设的过渡会获得自己的预设</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="435"/>
+        <source>Shared by {0} transitions</source>
+        <translation>由 {0} 个过渡共用</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="435"/>
+        <source>Own</source>
+        <translation>独有</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="452"/>
+        <source>Open in the variable editor</source>
+        <translation>在变量编辑器中打开</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="458"/>
+        <source>Calls</source>
+        <translation>调用</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="460"/>
+        <source>No condition object</source>
+        <translation>无条件对象</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="47"/>
@@ -7112,6 +9097,9 @@ Save before reloading?</source>
         <translation>编辑轨道</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="249"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="315"/>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="448"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="106"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="134"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="147"/>
@@ -7209,6 +9197,7 @@ Save before reloading?</source>
         <translation>编辑节点</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="449"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="159"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="185"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="212"/>
@@ -7223,6 +9212,7 @@ Save before reloading?</source>
         <translation>开始</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="259"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="162"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="188"/>
         <source>End</source>
@@ -7387,6 +9377,7 @@ Save before reloading?</source>
         <translation>编辑值</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="450"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="293"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="295"/>
         <location filename="../../file_handlers/clip/editor/inspector.py" line="297"/>
@@ -7433,6 +9424,7 @@ Save before reloading?</source>
         <translation>动作列表</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="340"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="51"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="55"/>
         <source>Entry</source>
@@ -7770,6 +9762,7 @@ Save before reloading?</source>
         <translation>节点类型</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="380"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="206"/>
         <source>ID</source>
         <translation>ID</translation>
@@ -7795,6 +9788,7 @@ Save before reloading?</source>
         <translation>编辑连接</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="369"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="228"/>
         <source>From</source>
         <translation>起点</translation>
@@ -7805,6 +9799,7 @@ Save before reloading?</source>
         <translation>端口</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="372"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="230"/>
         <source>To</source>
         <translation>终点</translation>
@@ -7815,6 +9810,7 @@ Save before reloading?</source>
         <translation>子节点端口</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/bhvt/editor/inspector.py" line="462"/>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="237"/>
         <source>Variable</source>
         <translation>变量</translation>
@@ -7823,6 +9819,31 @@ Save before reloading?</source>
         <location filename="../../file_handlers/motion/editor/inspector.py" line="240"/>
         <source>(not in the .uvar)</source>
         <translation>（不在 .uvar 中）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="301"/>
+        <source>Script values: while on, a change is kept for the preview only, as a value the game&apos;s script sets when the GUI runs. The file is not changed.</source>
+        <translation>脚本值：开启时，更改仅保留在预览中，作为游戏脚本在 GUI 运行时设置的值。文件不会被修改。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="305"/>
+        <source>Remove every script value</source>
+        <translation>移除所有脚本值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="404"/>
+        <source>Nothing selected</source>
+        <translation>未选择任何内容</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="409"/>
+        <source>Stored, not read by the game</source>
+        <translation>已存储，但游戏不读取</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="414"/>
+        <source>Content</source>
+        <translation>内容</translation>
     </message>
 </context>
 <context>
@@ -8124,6 +10145,79 @@ Save before reloading?</source>
     </message>
 </context>
 <context>
+    <name>KeyPane</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="161"/>
+        <source>(mixed)</source>
+        <translation>（混合）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="192"/>
+        <source>Key</source>
+        <translation>关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="192"/>
+        <source>{0} keys</source>
+        <translation>{0} 个关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="193"/>
+        <source>No key selected</source>
+        <translation>未选择关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="200"/>
+        <source>Select a key to edit its frame, value and the way the value moves to the next key. Double-click a track&apos;s lane to add a key.</source>
+        <translation>选择关键帧以编辑其帧、值以及值过渡到下一个关键帧的方式。双击轨道所在的行以添加关键帧。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="209"/>
+        <source>Frame</source>
+        <translation>帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="211"/>
+        <source>Value</source>
+        <translation>值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="216"/>
+        <source>(first state)</source>
+        <translation>（第一个状态）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="218"/>
+        <source>Interpolation</source>
+        <translation>插值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="220"/>
+        <source>How the value moves to the next key: Discrete holds it, Linear moves evenly, Hermite follows the curve its tangents set, Event applies the key once when the playhead reaches it</source>
+        <translation>值如何过渡到下一个关键帧：Discrete 保持不变，Linear 匀速变化，Hermite 沿切线确定的曲线变化，Event 在播放头到达时应用一次该关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="223"/>
+        <source>Out tangent</source>
+        <translation>出切线</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="223"/>
+        <source>The curve&apos;s direction as it leaves this key</source>
+        <translation>曲线离开此关键帧时的方向</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="224"/>
+        <source>In tangent</source>
+        <translation>入切线</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="224"/>
+        <source>The curve&apos;s direction as it reaches the next key</source>
+        <translation>曲线到达下一个关键帧时的方向</translation>
+    </message>
+</context>
+<context>
     <name>KeyboardShortcuts</name>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="20"/>
@@ -8309,6 +10403,108 @@ Save before reloading?</source>
         <location filename="../../ui/keyboard_shortcuts.py" line="287"/>
         <source>The default shortcut &apos;{shortcut}&apos; is already assigned to &apos;{name}&apos;.</source>
         <translation>默认快捷键“{shortcut}”已分配给“{name}”。</translation>
+    </message>
+</context>
+<context>
+    <name>LaneSources</name>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="98"/>
+        <source>Invert</source>
+        <translation>反转</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="99"/>
+        <source>DirectX</source>
+        <translation>DirectX</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="101"/>
+        <source>Keep</source>
+        <translation>保留</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="101"/>
+        <source>Neutral</source>
+        <translation>中性值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="102"/>
+        <source>Image</source>
+        <translation>图像</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="102"/>
+        <source>Constant</source>
+        <translation>常量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="105"/>
+        <source>Image file</source>
+        <translation>图像文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="107"/>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="136"/>
+        <source>Choose an image</source>
+        <translation>选择图像</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="109"/>
+        <source>R</source>
+        <translation>R</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="109"/>
+        <source>G</source>
+        <translation>G</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="109"/>
+        <source>B</source>
+        <translation>B</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="109"/>
+        <source>A</source>
+        <translation>A</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="110"/>
+        <source>Luminance</source>
+        <translation>亮度</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="114"/>
+        <source>Use 1 - value</source>
+        <translation>使用 1 - 值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="114"/>
+        <source>The normal map&apos;s green points down</source>
+        <translation>法线贴图的绿色通道朝下</translation>
+    </message>
+</context>
+<context>
+    <name>LanesDialog</name>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="308"/>
+        <source>Fill from Folder...</source>
+        <translation>从文件夹填充...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="310"/>
+        <source>Take each lane&apos;s image named as Export Lanes writes it, such as {name}</source>
+        <translation>按“导出分量”写出的命名方式读取每个分量的图像，例如 {name}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="325"/>
+        <source>Folder with the lane images</source>
+        <translation>包含分量图像的文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="328"/>
+        <source>{found} of {total} lanes found.</source>
+        <translation>找到 {found}/{total} 个分量。</translation>
     </message>
 </context>
 <context>
@@ -9176,19 +11372,19 @@ Save before reloading?</source>
         <translation>引擎缓冲区中没有字段 {name}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/engine_buffers.py" line="221"/>
+        <location filename="../../file_handlers/mmtr/engine_buffers.py" line="222"/>
         <location filename="../../file_handlers/mmtr/material_preview.py" line="488"/>
         <location filename="../../file_handlers/mmtr/meshlets.py" line="640"/>
         <source>The engine field {name} is declared {declaration}, which the preview does not lay out.</source>
         <translation>引擎字段 {name} 声明为 {declaration}，预览无法布局。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/engine_buffers.py" line="231"/>
+        <location filename="../../file_handlers/mmtr/engine_buffers.py" line="232"/>
         <source>The engine field {name} holds {count} values, not {expected}.</source>
         <translation>引擎字段 {name} 包含 {count} 个值，而不是 {expected} 个。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/engine_buffers.py" line="344"/>
+        <location filename="../../file_handlers/mmtr/engine_buffers.py" line="345"/>
         <source>The engine&apos;s bone buffer has {count} fields, not three rows.</source>
         <translation>引擎的骨骼缓冲区有 {count} 个字段，而不是三行。</translation>
     </message>
@@ -9481,128 +11677,128 @@ Save before reloading?</source>
         <translation>发丝在没有引导线的情况下被摆放姿势，所用程序在任何捕获中都未显示运行。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="121"/>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="261"/>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="378"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="122"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="262"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="379"/>
         <source>The prefab {path} was not found.</source>
         <translation>未找到预制体 {path}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="157"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="158"/>
         <source>{count} objects of the prefab {path} hold the mesh, none under another.</source>
         <translation>预制体 {path} 中有 {count} 个对象包含该网格，且没有一个位于另一个之下。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="247"/>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="402"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="248"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="403"/>
         <location filename="../../file_handlers/strands/controls.py" line="57"/>
         <source>The file {path} was not found.</source>
         <translation>未找到文件 {path}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="328"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="329"/>
         <source>The strands&apos; binding names no mesh, and their object draws {count} meshes.</source>
         <translation>发丝的绑定未指定网格，而其对象绘制了 {count} 个网格。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="371"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="372"/>
         <location filename="../../file_handlers/strands/controls.py" line="66"/>
         <source>REasy has no catalog of this build&apos;s strand chain.</source>
         <translation>REasy 没有此版本发丝链的目录。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="373"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="374"/>
         <source>The strands are drawn over a mesh with bones only.</source>
         <translation>发丝绘制在仅有骨骼的网格之上。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="375"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="376"/>
         <source>No prefab holding the strands&apos; set was found.</source>
         <translation>未找到包含该发丝集的预制体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="384"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="385"/>
         <source>The prefab holds {count} sets drawing {path}.</source>
         <translation>该预制体包含 {count} 个绘制 {path} 的发丝集。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="389"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="390"/>
         <source>The set&apos;s object references objects of its prefab, which REasy does not resolve.</source>
         <translation>该发丝集的对象引用了其预制体中的对象，而 REasy 不会解析这些引用。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="393"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="394"/>
         <source>The strands are not driven by their dynamics, a path no capture shows.</source>
         <translation>发丝未由其动力学驱动，而没有任何捕获显示这条路径。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="396"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="397"/>
         <source>The strands&apos; shading quality takes the guide shading path, which no capture shows.</source>
         <translation>发丝的着色质量采用引导线着色路径，而没有任何捕获显示这条路径。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="411"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="412"/>
         <source>The stamp&apos;s texture {path} is not a 2D texture.</source>
         <translation>印章纹理 {path} 不是 2D 纹理。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="423"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="424"/>
         <source>The strands are bound to the mesh {path}; view it to draw them.</source>
         <translation>发丝绑定到网格 {path}；查看该网格即可绘制发丝。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="461"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="462"/>
         <source>The mesh&apos;s component fixes its LOD at {level}; view that LOD to draw the strands.</source>
         <translation>网格的组件将其 LOD 固定为 {level}；查看该 LOD 即可绘制发丝。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="433"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="434"/>
         <source>The strands&apos; material file {path} holds {count} materials.</source>
         <translation>发丝的材质文件 {path} 包含 {count} 个材质。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="503"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="504"/>
         <source>The strands&apos; binding reads the mesh&apos;s own deformed positions, which no capture shows.</source>
         <translation>发丝的绑定读取网格自身变形后的位置，而没有任何捕获显示这一点。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="489"/>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="507"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="490"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="508"/>
         <source>The binding file holds no table of LOD {level}, where the game leaves the binding mesh unskinned.</source>
         <translation>绑定文件中没有 LOD {level} 的表，而游戏在该 LOD 下不对绑定网格做蒙皮。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="139"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="140"/>
         <source>No prefab holding the mesh {mesh} was found.</source>
         <translation>未找到包含网格 {mesh} 的预制体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="142"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="143"/>
         <source>{count} prefabs hold the mesh {mesh}: choose the character prefab.</source>
         <translation>有 {count} 个预制体包含网格 {mesh}：请选择角色预制体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="476"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="477"/>
         <source>The binding mesh has no submeshes at this LOD.</source>
         <translation>绑定网格在此 LOD 下没有子网格。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="485"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="486"/>
         <source>The renderer skins the binding mesh&apos;s LOD as it draws it, leaving no positions for the strands&apos; binding, which no capture shows.</source>
         <translation>渲染器在绘制绑定网格的 LOD 时进行蒙皮，没有为发丝绑定留下位置，而没有任何捕获显示这种情况。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="510"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="511"/>
         <source>The game skins the binding mesh at this LOD with programs no capture shows.</source>
         <translation>游戏在此 LOD 下使用任何捕获中都未显示的程序对绑定网格进行蒙皮。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="516"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="517"/>
         <source>The binding mesh has no blend shapes at this LOD, where no capture shows what the game&apos;s binding reads.</source>
         <translation>绑定网格在此 LOD 下没有混合形状，而没有任何捕获显示游戏的绑定在此读取什么。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/strands/chain_scene.py" line="534"/>
+        <location filename="../../file_handlers/strands/chain_scene.py" line="535"/>
         <source>A mesh group of the binding mesh&apos;s LOD holds vertices apart.</source>
         <translation>绑定网格的 LOD 中有一个网格组包含分离的顶点。</translation>
     </message>
@@ -12531,451 +14727,456 @@ Base dimensions (X × Y × Z): {size} mesh units</source>
 <context>
     <name>MeshViewer</name>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="163"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="167"/>
         <source>Failed to create viewer: {}</source>
         <translation>创建查看器失败：{}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="167"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="171"/>
         <source>No mesh buffer data available to display</source>
         <translation>没有可显示的网格缓冲区数据</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="292"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="304"/>
         <source>Inspect</source>
         <translation>检查</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="293"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="305"/>
         <source>Materials, submeshes, selection, and camera views. Ctrl+F searches the list.</source>
         <translation>材质、子网格、选择和相机视图。Ctrl+F 在列表中搜索。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="294"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="306"/>
         <source>Textures</source>
         <translation>纹理</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="296"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="308"/>
         <source>Mesh data</source>
         <translation>网格数据</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="297"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="309"/>
         <source>Resource paths and parsed mesh structure.</source>
         <translation>资源路径和解析的网格结构。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="295"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="307"/>
         <source>Resolved material textures.</source>
         <translation>已解析的材质纹理。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="254"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="256"/>
+        <source>This mesh holds values the game&apos;s own files do not have. Saving writes the game&apos;s values.</source>
+        <translation>此网格包含游戏自身文件中没有的值。保存时会写入游戏的值。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="266"/>
         <source>Nothing is drawn.</source>
         <translation>未绘制任何内容。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="256"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="268"/>
         <source>And {count} more reasons: the Textures panel lists each part&apos;s.</source>
         <translation>还有 {count} 个原因：“纹理”面板列出了每个部分的原因。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="278"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="290"/>
         <source>Distance field…</source>
         <translation>距离场…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="281"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="293"/>
         <source>Convert mesh…</source>
         <translation>转换网格…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="285"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="297"/>
         <source>Import .blend…</source>
         <translation>导入 .blend…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="287"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="299"/>
         <source>Apply edits from a .blend exported by Convert mesh… › Blender. Untouched data stays bit-exact.</source>
         <translation>应用通过“转换网格…” › Blender 导出的 .blend 中的编辑。未修改的数据保持逐位一致。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="304"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1304"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="316"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1320"/>
         <source>Geometry</source>
         <translation>几何体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="306"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="318"/>
         <source>Geometry and LOD</source>
         <translation>几何体和 LOD</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="310"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="322"/>
         <source>View</source>
         <translation>视图</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="312"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="324"/>
         <source>Displayed mesh attribute</source>
         <translation>显示的网格属性</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="316"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="328"/>
         <source>Inspect decoded attributes with influence heatmaps, UV checkers, and individual color channels. Each view includes its own controls and legend.</source>
         <translation>使用影响热图、UV 棋盘格和单独的颜色通道检查解码后的属性。每个视图都有各自的控件和图例。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="322"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="334"/>
         <source>Compare surface and attribute</source>
         <translation>比较表面和属性</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="323"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="335"/>
         <source>Switch between the surface and the last attribute view. Shortcut: V in the viewport.</source>
         <translation>在表面和上一个属性视图之间切换。快捷键：视口中按 V。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="329"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="341"/>
         <source>Display</source>
         <translation>显示</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="332"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="344"/>
         <source>Vertex colors, bounds, and pivot overlays.</source>
         <translation>顶点颜色、边界和枢轴叠加。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="338"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="350"/>
         <source>Bounds</source>
         <translation>边界</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="339"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="351"/>
         <source>Pivots</source>
         <translation>枢轴</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="349"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="361"/>
         <source>Fit visible</source>
         <translation>适应可见内容</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="350"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="362"/>
         <source>Frame visible submeshes. F frames the selection, or visible geometry when nothing is selected.</source>
         <translation>聚焦可见子网格。F 聚焦所选内容；若未选择任何内容，则聚焦可见几何体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="354"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="366"/>
         <source>Navigate</source>
         <translation>导航</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="358"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="370"/>
         <source>Camera views, selection commands, and viewport shortcuts.</source>
         <translation>相机视图、选择命令和视口快捷键。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="401"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="415"/>
         <source>MDF: unresolved</source>
         <translation>MDF：未解析</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="406"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="563"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="420"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="579"/>
         <source>Open MDF</source>
         <translation>打开 MDF</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="408"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="422"/>
         <source>Open this mesh&apos;s MDF. Its materials&apos; Edit Shader… changes the shader of this object or of every object using the same master material.</source>
         <translation>打开此网格的 MDF。在其材质中使用“编辑着色器…”可更改此对象或所有使用同一主材质的对象的着色器。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="564"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="580"/>
         <source>{path} is in the game PAKs; open the game&apos;s PAKs in the project panel to open it.</source>
         <translation>{path} 位于游戏 PAK 中；请在项目面板中打开游戏的 PAK 以打开它。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="602"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="618"/>
         <source>Main LOD {}</source>
         <translation>主 LOD {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="602"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="618"/>
         <source>Shadow LOD {}</source>
         <translation>阴影 LOD {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="603"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="619"/>
         <source>Occluder LOD {}</source>
         <translation>遮挡体 LOD {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="624"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="640"/>
         <source>Base</source>
         <translation>基础</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="630"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="646"/>
         <source>Channel {}</source>
         <translation>通道 {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="644"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="660"/>
         <source>Surface</source>
         <translation>表面</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="701"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="717"/>
         <source>Normals</source>
         <translation>法线</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="702"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="718"/>
         <source>Tangents</source>
         <translation>切线</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="703"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="719"/>
         <source>Normal W (signed)</source>
         <translation>法线 W（带符号）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="704"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="720"/>
         <source>Pivot assignment</source>
         <translation>枢轴分配</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="705"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="721"/>
         <source>Tangent handedness</source>
         <translation>切线手性</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="710"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="726"/>
         <source>Primary weights</source>
         <translation>主权重</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="711"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="727"/>
         <source>Extra weights</source>
         <translation>额外权重</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="712"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="728"/>
         <source>Additional vertex weights</source>
         <translation>附加顶点权重</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="713"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="729"/>
         <source>Bone-modifier effectors</source>
         <translation>骨骼修改器效应器</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="714"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="730"/>
         <source>Shape-key / secondary weights</source>
         <translation>形态键 / 次级权重</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="750"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="766"/>
         <source>Cannot preview {geometry}: {error}</source>
         <translation>无法预览 {geometry}：{error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="917"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="933"/>
         <source>MPLY meshlet data</source>
         <translation>MPLY 网格簇数据</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1161"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1177"/>
         <source>Overview</source>
         <translation>概览</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1176"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1192"/>
         <source>Version profile</source>
         <translation>版本配置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1196"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1212"/>
         <source>Accepted version pairs</source>
         <translation>接受的版本对</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1206"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1222"/>
         <source>Header metadata</source>
         <translation>头部元数据</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1270"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1286"/>
         <source>Light map</source>
         <translation>光照贴图</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1273"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1289"/>
         <source>Used</source>
         <translation>已使用</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1276"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1292"/>
         <source>Reserved allocation</source>
         <translation>保留分配</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1280"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1296"/>
         <source>Header offsets</source>
         <translation>头部偏移</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1296"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1312"/>
         <source>Enabled mesh features</source>
         <translation>已启用的网格功能</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1432"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1448"/>
         <source>Vertex/index buffers</source>
         <translation>顶点/索引缓冲区</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1693"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1709"/>
         <source>Shadow mesh</source>
         <translation>阴影网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1694"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1710"/>
         <source>Occluder mesh</source>
         <translation>遮挡网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1769"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1785"/>
         <source>Skeleton</source>
         <translation>骨架</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1832"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1848"/>
         <source>Blend shapes</source>
         <translation>混合形状</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2165"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2181"/>
         <source>Normal recalculation</source>
         <translation>法线重新计算</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2378"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2394"/>
         <source>Bounding boxes</source>
         <translation>包围盒</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2401"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2417"/>
         <source>Group pivots</source>
         <translation>组枢轴</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2421"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2437"/>
         <source>Name tables</source>
         <translation>名称表</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2438"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2454"/>
         <source>File sections</source>
         <translation>文件分区</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2450"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2466"/>
         <source>Semantic notes</source>
         <translation>语义说明</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="336"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="709"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="348"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="725"/>
         <source>Vertex colors</source>
         <translation>顶点颜色</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="337"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="349"/>
         <source>Multiply textured preview by mesh vertex colors</source>
         <translation>将纹理预览与网格顶点颜色相乘</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="463"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="477"/>
         <source>Resolved material textures</source>
         <translation>已解析的材质纹理</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="416"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="430"/>
         <source>Mesh</source>
         <translation>网格</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="418"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="432"/>
         <source>Type</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="419"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="433"/>
         <source>Texture</source>
         <translation>纹理</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="420"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="434"/>
         <source>Status</source>
         <translation>状态</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="435"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2492"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="449"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2508"/>
         <source>Select a material to preview its texture.</source>
         <translation>选择一个材质以预览其纹理。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="464"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="478"/>
         <source>Parsed mesh structure</source>
         <translation>解析的网格结构</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="454"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="468"/>
         <source>Field</source>
         <translation>字段</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="454"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="468"/>
         <source>Value</source>
         <translation>值</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="471"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="485"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="475"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="489"/>
         <source>Inspect the referenced distance volume or bake a replacement.</source>
         <translation>检查引用的距离体积，或烘焙一个替换体积。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="476"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="490"/>
         <source>No verified SDFTEX resource profile for this mesh build.</source>
         <translation>此网格构建没有经过验证的 SDFTEX 资源配置。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="486"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="500"/>
         <source>Distance field</source>
         <translation>距离场</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="575"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="591"/>
         <source>MDF: {path}</source>
         <translation>MDF：{path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="578"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="594"/>
         <source>MDF: not found</source>
         <translation>MDF：未找到</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2482"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2498"/>
         <source>No material mappings found.</source>
         <translation>未找到材质映射。</translation>
     </message>
@@ -14485,82 +16686,132 @@ All parameters and texture slots were synchronized and validated after save/relo
 <context>
     <name>MotionEditor</name>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="77"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="79"/>
         <source>Undo (Ctrl+Z)</source>
         <translation>撤销 (Ctrl+Z)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="78"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="80"/>
         <source>Redo (Ctrl+Y)</source>
         <translation>重做 (Ctrl+Y)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="84"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="85"/>
+        <source>Export the selected motions to a .blend, one action each</source>
+        <translation>将所选动作导出到 .blend，每个动作对应一个 Action</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="94"/>
         <source>Duplicate (Ctrl+D)</source>
         <translation>复制副本 (Ctrl+D)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="85"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="95"/>
         <source>Delete (Del)</source>
         <translation>删除 (Del)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/editor/motion_editor.py" line="86"/>
-        <source>Export the motions to a .blend, one action each</source>
-        <translation>将动作导出到 .blend，每个动作对应一个 Action</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="87"/>
         <source>Blender</source>
         <translation>Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="88"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="89"/>
+        <source>Onto an armature in a .blend…</source>
+        <translation>导出到 .blend 中的骨架上…</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="89"/>
+        <source>As a new .blend…</source>
+        <translation>作为新的 .blend…</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="90"/>
+        <source>As a new .blend with the previewed meshes…</source>
+        <translation>作为包含预览网格的新 .blend…</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="96"/>
         <source>Replace the motion&apos;s keys with an action from a .blend</source>
         <translation>用 .blend 中的 Action 替换该动作的关键帧</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="239"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="247"/>
         <source>Export to Blender</source>
         <translation>导出到 Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="243"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="252"/>
+        <source>Select a motion first.</source>
+        <translation>请先选择一个动作。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="253"/>
         <source>Exporting needs a motion and a skeleton: this file holds no skeleton, and no prefab is previewed.</source>
         <translation>导出需要动作和骨架：此文件不包含骨架，且未预览任何预制体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="251"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="259"/>
+        <source>No mesh shown in the preview takes this motion: preview a prefab that holds its joints.</source>
+        <translation>预览中显示的网格都不适用此动作：请预览包含其关节的预制体。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="264"/>
+        <source>Export {0} motions to Blender</source>
+        <translation>将 {0} 个动作导出到 Blender</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="267"/>
+        <source>Export onto an armature in a .blend</source>
+        <translation>导出到 .blend 中的骨架上</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="268"/>
+        <source>Reading the armatures…</source>
+        <translation>正在读取骨架…</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="274"/>
+        <source>Armature</source>
+        <translation>骨架</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="281"/>
+        <source>None of the armature&apos;s bones map onto the motion&apos;s joints.</source>
+        <translation>骨架的骨骼都无法映射到该动作的关节上。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="288"/>
         <source>Writing the .blend…</source>
         <translation>正在写入 .blend…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="257"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="294"/>
         <source>Import from Blender</source>
         <translation>从 Blender 导入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="260"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="297"/>
         <source>Select a motion of this file first; its joints come from the file&apos;s skeleton or the previewed prefab.</source>
         <translation>请先选择此文件中的一个动作；其关节来自文件的骨架或正在预览的预制体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="267"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="300"/>
         <source>Reading the actions…</source>
         <translation>正在读取 Action…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="274"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="306"/>
         <source>The .blend has no action keying its armature&apos;s bones.</source>
         <translation>.blend 中没有为其骨架骨骼设置关键帧的 Action。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="278"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="310"/>
         <source>Action</source>
         <translation>Action</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="289"/>
+        <location filename="../../file_handlers/motion/editor/motion_editor.py" line="322"/>
         <source>The action keys none of the joints its bones map onto.</source>
         <translation>该 Action 没有为其骨骼所映射到的任何关节设置关键帧。</translation>
     </message>
@@ -15064,6 +17315,217 @@ This will remove it from all entries.</source>
     </message>
 </context>
 <context>
+    <name>Navigator</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="137"/>
+        <source>Filter nodes</source>
+        <translation>筛选节点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="153"/>
+        <source>Owner variables: the .uvar files whose variables the running component adds (its UserVariables, global files)</source>
+        <translation>所有者变量：运行中的组件所添加变量的 .uvar 文件（其 UserVariables、全局文件）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="154"/>
+        <source>Owner files</source>
+        <translation>所有者文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="156"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="156"/>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="156"/>
+        <source>File</source>
+        <translation>文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="165"/>
+        <source>Open the variable editor</source>
+        <translation>打开变量编辑器</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="166"/>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="168"/>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="211"/>
+        <source>Hierarchy</source>
+        <translation>层级</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="168"/>
+        <source>Variables</source>
+        <translation>变量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="169"/>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="346"/>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="213"/>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="431"/>
+        <source>Problems</source>
+        <translation>问题</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="172"/>
+        <source>Add a layer: a tree of its own, run beside the others</source>
+        <translation>添加层：一棵独立的树，与其他树并行运行</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="173"/>
+        <source>Layer</source>
+        <translation>层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="174"/>
+        <source>Remove the shown layer</source>
+        <translation>移除当前显示的层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="180"/>
+        <source>Timelines</source>
+        <translation>时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="250"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="251"/>
+        <source>Add layer</source>
+        <translation>添加层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="252"/>
+        <source>Remove layer</source>
+        <translation>移除层</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="324"/>
+        <source>Owner variables</source>
+        <translation>所有者变量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="326"/>
+        <source>User variables (*.uvar.*)</source>
+        <translation>用户变量 (*.uvar.*)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/navigator.py" line="346"/>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="431"/>
+        <source>Problems ({0})</source>
+        <translation>问题 ({0})</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="163"/>
+        <source>Filter objects</source>
+        <translation>筛选对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="179"/>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="196"/>
+        <source>Symbol</source>
+        <translation>元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="179"/>
+        <source>Class</source>
+        <translation>类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="179"/>
+        <source>Placed</source>
+        <translation>放置次数</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="195"/>
+        <source>New symbol: a group of objects with its own states, placed by controls</source>
+        <translation>新建元件：一组拥有自身状态的对象，由控件放置</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="197"/>
+        <source>Duplicate the symbol</source>
+        <translation>复制元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="198"/>
+        <source>Remove the symbol or the import</source>
+        <translation>移除元件或导入</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="199"/>
+        <source>Open the symbol alone</source>
+        <translation>单独打开元件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="205"/>
+        <source>Import a GUI file: UI/GUI/.../name.gui</source>
+        <translation>导入 GUI 文件：UI/GUI/.../name.gui</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="207"/>
+        <source>Choose one of the game&apos;s GUI files to import</source>
+        <translation>选择要导入的游戏 GUI 文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="210"/>
+        <source>Import: its symbols can be placed in this file</source>
+        <translation>导入：其元件可放置在此文件中</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="212"/>
+        <source>Library</source>
+        <translation>库</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="213"/>
+        <source>Sources</source>
+        <translation>来源</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="221"/>
+        <source>The files this tab has read: what the game&apos;s scenes give the view, then the files by kind</source>
+        <translation>此选项卡读取的文件：先是游戏场景为视图提供的内容，然后按类型列出文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="355"/>
+        <source>{0} was not found</source>
+        <translation>未找到 {0}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="377"/>
+        <source>{0} files ({1})</source>
+        <translation>{0} 文件（{1}）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="382"/>
+        <source>{0}
+read from {1}</source>
+        <translation>{0}
+读取自 {1}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="394"/>
+        <source>Class of the new symbol</source>
+        <translation>新元件的类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/navigator.py" line="416"/>
+        <source>Search the game&apos;s GUI files</source>
+        <translation>搜索游戏的 GUI 文件</translation>
+    </message>
+</context>
+<context>
     <name>NewColliderDialog</name>
     <message>
         <location filename="../../file_handlers/strands/forms.py" line="498"/>
@@ -15124,6 +17586,275 @@ This will remove it from all entries.</source>
         <location filename="../../file_handlers/strands/forms.py" line="553"/>
         <source>The tag is 64 bits written in hexadecimal.</source>
         <translation>标签是以十六进制书写的 64 位值。</translation>
+    </message>
+</context>
+<context>
+    <name>NewTextureDialog</name>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="67"/>
+        <source>Wrote {files}.</source>
+        <translation>已写入 {files}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="183"/>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="275"/>
+        <source>New Texture</source>
+        <translation>新建纹理</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="195"/>
+        <source>One packed image, written as stored</source>
+        <translation>单张打包图像，按存储方式写入</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="196"/>
+        <source>Take the image&apos;s channels as the texture&apos;s lanes; a block-compressed DDS keeps its encoded mips</source>
+        <translation>将图像的通道作为纹理的分量；块压缩的 DDS 会保留其已编码的 mip</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="199"/>
+        <source>Image file</source>
+        <translation>图像文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="204"/>
+        <source>Where to write the .tex</source>
+        <translation>.tex 的写入位置</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="208"/>
+        <source>Game</source>
+        <translation>游戏</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="208"/>
+        <source>Kind</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="209"/>
+        <source>Image</source>
+        <translation>图像</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="209"/>
+        <source>Output</source>
+        <translation>输出</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="260"/>
+        <source>Choose an image</source>
+        <translation>选择图像</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="266"/>
+        <source>Save .tex</source>
+        <translation>保存 .tex</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/lane_dialog.py" line="289"/>
+        <source>Give at least one lane an image: it sets the texture&apos;s size.</source>
+        <translation>请至少为一个分量指定图像：它决定纹理的尺寸。</translation>
+    </message>
+</context>
+<context>
+    <name>NineSliceEdit</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="116"/>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="126"/>
+        <source>Left</source>
+        <translation>左</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="116"/>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="126"/>
+        <source>Top</source>
+        <translation>顶部</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="116"/>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="127"/>
+        <source>Right</source>
+        <translation>右</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="116"/>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="127"/>
+        <source>Bottom</source>
+        <translation>底部</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="117"/>
+        <source>The width of the border on that side: corners keep their size, edges stretch along one axis, the centre along both</source>
+        <translation>该侧边框的宽度：角保持大小，边沿一个轴拉伸，中心沿两个轴拉伸</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="120"/>
+        <source>Border</source>
+        <translation>边框</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="123"/>
+        <source>Stored per cell; every file of the game holds 0 and the preview does not use it</source>
+        <translation>按单元格存储；游戏的所有文件中均为 0，预览不使用此值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="124"/>
+        <source>Cell</source>
+        <translation>单元格</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="124"/>
+        <source>The nine parts of the frame, row by row</source>
+        <translation>边框的九个部分，逐行排列</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="125"/>
+        <source>Repeat W</source>
+        <translation>横向重复</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="125"/>
+        <source>Repeat H</source>
+        <translation>纵向重复</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="126"/>
+        <source>Top left</source>
+        <translation>左上</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="126"/>
+        <source>Top right</source>
+        <translation>右上</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="126"/>
+        <source>Centre</source>
+        <translation>中心</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="127"/>
+        <source>Bottom left</source>
+        <translation>左下</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="127"/>
+        <source>Bottom right</source>
+        <translation>右下</translation>
+    </message>
+</context>
+<context>
+    <name>ObjectForm</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="138"/>
+        <source>{0} elements</source>
+        <translation>{0} 个元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="143"/>
+        <source>shared by {0}</source>
+        <translation>由 {0} 个字段共用</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="144"/>
+        <source>{0} fields hold this user data: an edit here is an edit for all of them</source>
+        <translation>有 {0} 个字段持有此用户数据：在此处编辑会影响所有这些字段</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="150"/>
+        <source>Add an element</source>
+        <translation>添加元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="152"/>
+        <source>Choose the user data</source>
+        <translation>选择用户数据</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="153"/>
+        <source>Choose the class</source>
+        <translation>选择类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="154"/>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="185"/>
+        <source>Remove the element</source>
+        <translation>移除元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="242"/>
+        <source>Edit field</source>
+        <translation>编辑字段</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="248"/>
+        <source>Choose...</source>
+        <translation>选择...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="252"/>
+        <source>Variable</source>
+        <translation>变量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="253"/>
+        <source>Set variable</source>
+        <translation>设置变量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="257"/>
+        <source>Timeline</source>
+        <translation>时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="258"/>
+        <source>Set timeline</source>
+        <translation>设置时间轴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="262"/>
+        <source>Hold point</source>
+        <translation>等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="263"/>
+        <source>Set hold point</source>
+        <translation>设置等待点</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="274"/>
+        <source>Set user data</source>
+        <translation>设置用户数据</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="282"/>
+        <source>User data</source>
+        <translation>用户数据</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="282"/>
+        <source>Class</source>
+        <translation>类</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="290"/>
+        <source>Set object</source>
+        <translation>设置对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="308"/>
+        <source>Add element</source>
+        <translation>添加元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/object_form.py" line="313"/>
+        <source>Remove element</source>
+        <translation>移除元素</translation>
     </message>
 </context>
 <context>
@@ -15435,6 +18166,14 @@ Failed to delete {error_count} files:
         <location filename="../../ui/outdated_files_dialog.py" line="467"/>
         <source>Successfully deleted {count} files.</source>
         <translation>已成功删除 {count} 个文件。</translation>
+    </message>
+</context>
+<context>
+    <name>Outline</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_outline.py" line="133"/>
+        <source>FSM {0}</source>
+        <translation>FSM {0}</translation>
     </message>
 </context>
 <context>
@@ -15861,7 +18600,7 @@ Failed to delete {error_count} files:
 <context>
     <name>PakThumbnailProvider</name>
     <message>
-        <location filename="../../ui/pak_icon_view.py" line="289"/>
+        <location filename="../../ui/pak_icon_view.py" line="258"/>
         <source>Streaming</source>
         <translation>流式</translation>
     </message>
@@ -16392,36 +19131,36 @@ Saved to:
         <translation>在文件夹中显示</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2127"/>
+        <location filename="../../ui/project_manager/manager.py" line="2129"/>
         <source>The REE.PAK packer ({}) is not downloaded yet
 </source>
         <translation>REE.PAK 打包工具（{}）尚未下载
 </translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2129"/>
+        <location filename="../../ui/project_manager/manager.py" line="2131"/>
         <source>A newer packer release ({}) is available
 </source>
         <translation>有新版打包工具（{}）可用
 </translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2154"/>
+        <location filename="../../ui/project_manager/manager.py" line="2156"/>
         <source>Packing {name}…</source>
         <translation>正在打包 {name}…</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2183"/>
+        <location filename="../../ui/project_manager/manager.py" line="2185"/>
         <source>Finished</source>
         <translation>已完成</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2183"/>
+        <location filename="../../ui/project_manager/manager.py" line="2185"/>
         <source>Failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2187"/>
+        <location filename="../../ui/project_manager/manager.py" line="2189"/>
         <source>Export completed.
 PAK file saved to:
 {}</source>
@@ -16638,32 +19377,32 @@ Open the settings dialog now?</source>
         <translation>ZIP 失败</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2130"/>
+        <location filename="../../ui/project_manager/manager.py" line="2132"/>
         <source>Do you want to download it now?</source>
         <translation>您想现在下载吗？</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2131"/>
+        <location filename="../../ui/project_manager/manager.py" line="2133"/>
         <source>Download packer?</source>
         <translation>下载打包工具？</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2137"/>
+        <location filename="../../ui/project_manager/manager.py" line="2139"/>
         <source>Download failed</source>
         <translation>下载失败</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2151"/>
+        <location filename="../../ui/project_manager/manager.py" line="2153"/>
         <source>REE.Packer output</source>
         <translation>REE.Packer 输出</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2191"/>
+        <location filename="../../ui/project_manager/manager.py" line="2193"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="2192"/>
+        <location filename="../../ui/project_manager/manager.py" line="2194"/>
         <source>PAK packer returned an error.</source>
         <translation>PAK 打包工具返回了一个错误。</translation>
     </message>
@@ -17052,6 +19791,49 @@ This will permanently remove:
     </message>
 </context>
 <context>
+    <name>Properties</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="48"/>
+        <source>(first state)</source>
+        <translation>（第一个状态）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="51"/>
+        <source>Remove the script value: the file&apos;s value shows again</source>
+        <translation>移除脚本值：重新显示文件中的值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="53"/>
+        <source>Remove this placement&apos;s own value: the symbol&apos;s value shows again</source>
+        <translation>移除此放置自身的值：重新显示元件的值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="67"/>
+        <source>stored while {0} is {1}</source>
+        <translation>仅在 {0} 为 {1} 时存储</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="69"/>
+        <source>the game&apos;s class does not read it</source>
+        <translation>游戏的类不读取它</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="87"/>
+        <source>Animated in {0}: the value shown is the state&apos;s at the playhead, and a change keys it there. Click to add a key at frame {1:g} that holds it.</source>
+        <translation>在 {0} 中有动画：显示的是播放头处该状态的值，修改会在该处设置关键帧。单击可在第 {1:g} 帧添加保持此值的关键帧。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="90"/>
+        <source>Animate in {0}: the value becomes the first key at frame 0, and a change at another frame keys it there.</source>
+        <translation>在 {0} 中制作动画：该值将成为第 0 帧的第一个关键帧，在其他帧修改会在该处设置关键帧。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="92"/>
+        <source>Animated in {0}: while such a state plays, its keys set the value. Click to show the state.</source>
+        <translation>在 {0} 中有动画：播放该状态时，由其关键帧设置此值。单击可显示该状态。</translation>
+    </message>
+</context>
+<context>
     <name>QStarWidget</name>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="132"/>
@@ -17062,178 +19844,183 @@ This will permanently remove:
 <context>
     <name>REasyEditorApp</name>
     <message>
-        <location filename="../../ui/main_window.py" line="453"/>
+        <location filename="../../ui/main_window.py" line="455"/>
         <source>Save All Modified Files</source>
         <translation>保存所有已修改文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1445"/>
+        <location filename="../../ui/main_window.py" line="1459"/>
         <source>No modified files to save.</source>
         <translation>没有需要保存的已修改文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1448"/>
+        <location filename="../../ui/main_window.py" line="1462"/>
         <source>Saved {count} modified file(s).</source>
         <translation>已保存 {count} 个已修改文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1452"/>
+        <location filename="../../ui/main_window.py" line="1466"/>
         <source>Saved {saved} modified file(s); {failed} could not be saved.</source>
         <translation>已保存 {saved} 个已修改文件；{failed} 个文件无法保存。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="434"/>
+        <location filename="../../ui/main_window.py" line="436"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="188"/>
+        <location filename="../../ui/main_window.py" line="190"/>
         <source>Game used to read RSZ files. Change it in File &gt; Settings.</source>
         <translation>用于读取 RSZ 文件的游戏。可在“文件 &gt; 设置”中更改。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="436"/>
+        <location filename="../../ui/main_window.py" line="438"/>
         <source>Open File...</source>
         <translation>打开文件...</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="438"/>
+        <location filename="../../ui/main_window.py" line="440"/>
         <source>New Project (Create Mod)...</source>
         <translation>新建项目（创建模组）...</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="440"/>
+        <location filename="../../ui/main_window.py" line="442"/>
         <source>Close Project</source>
         <translation>关闭项目</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="450"/>
+        <location filename="../../ui/main_window.py" line="452"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="457"/>
+        <location filename="../../ui/main_window.py" line="459"/>
         <source>Save As...</source>
         <translation>另存为...</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="458"/>
+        <location filename="../../ui/main_window.py" line="460"/>
         <source>Restore Backup...</source>
         <translation>恢复备份...</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="459"/>
+        <location filename="../../ui/main_window.py" line="461"/>
         <source>Reload</source>
         <translation>重新加载</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="460"/>
+        <location filename="../../ui/main_window.py" line="462"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="463"/>
+        <location filename="../../ui/main_window.py" line="465"/>
         <source>Reopen Last Closed File</source>
         <translation>重新打开上次关闭的文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="469"/>
+        <location filename="../../ui/main_window.py" line="471"/>
         <source>Recently Closed Files</source>
         <translation>最近关闭的文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="475"/>
+        <location filename="../../ui/main_window.py" line="477"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="476"/>
+        <location filename="../../ui/main_window.py" line="478"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="478"/>
         <location filename="../../ui/main_window.py" line="480"/>
+        <location filename="../../ui/main_window.py" line="482"/>
         <source>Find</source>
         <translation>查找</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="483"/>
+        <location filename="../../ui/main_window.py" line="485"/>
         <source>Search Directory for GUID</source>
         <translation>在目录中搜索 GUID</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="489"/>
+        <location filename="../../ui/main_window.py" line="491"/>
         <source>Search Directory for Text</source>
         <translation>在目录中搜索文本</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="495"/>
+        <location filename="../../ui/main_window.py" line="497"/>
         <source>Search Directory for Number</source>
         <translation>在目录中搜索数字</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="501"/>
+        <location filename="../../ui/main_window.py" line="503"/>
         <source>Search Directory for Hex</source>
         <translation>在目录中搜索十六进制</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="507"/>
+        <location filename="../../ui/main_window.py" line="509"/>
         <source>Find/Replace RSZ Field Value</source>
         <translation>查找/替换 RSZ 字段值</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="512"/>
+        <location filename="../../ui/main_window.py" line="514"/>
         <source>View</source>
         <translation>视图</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="516"/>
+        <location filename="../../ui/main_window.py" line="518"/>
         <source>Previous Tab</source>
         <translation>上一标签页</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="518"/>
+        <location filename="../../ui/main_window.py" line="520"/>
         <source>Next Tab</source>
         <translation>下一标签页</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="545"/>
+        <location filename="../../ui/main_window.py" line="547"/>
         <source>Scene</source>
         <translation>场景</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="548"/>
+        <location filename="../../ui/main_window.py" line="550"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="549"/>
+        <location filename="../../ui/main_window.py" line="551"/>
         <source>GUID Converter</source>
         <translation>GUID 转换器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="550"/>
+        <location filename="../../ui/main_window.py" line="552"/>
         <source>Hash Calculator</source>
         <translation>哈希计算器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="556"/>
+        <location filename="../../ui/main_window.py" line="558"/>
         <source>RSZ Diff Viewer</source>
         <translation>RSZ 差异查看器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="558"/>
+        <location filename="../../ui/main_window.py" line="560"/>
         <source>File List Generator</source>
         <translation>文件列表生成器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="559"/>
+        <location filename="../../ui/main_window.py" line="561"/>
         <source>Import Mesh from Blender…</source>
         <translation>从 Blender 导入网格…</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="565"/>
+        <location filename="../../ui/main_window.py" line="562"/>
+        <source>New Texture…</source>
+        <translation>新建纹理…</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="568"/>
         <source>CSV Extractor (RSZ Data Matcher)</source>
         <translation>CSV 提取器（RSZ 数据匹配）</translation>
     </message>
@@ -17282,172 +20069,170 @@ Please select the correct unpacked game directory.</source>
         <translation>所选目录中未找到 .pak 文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="401"/>
-        <location filename="../../ui/main_window.py" line="1230"/>
-        <location filename="../../ui/main_window.py" line="1347"/>
-        <location filename="../../ui/main_window.py" line="1424"/>
-        <location filename="../../ui/main_window.py" line="1431"/>
+        <location filename="../../ui/main_window.py" line="403"/>
+        <location filename="../../ui/main_window.py" line="1242"/>
+        <location filename="../../ui/main_window.py" line="1359"/>
         <location filename="../../ui/main_window.py" line="1438"/>
-        <location filename="../../ui/main_window.py" line="1468"/>
+        <location filename="../../ui/main_window.py" line="1445"/>
+        <location filename="../../ui/main_window.py" line="1452"/>
+        <location filename="../../ui/main_window.py" line="1482"/>
+        <location filename="../../ui/main_window.py" line="1670"/>
         <location filename="../../ui/main_window.py" line="1674"/>
-        <location filename="../../ui/main_window.py" line="1678"/>
-        <location filename="../../ui/main_window.py" line="1713"/>
+        <location filename="../../ui/main_window.py" line="1709"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="194"/>
+        <location filename="../../ui/main_window.py" line="196"/>
         <source>Output</source>
         <translation>输出</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="325"/>
+        <location filename="../../ui/main_window.py" line="327"/>
         <source>{name} — {parent}</source>
         <translation>{name} — {parent}</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="521"/>
+        <location filename="../../ui/main_window.py" line="523"/>
         <source>Toggle Output</source>
         <translation>切换输出</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="532"/>
+        <location filename="../../ui/main_window.py" line="534"/>
         <source>Split Editor Right</source>
         <translation>向右拆分编辑器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="539"/>
+        <location filename="../../ui/main_window.py" line="541"/>
         <source>Split Editor Down</source>
         <translation>向下拆分编辑器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="804"/>
+        <location filename="../../ui/main_window.py" line="768"/>
+        <source>Support</source>
+        <translation>支持</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="769"/>
+        <source>Support REasy&apos;s development</source>
+        <translation>支持 REasy 的开发</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="816"/>
         <source>Game: {game}</source>
         <translation>游戏：{game}</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1039"/>
+        <location filename="../../ui/main_window.py" line="1051"/>
         <source>Restore Tab</source>
         <translation>恢复标签页</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1040"/>
+        <location filename="../../ui/main_window.py" line="1052"/>
         <source>Could not restore {path}.</source>
         <translation>无法恢复 {path}。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1230"/>
+        <location filename="../../ui/main_window.py" line="1242"/>
         <source>No active tab for searching.</source>
         <translation>没有可搜索的活动标签页。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1234"/>
+        <location filename="../../ui/main_window.py" line="1246"/>
         <source>Search in MSG</source>
         <translation>在 MSG 中搜索</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1306"/>
+        <location filename="../../ui/main_window.py" line="1318"/>
         <source>JSON Path Not Set</source>
         <translation>JSON 路径未设置</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1307"/>
+        <location filename="../../ui/main_window.py" line="1319"/>
         <source>RSZ type registry JSON path is not set.
 Would you like to set it now?</source>
         <translation>未设置 RSZ 类型注册表 JSON 路径。
 是否现在设置？</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1348"/>
+        <location filename="../../ui/main_window.py" line="1360"/>
         <source>Failed to open file: {error}</source>
         <translation>打开文件失败：{error}</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1431"/>
-        <location filename="../../ui/main_window.py" line="1438"/>
+        <location filename="../../ui/main_window.py" line="1445"/>
+        <location filename="../../ui/main_window.py" line="1452"/>
         <source>No active tab to save.</source>
         <translation>没有可保存的活动标签页。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1468"/>
+        <location filename="../../ui/main_window.py" line="1482"/>
         <source>No active tab to reload.</source>
         <translation>没有可重新加载的活动标签页。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1570"/>
         <location filename="../../ui/main_window.py" line="1584"/>
+        <location filename="../../ui/main_window.py" line="1598"/>
         <source>Reopen Closed File</source>
         <translation>重新打开已关闭文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1572"/>
+        <location filename="../../ui/main_window.py" line="1586"/>
         <source>Failed to reopen {filename}. Remove it from recently closed files?</source>
         <translation>重新打开 {filename} 失败。要将其从最近关闭的文件中移除吗？</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1585"/>
+        <location filename="../../ui/main_window.py" line="1599"/>
         <source>No recently closed files to reopen.</source>
         <translation>没有可重新打开的最近关闭文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1594"/>
+        <location filename="../../ui/main_window.py" line="1608"/>
         <source>No recently closed files</source>
         <translation>没有最近关闭的文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1605"/>
+        <location filename="../../ui/main_window.py" line="1619"/>
         <source>Clear Recently Closed Files</source>
         <translation>清空最近关闭的文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1652"/>
-        <source>Support REasy Editor</source>
-        <translation>支持 REasy 编辑器</translation>
-    </message>
-    <message>
-        <location filename="../../ui/main_window.py" line="1655"/>
-        <source>Thank you for your feedback and support!
-Your contributions help keep this project going.</source>
-        <translation>感谢您的反馈和支持！
-您的贡献帮助这个项目持续发展。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/main_window.py" line="1674"/>
+        <location filename="../../ui/main_window.py" line="1670"/>
         <source>No active tab to restore the backup of.</source>
         <translation>没有可恢复备份的活动标签页。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1678"/>
+        <location filename="../../ui/main_window.py" line="1674"/>
         <source>File has not been saved yet.</source>
         <translation>文件尚未保存。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1683"/>
+        <location filename="../../ui/main_window.py" line="1679"/>
         <source>No Backups</source>
         <translation>没有备份可用</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1683"/>
+        <location filename="../../ui/main_window.py" line="1679"/>
         <source>No backup files found for this file.</source>
         <translation>未找到此文件的备份文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1687"/>
+        <location filename="../../ui/main_window.py" line="1683"/>
         <source>Available Backups for {filename}</source>
         <translation>{filename} 的可用备份</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1701"/>
+        <location filename="../../ui/main_window.py" line="1697"/>
         <source>Select a backup to restore:</source>
         <translation>选择要恢复的备份：</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1713"/>
+        <location filename="../../ui/main_window.py" line="1709"/>
         <source>No backup selected.</source>
         <translation>未选择备份。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1720"/>
+        <location filename="../../ui/main_window.py" line="1716"/>
         <source>Are you sure you want to restore the backup from:
 {time}?
 
@@ -17458,30 +20243,30 @@ Current changes will be lost.</source>
 当前更改将丢失。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1725"/>
+        <location filename="../../ui/main_window.py" line="1721"/>
         <source>Confirm Restore</source>
         <translation>确认恢复</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1733"/>
+        <location filename="../../ui/main_window.py" line="1729"/>
         <source>Success</source>
         <translation>成功</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1733"/>
+        <location filename="../../ui/main_window.py" line="1729"/>
         <source>Backup restored successfully</source>
         <translation>备份恢复成功</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="553"/>
+        <location filename="../../ui/main_window.py" line="555"/>
         <source>Outdated Files Detector</source>
         <translation>过时文件检测器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="299"/>
-        <location filename="../../ui/main_window.py" line="307"/>
+        <location filename="../../ui/main_window.py" line="301"/>
+        <location filename="../../ui/main_window.py" line="309"/>
         <location filename="../../ui/main_window.py" line="684"/>
-        <location filename="../../ui/main_window.py" line="1330"/>
+        <location filename="../../ui/main_window.py" line="1342"/>
         <source>Untitled</source>
         <translation>无标题</translation>
     </message>
@@ -17493,91 +20278,81 @@ Save before closing?</source>
 关闭前保存吗？</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1234"/>
+        <location filename="../../ui/main_window.py" line="1246"/>
         <source>MSG files have their own search bar at the top of the editor.</source>
         <translation>MSG 文件在编辑器顶部有自己的搜索栏。</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1281"/>
+        <location filename="../../ui/main_window.py" line="1293"/>
         <source>The file {filename} has unsaved changes.
 Save before reopening?</source>
         <translation>文件 {filename} 有未保存的更改。
 重新打开前保存吗？</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="1401"/>
+        <location filename="../../ui/main_window.py" line="1413"/>
         <source>Open File</source>
         <translation>打开文件</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="569"/>
+        <location filename="../../ui/main_window.py" line="572"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="108"/>
+        <location filename="../../ui/main_window.py" line="110"/>
         <source>REasy Editor v{version}</source>
         <translation>REasy 编辑器 v{version}</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="184"/>
+        <location filename="../../ui/main_window.py" line="186"/>
         <source>Ready</source>
         <translation>就绪</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="402"/>
+        <location filename="../../ui/main_window.py" line="404"/>
         <source>Failed to load {path}: {error}</source>
         <translation>加载 {path} 失败：{error}</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="439"/>
+        <location filename="../../ui/main_window.py" line="441"/>
         <source>Project Library...</source>
         <translation>项目库...</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="570"/>
+        <location filename="../../ui/main_window.py" line="573"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="571"/>
+        <location filename="../../ui/main_window.py" line="574"/>
         <source>What&apos;s new?</source>
         <translation>有什么新功能？</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="572"/>
+        <location filename="../../ui/main_window.py" line="575"/>
         <source>REasy Wiki</source>
         <translation>REasy 维基</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="574"/>
-        <source>Donate</source>
-        <translation>捐助</translation>
-    </message>
-    <message>
-        <location filename="../../ui/main_window.py" line="575"/>
-        <source>Support REasy</source>
-        <translation>支持 REasy</translation>
-    </message>
-    <message>
-        <location filename="../../ui/main_window.py" line="557"/>
+        <location filename="../../ui/main_window.py" line="559"/>
         <source>PAK Browser</source>
         <translation>PAK 浏览器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="213"/>
         <location filename="../../ui/main_window.py" line="215"/>
-        <location filename="../../ui/main_window.py" line="238"/>
+        <location filename="../../ui/main_window.py" line="217"/>
+        <location filename="../../ui/main_window.py" line="240"/>
         <source>AI Assistant</source>
         <translation>AI 助手</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="237"/>
+        <location filename="../../ui/main_window.py" line="239"/>
         <source>AI</source>
         <translation>AI</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="240"/>
+        <location filename="../../ui/main_window.py" line="242"/>
         <source>Show or hide AI Assistant</source>
         <translation>显示或隐藏 AI 助手</translation>
     </message>
@@ -18761,6 +21536,43 @@ Output folder: {output_folder}</source>
     </message>
 </context>
 <context>
+    <name>RecordInspector</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="72"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="97"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="110"/>
+        <source>Edit {0}</source>
+        <translation>编辑 {0}</translation>
+    </message>
+</context>
+<context>
+    <name>RecordTable</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="169"/>
+        <source>Add rows</source>
+        <translation>添加行</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="173"/>
+        <source>Remove rows</source>
+        <translation>移除行</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="189"/>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="192"/>
+        <source>Edit {0}</source>
+        <translation>编辑 {0}</translation>
+    </message>
+</context>
+<context>
     <name>ReferencePicker</name>
     <message>
         <location filename="../../file_handlers/mesh/blender_reference_dialog.py" line="100"/>
@@ -19068,6 +21880,39 @@ Output folder: {output_folder}</source>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="94"/>
         <source>Invalid Loop or Marker</source>
         <translation>无效的循环或标记</translation>
+    </message>
+</context>
+<context>
+    <name>Rows</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/rows.py" line="41"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/rows.py" line="42"/>
+        <source>Add</source>
+        <translation>添加</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/rows.py" line="62"/>
+        <source>Move up</source>
+        <translation>上移</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/rows.py" line="63"/>
+        <source>Move down</source>
+        <translation>下移</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/rows.py" line="64"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/rows.py" line="65"/>
+        <source>Remove</source>
+        <translation>移除</translation>
     </message>
 </context>
 <context>
@@ -20943,13 +23788,13 @@ Do you want to continue parsing this file?</source>
         <translation>场景预览已过时。请重新加载场景，以根据编辑后的 SCN 重新构建。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="697"/>
-        <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="726"/>
+        <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="698"/>
+        <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="727"/>
         <source>No SCN is loaded.</source>
         <translation>未加载 SCN。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="721"/>
+        <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="722"/>
         <source>Building source-aware SCN scene graph...</source>
         <translation>正在构建带来源信息的 SCN 场景图...</translation>
     </message>
@@ -24529,88 +27374,88 @@ Primitive: {topology}.</source>
 <context>
     <name>SoundViewer</name>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="156"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="157"/>
         <source>Duration</source>
         <translation>时长</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="885"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="886"/>
         <source>Codec</source>
         <translation>编解码器</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="950"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="951"/>
         <source>Channels</source>
         <translation>声道</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2020"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2021"/>
         <source>Export All Tracks</source>
         <translation>导出所有轨道</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1800"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1849"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1859"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1871"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1886"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1900"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1904"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1918"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1801"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1850"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1860"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1872"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1887"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1901"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1905"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1919"/>
         <source>Export Error</source>
         <translation>导出错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1773"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2497"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2503"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2602"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1774"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2498"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2504"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2603"/>
         <source>Replace Error</source>
         <translation>替换错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2701"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2717"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2726"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2848"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2702"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2718"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2727"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2849"/>
         <source>Bulk Replace</source>
         <translation>批量替换</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1566"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1617"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1567"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1618"/>
         <source>Playback</source>
         <translation>播放</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="976"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1389"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="977"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1390"/>
         <source>Play</source>
         <translation>播放</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="977"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="978"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1207"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1208"/>
         <source>Skip Silence</source>
         <translation>跳过静音</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1908"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1909"/>
         <source>Export WAV</source>
         <translation>导出 WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1836"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1837"/>
         <source>Export WEM</source>
         <translation>导出 WEM</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1408"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1411"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1409"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1412"/>
         <source>{action} Error</source>
         <translation>{action}错误</translation>
     </message>
@@ -24620,505 +27465,505 @@ Primitive: {topology}.</source>
         <translation>下载 VGMStream CLI？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1539"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1540"/>
         <source>Decode Error</source>
         <translation>解码错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1800"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1801"/>
         <source>Failed to export {label}:
 {error}</source>
         <translation>导出 {label} 失败：
 {error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1830"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1852"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1831"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1853"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2014"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2087"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2015"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2088"/>
         <source>Export All</source>
         <translation>全部导出</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2018"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2019"/>
         <source>Export format:</source>
         <translation>导出格式：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2025"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2745"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2026"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2746"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2488"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2490"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2489"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2491"/>
         <source>Replace</source>
         <translation>替换</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2468"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2469"/>
         <source>Select Replacement Audio</source>
         <translation>选择替换音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1634"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1635"/>
         <source>Decode failed.</source>
         <translation>解码失败。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2856"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2857"/>
         <source>Analyze Error</source>
         <translation>分析错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="153"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="154"/>
         <source>#</source>
         <translation>#</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="154"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="155"/>
         <source>Source ID</source>
         <translation>源 ID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="155"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="156"/>
         <source>Where to edit</source>
         <translation>编辑位置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="157"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="158"/>
         <source>Format</source>
         <translation>格式</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="158"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="159"/>
         <source>Used by</source>
         <translation>使用者</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="444"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="445"/>
         <source>No sound profile matches this game. IDs are shown numerically, and linked-file replacement is unavailable.</source>
         <translation>没有声音配置文件匹配此游戏。ID 将以数字显示，无法替换链接文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="457"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="865"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="458"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="866"/>
         <source>Match original WEM (Recommended)</source>
         <translation>匹配原始 WEM（推荐）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="475"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="890"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="476"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="891"/>
         <source>Low</source>
         <translation>低</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="476"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="890"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="477"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="891"/>
         <source>Medium</source>
         <translation>中</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="477"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="891"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="478"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="892"/>
         <source>High</source>
         <translation>高</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="478"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="891"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="479"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="892"/>
         <source>Maximum</source>
         <translation>最高</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="510"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4569"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="511"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4568"/>
         <source>Unavailable</source>
         <translation>不可用</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="512"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="539"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="513"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="540"/>
         <source>Exact quality</source>
         <translation>精确质量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="515"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="516"/>
         <source>Target bitrate</source>
         <translation>目标比特率</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="534"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="535"/>
         <source>Average bitrate</source>
         <translation>平均比特率</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="535"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="935"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="536"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="936"/>
         <source> kbps/ch</source>
         <translation> 千比特/秒/声道</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="564"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="565"/>
         <source>Available after explicitly selecting Wwise Vorbis or WEM Opus.</source>
         <translation>仅在明确选择 Wwise Vorbis 或 WEM Opus 后可用。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="568"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="569"/>
         <source>Vorbis bitrate values are per channel. Optional bounds constrain the encoder around the average target.</source>
         <translation>Vorbis 比特率按声道计算。可选范围会限制编码器围绕平均目标值工作。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="574"/>
         <source>The exact value replaces the simple quality preset above.</source>
         <translation>精确值会替代上面的简单质量预设。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="660"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="661"/>
         <source>Sound Modding</source>
         <translation>声音模组</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="661"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="662"/>
         <source>Reading the sound container…</source>
         <translation>正在读取声音容器…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="675"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2896"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="676"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2897"/>
         <source>Audio</source>
         <translation>音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="676"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="788"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="677"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="789"/>
         <source>All Objects</source>
         <translation>所有对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="677"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="678"/>
         <source>Bank Settings</source>
         <translation>Bank 设置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="695"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="696"/>
         <source>Sound container</source>
         <translation>声音容器</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="706"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="707"/>
         <source>Open Full Streaming PCK…</source>
         <translation>打开完整流式 PCK…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="711"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="712"/>
         <source>Open the full package containing this indexed audio.</source>
         <translation>打开包含此索引音频的完整包。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="716"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="717"/>
         <source>Open Companion…</source>
         <translation>打开配套文件…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="734"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="735"/>
         <source>1. Choose an event</source>
         <translation>1. 选择事件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="738"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="739"/>
         <source>Find event name, ShortID, or source ID</source>
         <translation>查找事件名称、ShortID 或源 ID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="749"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="750"/>
         <source>New Event…</source>
         <translation>新建事件…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="750"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4151"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="751"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4150"/>
         <source>Edit Actions…</source>
         <translation>编辑动作…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="762"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="763"/>
         <source>2. Edit playback flow and audio</source>
         <translation>2. 编辑播放流程和音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="764"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="765"/>
         <source>All media sources</source>
         <translation>所有媒体源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="785"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="786"/>
         <source>Event playback graph</source>
         <translation>事件播放图</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="797"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="798"/>
         <source>Hover a node to trace its links. Double-click to edit; scroll to zoom; drag to move the graph.</source>
         <translation>将鼠标悬停在节点上以跟踪链接。双击编辑；滚动缩放；拖动移动图表。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="792"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="793"/>
         <source>Fit</source>
         <translation>适应</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="806"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="807"/>
         <source>Select a node for details; double-click to edit or preview.</source>
         <translation>选择节点查看详情；双击编辑或预览。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="811"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="812"/>
         <source>Edit…</source>
         <translation>编辑…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="812"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="813"/>
         <source>Add Action…</source>
         <translation>添加动作…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="813"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="814"/>
         <source>Detach Action</source>
         <translation>分离动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="814"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1076"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="815"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1077"/>
         <source>Connect Child…</source>
         <translation>连接子对象…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="815"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1077"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="816"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1078"/>
         <source>Disconnect Child…</source>
         <translation>断开子对象…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="817"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4359"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="818"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4358"/>
         <source>Delete Event</source>
         <translation>删除事件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="840"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4675"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="841"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4674"/>
         <source>Select a media source</source>
         <translation>选择媒体源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="869"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="870"/>
         <source>Keep imported WAV rate</source>
         <translation>保留导入 WAV 采样率</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="872"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="873"/>
         <source>Matching the original keeps the game&apos;s storage and runtime profile. A codec-required rate, such as RE4 WEM Opus at 48 kHz, always wins.</source>
         <translation>匹配原始文件会保留游戏的存储和运行时配置文件。编解码器要求的采样率（例如 RE4 WEM Opus 的 48 kHz）始终优先。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="882"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="883"/>
         <source>Match the original WEM for safest replacement, or explicitly choose another codec supported by this game&apos;s Wwise version.</source>
         <translation>为了安全替换，请匹配原始 WEM；也可以明确选择此游戏 Wwise 版本支持的其他编解码器。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="889"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="890"/>
         <source>Current default (Recommended)</source>
         <translation>当前默认值（推荐）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="895"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="896"/>
         <source>Quality is codec-aware: Vorbis uses quality factors 0, 2, 4, and 10; WEM Opus uses 32, 64, 128, and 256. PCM and ADPCM have no adjustable compression quality.</source>
         <translation>质量取决于编解码器：Vorbis 使用质量因子 0、2、4 和 10；WEM Opus 使用 32、64、128 和 256。PCM 与 ADPCM 没有可调压缩质量。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="904"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="905"/>
         <source>Advanced compression</source>
         <translation>高级压缩</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="908"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="909"/>
         <source>Override the simple quality preset with exact codec parameters. An explicit WAV import codec must be selected.</source>
         <translation>使用精确编解码器参数覆盖简单质量预设。必须选择明确的 WAV 导入编解码器。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="916"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="917"/>
         <source>Mode</source>
         <translation>模式</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="923"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="924"/>
         <source>Value</source>
         <translation>值</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="944"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="945"/>
         <source>Minimum bitrate</source>
         <translation>最小比特率</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="947"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="948"/>
         <source>Maximum bitrate</source>
         <translation>最大比特率</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="953"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="954"/>
         <source>As input (Recommended)</source>
         <translation>与输入相同（推荐）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="954"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1552"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="955"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1553"/>
         <source>Mono</source>
         <translation>单声道</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="955"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="956"/>
         <source>Stereo</source>
         <translation>立体声</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="959"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="960"/>
         <source>Mono and Stereo may reduce package size but intentionally change the authored channel layout. Mono input is not upmixed to stereo.</source>
         <translation>单声道和立体声可能减小包大小，但会有意改变创作的声道布局。单声道输入不会上混为立体声。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="982"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4617"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="983"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4616"/>
         <source>Replace Audio…</source>
         <translation>替换音频…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="984"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="985"/>
         <source>WAV import uses the codec, quality and sample rate from Replacement Settings; the defaults match the original WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV has none.</source>
         <translation>WAV 导入使用“替换设置”中的编解码器、质量和采样率；默认值与原始 WEM 一致。循环、提示点和标记取自 WAV；若 WAV 中没有，则取自原始 WEM。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="988"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="989"/>
         <source>Loop / Markers…</source>
         <translation>循环/标记…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="989"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4617"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="990"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4616"/>
         <source>Export WEM…</source>
         <translation>导出 WEM…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="993"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4617"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="994"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4616"/>
         <source>Export WAV…</source>
         <translation>导出 WAV…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="994"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="995"/>
         <source>Bulk Replace…</source>
         <translation>批量替换…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="996"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="997"/>
         <source>Add Audio Source…</source>
         <translation>添加音频源…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1000"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1001"/>
         <source>Export All…</source>
         <translation>全部导出…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1054"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1055"/>
         <source>Find type, ShortID, source ID, or capability</source>
         <translation>查找类型、ShortID、源 ID 或能力</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1068"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1069"/>
         <source>Duplicate…</source>
         <translation>复制…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1069"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1070"/>
         <source>Rename ID…</source>
         <translation>重命名 ID…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1071"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1072"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1074"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4154"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1075"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4153"/>
         <source>Properties…</source>
         <translation>属性…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1078"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1079"/>
         <source>Retarget Link…</source>
         <translation>重新指定链接目标…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1090"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1091"/>
         <source>Advanced / destructive</source>
         <translation>高级/破坏性</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1103"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1104"/>
         <source>Direct parents  →  &lt;b&gt;Selected object&lt;/b&gt;  →  Direct children &amp;nbsp; · &amp;nbsp; Hover a node to trace its links</source>
         <translation>直接父对象  →  &lt;b&gt;选中对象&lt;/b&gt;  →  直接子对象 &amp;nbsp; · &amp;nbsp; 将鼠标悬停在节点上以跟踪其链接</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1112"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3440"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1113"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3441"/>
         <source>Select a HIRC object.</source>
         <translation>选择 HIRC 对象。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1129"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1130"/>
         <source>Chunk</source>
         <translation>区块</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1136"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1137"/>
         <source>Apply Settings</source>
         <translation>应用设置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1198"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1199"/>
         <source>Preview controls</source>
         <translation>预览控件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1217"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1453"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1218"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1454"/>
         <source>Mix</source>
         <translation>混音</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1220"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1221"/>
         <source>Preview the complete mix or solo one channel; audio data is not modified.</source>
         <translation>预览完整混音或单独一个声道；不会修改音频数据。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1371"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1372"/>
         <source>No later activity segment was found.</source>
         <translation>在当前播放位置之后未找到更晚的活动片段。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1375"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1376"/>
         <source>Skipped silence to {time}.</source>
         <translation>已跳过静音。已跳转到 {time}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1408"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1409"/>
         <source>Select a media source first.</source>
         <translation>请先选择媒体源。</translation>
     </message>
@@ -25133,528 +27978,528 @@ Primitive: {topology}.</source>
         <translation>最新版本</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1539"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1540"/>
         <source>VGMStream could not decode this WEM.</source>
         <translation>VGMStream 无法解码此 WEM。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1552"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1553"/>
         <source>Mix ({count} channels)</source>
         <translation>混音（{count} 个声道）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1557"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1558"/>
         <source>Channel {number}</source>
         <translation>声道 {number}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1574"/>
         <source>Playing source {id} — {channels}; analyzing activity…</source>
         <translation>正在播放源 {id} — {channels}；正在分析活动…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1631"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1632"/>
         <source>Decoding source {id}…</source>
         <translation>正在解码源 {id}…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1612"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1613"/>
         <source>Preview Error</source>
         <translation>预览错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="875"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="876"/>
         <source>Rate</source>
         <translation>采样率</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="899"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="900"/>
         <source>Quality</source>
         <translation>质量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="979"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="980"/>
         <source>Replacement Settings…</source>
         <translation>替换设置…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1158"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1159"/>
         <source>Replacement Settings</source>
         <translation>替换设置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1213"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1214"/>
         <source>Jump to the next activity segment.</source>
         <translation>跳到下一个活动段。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1235"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1237"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1236"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1238"/>
         <source>Playback speed (50%–200%).</source>
         <translation>播放速度（50%–200%）。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1190"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1195"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1191"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1196"/>
         <source>Volume.</source>
         <translation>音量。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="766"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="767"/>
         <source>Filter source ID or used by</source>
         <translation>按源 ID 或使用者筛选</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1007"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1008"/>
         <source>Selected source</source>
         <translation>所选源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1008"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1009"/>
         <source>Container</source>
         <translation>容器</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1058"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1059"/>
         <source>No objects match the current filter.</source>
         <translation>没有对象匹配当前筛选条件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1223"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1450"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1600"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1224"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1451"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1601"/>
         <source>Normalize</source>
         <translation>归一化</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1225"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1226"/>
         <source>Boost the preview to full scale; audio data is not modified.</source>
         <translation>将预览提升到满刻度；不会修改音频数据。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1255"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1256"/>
         <source>Silence</source>
         <translation>静音</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1256"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1257"/>
         <source>Silence the selected range.</source>
         <translation>将所选范围静音。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1257"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1258"/>
         <source>Trim</source>
         <translation>剪除</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1258"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1259"/>
         <source>Remove the selected range.</source>
         <translation>移除所选范围。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1259"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1260"/>
         <source>Crop</source>
         <translation>裁剪</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1260"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1261"/>
         <source>Keep only the selected range.</source>
         <translation>仅保留所选范围。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1264"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1265"/>
         <source>Undo</source>
         <translation>撤销</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1265"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1266"/>
         <source>Undo the last edit.</source>
         <translation>撤销上一次编辑。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1266"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1267"/>
         <source>Discard</source>
         <translation>放弃</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1267"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1268"/>
         <source>Discard all edits.</source>
         <translation>放弃所有编辑。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1270"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1760"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1271"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1761"/>
         <source>Apply Edits</source>
         <translation>应用编辑</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1272"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1273"/>
         <source>Encode the edited audio with Wwise at maximum quality and replace this source. After Trim or Crop the original loop points and markers no longer line up, so they are not kept.</source>
         <translation>使用 Wwise 以最高质量编码编辑后的音频并替换此源。执行“剪除”或“裁剪”后，原始循环点和标记将不再对齐，因此不会保留。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1281"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1282"/>
         <source>No media sources to show.</source>
         <translation>没有可显示的媒体源。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1329"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1330"/>
         <source>Playback Error</source>
         <translation>播放错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1389"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1390"/>
         <source>Pause</source>
         <translation>暂停</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1595"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1596"/>
         <source>Preview</source>
         <translation>预览</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1599"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1600"/>
         <source>Normalize ({gain:+.1f} dB)</source>
         <translation>归一化（{gain:+.1f} dB）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1671"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1672"/>
         <source>Playing audio; waveform analysis is unavailable.</source>
         <translation>正在播放音频；此格式无法分析波形。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1679"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1680"/>
         <source>no silence detected</source>
         <translation>未检测到静音</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1681"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1682"/>
         <source>no activity detected</source>
         <translation>未检测到活动</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1683"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1684"/>
         <source>{count} activity segment(s) detected</source>
         <translation>检测到 {count} 个活动片段</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1687"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1688"/>
         <source>Source {id} — {channels}: {result}.</source>
         <translation>源 {id} — {channels}：{result}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1736"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1737"/>
         <source>Edit Audio</source>
         <translation>编辑音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1802"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1803"/>
         <source>{label} exported to {path}</source>
         <translation>{label} 已导出到 {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1837"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1838"/>
         <source>Export Wwise MIDI</source>
         <translation>导出 Wwise MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1837"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2562"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1838"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2563"/>
         <source>Wwise MIDI</source>
         <translation>Wwise MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1838"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1839"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1840"/>
         <source>Export Compiled IR</source>
         <translation>导出已编译 IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1838"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1839"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1840"/>
         <source>compiled IR</source>
         <translation>已编译 IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1840"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1841"/>
         <source>Export REV Model</source>
         <translation>导出 REV 模型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1840"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1841"/>
         <source>REV model</source>
         <translation>REV 模型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1841"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1842"/>
         <source>Export Raw Media</source>
         <translation>导出原始媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1841"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1842"/>
         <source>raw media</source>
         <translation>原始媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1864"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1865"/>
         <source>Export MIDI</source>
         <translation>导出 MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1869"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1870"/>
         <source>MIDI</source>
         <translation>MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1875"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1890"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1876"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1891"/>
         <source>Export Processed IR WAV</source>
         <translation>导出处理后的 IR WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1883"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1884"/>
         <source>processed early-reflection WAV</source>
         <translation>处理后的早期反射 WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1897"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1898"/>
         <source>processed convolution IR WAV</source>
         <translation>处理后的卷积 IR WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1905"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1906"/>
         <source>This unknown payload has no safe editable export format.</source>
         <translation>此未知负载没有可安全编辑的导出格式。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1916"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1917"/>
         <source>WAV exported to {path}</source>
         <translation>WAV 已导出到 {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1932"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1933"/>
         <source>{action} blocked</source>
         <translation>{action} 被阻止</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1934"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1935"/>
         <source>Modding requires an active REasy project and a configured PAK directory. Open the Project Browser, create/open a project and set the game folder (PAKs).</source>
         <translation>制作模组需要一个活动的 REasy 项目和已配置的 PAK 目录。请打开项目浏览器，创建/打开项目并设置游戏文件夹（PAK）。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1943"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1945"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1952"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1956"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1963"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2006"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1944"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1946"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1953"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1957"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1964"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2007"/>
         <source>Loop / Markers</source>
         <translation>循环/标记</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1957"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1958"/>
         <source>Loop, cue, and marker chunks apply only to RIFF WEM audio.</source>
         <translation>循环、提示和标记区块仅适用于 RIFF WEM 音频。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1970"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1971"/>
         <source>Loop and marker metadata was unchanged.</source>
         <translation>循环和标记元数据未更改。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1993"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1994"/>
         <source>Wwise did not preserve the requested loop/cue metadata.</source>
         <translation>Wwise 未保留请求的循环/提示元数据。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1997"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1998"/>
         <source>Updated {loops} loop(s) and {markers} marker(s) in source {id} across {count} verified file(s).</source>
         <translation>已在 {count} 个已验证文件中更新源 {id} 的 {loops} 个循环和 {markers} 个标记。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2014"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2015"/>
         <source>No complete media sources are available.</source>
         <translation>没有完整的媒体源可用。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2016"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2017"/>
         <source>Compiled media</source>
         <translation>已编译媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2016"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2017"/>
         <source>Editable media</source>
         <translation>可编辑媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2016"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2017"/>
         <source>Both</source>
         <translation>两者</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2018"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2019"/>
         <source>Export All Sources</source>
         <translation>导出所有源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2025"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2026"/>
         <source>Exporting media…</source>
         <translation>正在导出媒体…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2031"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2032"/>
         <source>Exporting source {id}</source>
         <translation>正在导出源 {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2085"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2086"/>
         <source>Export finished: {count} source(s), {failed} failure(s).</source>
         <translation>导出完成：{count} 个源，{failed} 个失败。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2087"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2848"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2088"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2849"/>
         <source>Failed: {files}</source>
         <translation>失败：{files}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2136"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2137"/>
         <source>exact quality {value}</source>
         <translation>精确质量 {value}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2140"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2141"/>
         <source>{value} kbps/channel</source>
         <translation>{value} 千比特/秒/声道</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2144"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2145"/>
         <source>minimum</source>
         <translation>最小</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2145"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2146"/>
         <source>maximum</source>
         <translation>最大</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2172"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2173"/>
         <source>{source} → {target}</source>
         <translation>{source} → {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2177"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2178"/>
         <source> (required by codec)</source>
         <translation>（编解码器要求）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2179"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2180"/>
         <source> (matched original WEM)</source>
         <translation>（匹配原始 WEM）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2181"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2182"/>
         <source> (kept imported WAV)</source>
         <translation>（保留导入的 WAV）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2189"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2190"/>
         <source>Wwise Not Configured</source>
         <translation>Wwise 未配置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2191"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2192"/>
         <source>Wwise authoring is unavailable because this game has no registered sound profile.</source>
         <translation>此游戏没有注册声音配置文件，因此 Wwise 创作不可用。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2207"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2208"/>
         <source>Wwise Installation Required — {game}</source>
         <translation>需要安装 Wwise — {game}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2208"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2209"/>
         <source>Select the version folder containing Authoring.</source>
         <translation>选择包含 Authoring 的版本文件夹。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2214"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2215"/>
         <source>Select Wwise {version} for {game}</source>
         <translation>为 {game} 选择 Wwise {version}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2223"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2224"/>
         <source>Incompatible Wwise Installation</source>
         <translation>不兼容的 Wwise 安装</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2252"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2253"/>
         <source>The selected WEM is not RIFF/WAVE audio.</source>
         <translation>所选 WEM 不是 RIFF/WAVE 音频。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2255"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2256"/>
         <source>Only WEM and WAV replacement files are supported.</source>
         <translation>仅支持 WEM 和 WAV 替换文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2259"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2260"/>
         <source>Wwise WAV authoring is not configured for this game.</source>
         <translation>此游戏尚未配置 Wwise WAV 创作。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2310"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2311"/>
         <source>Wwise MIDI accepts MID or WMID replacement files.</source>
         <translation>Wwise MIDI 接受 MID 或 WMID 替换文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2319"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2320"/>
         <source>The compiled IR uses different decay tuning. Import its WAV instead so Wwise can author it with this effect&apos;s existing tuning.</source>
         <translation>已编译 IR 使用不同的衰减调音。请改为导入其 WAV，让 Wwise 使用此效果现有的调音进行创作。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2324"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2325"/>
         <source>Hybrid Reverb accepts WAV or compiled WIR files.</source>
         <translation>Hybrid Reverb 接受 WAV 或已编译 WIR 文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2341"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2342"/>
         <source>Wwise Convolution Reverb accepts WAV or compiled WIR files.</source>
         <translation>Wwise Convolution Reverb 接受 WAV 或已编译 WIR 文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2354"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2355"/>
         <source>Crankcase REV accepts a compiled MODEL or ADM file. Creating a model from recordings requires the licensed REV authoring tool.</source>
         <translation>Crankcase REV 接受已编译的 MODEL 或 ADM 文件。从录音创建模型需要获得许可的 REV 创作工具。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2362"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2363"/>
         <source>REasy cannot identify this payload. It can be exported raw, but replacement is disabled to avoid corrupting non-audio media.</source>
         <translation>REasy 无法识别此负载。可以导出原始数据，但已禁用替换以避免损坏非音频媒体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2387"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2388"/>
         <source>Analyze the sound file before replacing audio.</source>
         <translation>替换音频前请分析声音文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2390"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4472"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2391"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4471"/>
         <source>No sound profile is registered for this game.</source>
         <translation>此游戏未注册声音配置文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2402"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2403"/>
         <source>Automatic multi-file replacement requires an active REasy project.</source>
         <translation>自动替换多个文件需要活动的 REasy 项目。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2415"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2416"/>
         <source>Confirm Related Sound Files</source>
         <translation>确认相关声音文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2417"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2418"/>
         <source>REasy verified the Source ID relationships and will save these files together:
 
 </source>
@@ -25663,457 +28508,457 @@ Primitive: {topology}.</source>
 </translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2444"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2445"/>
         <source>Some selected BNK entries are prefetch fragments. Replace the same source IDs in the matching PCK.</source>
         <translation>选中的 BNK 条目中有些是预取片段。请在匹配的 PCK 中替换相同的源 ID。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2446"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2447"/>
         <source>This is a partial PCK; unrelated missing media cannot be preserved by this file.</source>
         <translation>这是部分 PCK；此文件无法保留无关的缺失媒体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2449"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2450"/>
         <source>Confirm Sound Replacement</source>
         <translation>确认声音替换</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2450"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2451"/>
         <source>Continue?</source>
         <translation>继续？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2459"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2460"/>
         <source>Sound Edit Error</source>
         <translation>声音编辑错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2471"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2472"/>
         <source>Select Replacement MIDI</source>
         <translation>选择替换 MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2474"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2478"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2475"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2479"/>
         <source>Select Replacement Impulse Response</source>
         <translation>选择替换脉冲响应</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2482"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2483"/>
         <source>Select Replacement REV Model</source>
         <translation>选择替换 REV 模型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2504"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2505"/>
         <source>This payload is unknown and cannot be replaced safely.</source>
         <translation>此负载未知，无法安全替换。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2523"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2664"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2524"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2665"/>
         <source>Authoring {file}: {rates}…</source>
         <translation>正在创作 {file}：{rates}…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2539"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2540"/>
         <source>Loop / Marker Metadata Does Not Fit</source>
         <translation>循环/标记元数据不适配</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2541"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2542"/>
         <source>Replace the audio without inheriting the original loops and markers?</source>
         <translation>替换音频而不继承原始循环和标记？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2563"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2564"/>
         <source>Hybrid Reverb IR</source>
         <translation>Hybrid Reverb IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2564"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2565"/>
         <source>Convolution Reverb IR</source>
         <translation>卷积混响 IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2565"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2566"/>
         <source>Crankcase Audio REV model</source>
         <translation>Crankcase Audio REV 模型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2566"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2567"/>
         <source>WEM</source>
         <translation>WEM</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2574"/>
         <source> (selected codec)</source>
         <translation>（所选编解码器）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2575"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2576"/>
         <source> (matched original)</source>
         <translation>（匹配原始）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2577"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2578"/>
         <source> (profile default)</source>
         <translation>（配置文件默认值）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2587"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2588"/>
         <source> · {quality} quality</source>
         <translation> · {quality} 质量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2591"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2592"/>
         <source>Replaced source {id} in {count} verified file(s) with {file} ({encoding}){rates}.</source>
         <translation>已使用 {file}（{encoding}）{rates} 将 {count} 个已验证文件中的源 {id} 替换。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2605"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2606"/>
         <source>Add Audio Source</source>
         <translation>添加音频源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2612"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2613"/>
         <source>Add PCK Audio Source</source>
         <translation>添加 PCK 音频源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2613"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2614"/>
         <source>Add Embedded BNK Audio Source</source>
         <translation>添加内嵌 BNK 音频源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2620"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2621"/>
         <source>This is the index-only PCK. Open the full streaming PCK before adding a source; REasy will keep its index in sync.</source>
         <translation>这是仅索引 PCK。在添加源之前打开完整流式 PCK；REasy 会保持其索引同步。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2633"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2634"/>
         <source>Source ID {id} already exists.</source>
         <translation>源 ID {id} 已存在。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2652"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2653"/>
         <source>Select Audio for Source {id}</source>
         <translation>为源 {id} 选择音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2680"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2681"/>
         <source>streamed PCK</source>
         <translation>流式 PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2681"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2682"/>
         <source>embedded BNK</source>
         <translation>内嵌 BNK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2684"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2685"/>
         <source>Added {location} source {id} from {file}.</source>
         <translation>已从 {file} 添加 {location} 源 {id}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2703"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2704"/>
         <source>Select Replacement Folder</source>
         <translation>选择替换文件夹</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2717"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2718"/>
         <source>No file names match a replaceable source ID.</source>
         <translation>没有文件名匹配可替换的源 ID。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2745"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2746"/>
         <source>Replacing media…</source>
         <translation>正在替换媒体…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2765"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2766"/>
         <source>Authoring {count} WAV file(s) in one Wwise batch…</source>
         <translation>正在 Wwise 中批量创作 {count} 个 WAV 文件…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2806"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2807"/>
         <source>Replacing source {id}</source>
         <translation>正在替换源 {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2820"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2821"/>
         <source>Replacing source {id} · {rates}</source>
         <translation>正在替换源 {id} · {rates}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2833"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2834"/>
         <source>No authored media was produced.</source>
         <translation>未生成创作媒体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2846"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2847"/>
         <source>Bulk replace: {done}/{total} succeeded.</source>
         <translation>批量替换：{done}/{total} 成功。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2860"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2861"/>
         <source>{type}: {sources} source(s), {events} event(s).</source>
         <translation>{type}：{sources} 个源，{events} 个事件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2895"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2896"/>
         <source>Events &amp; Audio</source>
         <translation>事件和音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2896"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2897"/>
         <source>Events</source>
         <translation>事件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2906"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2907"/>
         <source>Add PCK Source…</source>
         <translation>添加 PCK 源…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2907"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2908"/>
         <source>Add Embedded BNK Source…</source>
         <translation>添加内嵌 BNK 源…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2910"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2911"/>
         <source>Add a new media entry to this PCK and keep its index in sync.</source>
         <translation>向此 PCK 添加新的媒体条目并保持其索引同步。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2912"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2913"/>
         <source>Embed a new Source ID in this BNK&apos;s DIDX/DATA media table. This adds media without inventing Event or Action graph links.</source>
         <translation>在此 BNK 的 DIDX/DATA 媒体表中嵌入新的源 ID。只添加媒体，不虚构事件或动作图链接。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2949"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2950"/>
         <source>Layout error: {error}</source>
         <translation>布局错误：{error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2976"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2977"/>
         <source>No bank-setting values changed.</source>
         <translation>未更改任何 Bank 设置值。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2982"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2983"/>
         <source>Updated {title} ({chunk}).</source>
         <translation>已更新 {title}（{chunk}）。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2987"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2988"/>
         <source>Bank Settings Error</source>
         <translation>Bank 设置错误</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3050"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3051"/>
         <source>Type + ID collision · read-only</source>
         <translation>类型 + ID 冲突 · 只读</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3052"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3053"/>
         <source>Shared ShortID · {level}</source>
         <translation>共享 ShortID · {level}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3079"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3080"/>
         <source>{type}
 {id} · {editing}</source>
         <translation>{type}
 {id} · {editing}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3086"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3087"/>
         <source>HIRC type {type} · {bytes} payload bytes
 {detail}</source>
         <translation>HIRC 类型 {type} · {bytes} 个负载字节
 {detail}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3102"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3103"/>
         <source>All object types</source>
         <translation>所有对象类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3103"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3104"/>
         <source>Structured editing</source>
         <translation>结构化编辑</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3104"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3105"/>
         <source>Read-only</source>
         <translation>只读</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3148"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3149"/>
         <source>Editable objects: {structured}/{total} · Read-only: {read_only} · Conflicting IDs: {collisions} · Shared IDs: {shared}{detail}</source>
         <translation>可编辑对象：{structured}/{total} · 只读：{read_only} · 冲突 ID：{collisions} · 共享 ID：{shared}{detail}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3214"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3215"/>
         <source>The exact Wwise layout could not be completed: {error}</source>
         <translation>无法完成精确的 Wwise 布局：{error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3243"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3244"/>
         <source>All objects except {count}</source>
         <translation>除 {count} 个以外的所有对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3244"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4020"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3245"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4019"/>
         <source>All objects</source>
         <translation>所有对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3251"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3252"/>
         <source>Target object {id}</source>
         <translation>目标对象 {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3329"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3330"/>
         <source>Selected · ShortID {id}</source>
         <translation>已选择 · ShortID {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3360"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3361"/>
         <source>Any</source>
         <translation>任意</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3367"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3368"/>
         <source>Cross-bank Wwise object</source>
         <translation>跨 Bank Wwise 对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3368"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3369"/>
         <source>Unavailable compiled Wwise object</source>
         <translation>不可用的已编译 Wwise 对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3393"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3999"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3394"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3998"/>
         <source>Audio source</source>
         <translation>音频源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3394"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3395"/>
         <source>ID {id}</source>
         <translation>ID {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3441"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3442"/>
         <source>No object selected.</source>
         <translation>未选择对象。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3454"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3455"/>
         <source>read-only because type {type_id} + ShortID identifies {count} objects</source>
         <translation>因类型 {type_id} + ShortID 标识 {count} 个对象而只读</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3457"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3458"/>
         <source>{level} (type-qualified; ShortID is shared)</source>
         <translation>{level}（类型限定；ShortID 共享）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3459"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3460"/>
         <source>{type} {id} · HIRC type {type_id} · {size} bytes · {incoming} incoming / {outgoing} outgoing · Editing: {decoded}</source>
         <translation>{type} {id} · HIRC 类型 {type_id} · {size} 字节 · 传入 {incoming} / 传出 {outgoing} · 编辑：{decoded}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3486"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3487"/>
         <source>Audio source {id}; edit its media on Sound Graph.</source>
         <translation>音频源 {id}；在声音图中编辑其媒体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3489"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3490"/>
         <source>Any — matches any music object in a transition rule.</source>
         <translation>任意 — 匹配转换规则中的任意音乐对象。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3517"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3518"/>
         <source>Name or numeric ShortID:</source>
         <translation>名称或数字 ShortID：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3524"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3525"/>
         <source>Invalid name or ShortID.</source>
         <translation>名称或 ShortID 无效。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3569"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3570"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3574"/>
         <source>Duplicate HIRC Object</source>
         <translation>复制 HIRC 对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3546"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3573"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3596"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4249"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3547"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3574"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3597"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4248"/>
         <source>ShortID {id} already exists.</source>
         <translation>ShortID {id} 已存在。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="991"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1806"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="992"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1807"/>
         <source>Remove Media</source>
         <translation>移除媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1075"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1076"/>
         <source>New Object…</source>
         <translation>新建对象…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1813"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1814"/>
         <source>Remove media {id} from this file? Objects in other banks that stream it lose their audio.</source>
         <translation>要从此文件中移除媒体 {id} 吗？其他 Bank 中流式播放它的对象将失去音频。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1827"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1828"/>
         <source>Removed media {id}.</source>
         <translation>已移除媒体 {id}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2645"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2646"/>
         <source>This PCK holds media of several languages. Language of the new source:</source>
         <translation>此 PCK 包含多种语言的媒体。新源的语言：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3532"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3533"/>
         <source>New HIRC Object</source>
         <translation>新建 HIRC 对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3538"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3539"/>
         <source>Object type:</source>
         <translation>对象类型：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3558"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3559"/>
         <source>Created {type} {id}; connect it where needed.</source>
         <translation>已创建 {type} {id}；请在需要的地方连接它。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3583"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3584"/>
         <source>Duplicated {type} {old} as {new}; connect it where needed.</source>
         <translation>已将 {type} {old} 复制为 {new}；请在需要的位置连接它。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3592"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3596"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3601"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3593"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3597"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3602"/>
         <source>Rename HIRC ShortID</source>
         <translation>重命名 HIRC ShortID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3603"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3604"/>
         <source>Files outside this bank use {type} {id}:
 
 {users}
@@ -26126,32 +28971,32 @@ REasy renames it in this bank only, so they keep the old ID. Rename anyway?</sou
 REasy 只在此 Bank 中重命名它，因此这些文件会保留旧 ID。仍要重命名吗？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3611"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3612"/>
         <source>Renamed HIRC ShortID {old} to {new} and updated resolved links.</source>
         <translation>已将 HIRC ShortID {old} 重命名为 {new}，并更新已解析的链接。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3623"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3624"/>
         <source>Banks: {banks}</source>
         <translation>Bank：{banks}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3625"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3626"/>
         <source>and {count} more banks</source>
         <translation>以及另外 {count} 个 Bank</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3629"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3631"/>
         <source>and {count} more game files</source>
         <translation>以及另外 {count} 个游戏文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3646"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3648"/>
         <source>Delete {type} {id}?</source>
         <translation>删除 {type} {id}？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3653"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3655"/>
         <source>Files outside this bank use it:
 
 {users}</source>
@@ -26160,816 +29005,882 @@ REasy 只在此 Bank 中重命名它，因此这些文件会保留旧 ID。仍�
 {users}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3655"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3657"/>
         <source>Delete HIRC Object</source>
         <translation>删除 HIRC 对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3660"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3662"/>
         <source>Deleted {type} {id}.</source>
         <translation>已删除 {type} {id}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3668"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4347"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3670"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4346"/>
         <source>Edit Event Actions</source>
         <translation>编辑事件动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3681"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3683"/>
         <source>Updated {type} {id}.</source>
         <translation>已更新 {type} {id}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3702"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3705"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3701"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3704"/>
         <source>Connect Child</source>
         <translation>连接子对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3702"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3701"/>
         <source>No compatible unconnected child is available.</source>
         <translation>没有可用的兼容未连接子对象。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3705"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3748"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3704"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3747"/>
         <source>Child object:</source>
         <translation>子对象：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3714"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3724"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3713"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3723"/>
         <source>Reparent Child</source>
         <translation>重新指定父对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3715"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3714"/>
         <source>{child} currently belongs to {parent}. Move it to {new_parent}?</source>
         <translation>{child} 当前属于 {parent}。将其移动到 {new_parent}？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3725"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3724"/>
         <source>The old parent&apos;s companion layout is not safely editable.</source>
         <translation>旧父对象的配套布局无法安全编辑。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3734"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3733"/>
         <source>Connected child {child} to {parent}.</source>
         <translation>已将子对象 {child} 连接到 {parent}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3748"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3747"/>
         <source>Disconnect Child</source>
         <translation>断开子对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3760"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3759"/>
         <source>Disconnected child {child} from {parent}.</source>
         <translation>已断开子对象 {child} 与 {parent} 的连接。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3792"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3791"/>
         <source>offset {offset} · {role} → {type} {id}</source>
         <translation>偏移 {offset} · {role} → {type} {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3800"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3811"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3799"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3810"/>
         <source>Retarget Exact Link</source>
         <translation>重新指定精确链接目标</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3800"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3799"/>
         <source>Link field:</source>
         <translation>链接字段：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3811"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3810"/>
         <source>New target:</source>
         <translation>新目标：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3818"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3817"/>
         <source>Retargeted {role} in {id} to {target}.</source>
         <translation>已将 {id} 中的 {role} 重新指定为 {target}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3838"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3837"/>
         <source>All Sources
 {count} media source(s)</source>
         <translation>所有源
 {count} 个媒体源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3844"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3843"/>
         <source>Event {id}</source>
         <translation>事件 {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3847"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3846"/>
         <source>{title}
 ID {id} · {sources} source(s) · {actions} action(s)</source>
         <translation>{title}
 ID {id} · {sources} 个源 · {actions} 个动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3860"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3859"/>
         <source>WEL: {path}</source>
         <translation>WEL：{path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3864"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3863"/>
         <source>Sources: {ids}</source>
         <translation>源：{ids}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3905"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3904"/>
         <source>unknown resource</source>
         <translation>未知资源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3909"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3908"/>
         <source> · GameObject {name}</source>
         <translation> · GameObject {name}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3911"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3910"/>
         <source> · Joint {name}</source>
         <translation> · 关节 {name}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3914"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3913"/>
         <source>Used by: {contexts}</source>
         <translation>使用者：{contexts}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3915"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3914"/>
         <source>No shipped scene, prefab, or USER binding was recovered for this Event.</source>
         <translation>此事件没有恢复出随附的场景、预制体或 USER 绑定。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3941"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3977"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3940"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3976"/>
         <source>Event</source>
         <translation>事件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3942"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3941"/>
         <source>ShortID {id} · {count} Actions</source>
         <translation>ShortID {id} · {count} 个动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3954"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3953"/>
         <source>External Wwise object</source>
         <translation>外部 Wwise 对象</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3959"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3958"/>
         <source>Cross-bank {type}</source>
         <translation>跨 Bank {type}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3960"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3959"/>
         <source>Unavailable compiled target</source>
         <translation>不可用的已编译目标</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3969"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3968"/>
         <source>External Wwise target</source>
         <translation>外部 Wwise 目标</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3970"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3969"/>
         <source>Object {id}</source>
         <translation>对象 {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3993"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4815"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3992"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4814"/>
         <source>Not resolved</source>
         <translation>未解析</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4000"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3999"/>
         <source>ID {id} · {location}</source>
         <translation>ID {id} · {location}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4013"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4012"/>
         <source>State</source>
         <translation>状态</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4013"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4012"/>
         <source>Switch</source>
         <translation>切换</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4017"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4016"/>
         <source>Game Parameter</source>
         <translation>游戏参数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4023"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4022"/>
         <source>Trigger</source>
         <translation>触发器</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4032"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4031"/>
         <source>Missing Action</source>
         <translation>缺少动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4037"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4036"/>
         <source>{name} Action</source>
         <translation>{name} 动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4038"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4037"/>
         <source>Action {id} · {target}</source>
         <translation>动作 {id} · {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4064"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4063"/>
         <source>{name}Event {id} · {actions} Actions · {sources} media sources</source>
         <translation>{name}事件 {id} · {actions} 个动作 · {sources} 个媒体源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4116"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4115"/>
         <source>Audio source {id} · use the media controls below.</source>
         <translation>音频源 {id} · 使用下面的媒体控件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4123"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4122"/>
         <source>Wwise control value {id}; edit it through its parent Action.</source>
         <translation>Wwise 控制值 {id}；通过其父动作编辑。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4128"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4127"/>
         <source>{type} {id} · {links} outgoing link(s) · {properties} playback property entries</source>
         <translation>{type} {id} · {links} 个传出链接 · {properties} 个播放属性条目</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4132"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4131"/>
         <source>Unresolved object {id}</source>
         <translation>未解析对象 {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4132"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4131"/>
         <source>Select a node to edit it.</source>
         <translation>选择节点进行编辑。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4152"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4151"/>
         <source>Edit Action…</source>
         <translation>编辑动作…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4153"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4152"/>
         <source>Open in All Objects</source>
         <translation>在所有对象中打开</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4195"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4194"/>
         <source>Detached Action {action} from Event {event}; the Action remains in the bank.</source>
         <translation>已从事件 {event} 分离动作 {action}；动作仍保留在 Bank 中。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4232"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4231"/>
         <source>New Play Action</source>
         <translation>新建播放动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4232"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4231"/>
         <source>New Stop Action</source>
         <translation>新建停止动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4234"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4233"/>
         <source>Clone {name} Action {id} — {target}</source>
         <translation>克隆 {name} 动作 {id} — {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4241"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4245"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4249"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4273"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4279"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4240"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4244"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4248"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4272"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4278"/>
         <source>Add Action</source>
         <translation>添加动作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4241"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4240"/>
         <source>Action template:</source>
         <translation>动作模板：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4273"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4272"/>
         <source>Initial target:</source>
         <translation>初始目标：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4279"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4278"/>
         <source>This bank has no compatible target.</source>
         <translation>此 Bank 没有兼容目标。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4306"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4305"/>
         <source>Added Action {action} to Event {event}.</source>
         <translation>已将动作 {action} 添加到事件 {event}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4308"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4307"/>
         <source>Added unattached Action {id}; connect it from an Event when needed.</source>
         <translation>已添加未连接的动作 {id}；需要时请从事件连接它。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4324"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4330"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4333"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4335"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4323"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4329"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4332"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4334"/>
         <source>Add Event</source>
         <translation>添加事件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4324"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4323"/>
         <source>Event name or numeric ShortID:</source>
         <translation>事件名称或数字 ShortID：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4330"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4329"/>
         <source>Invalid Event name or ID.</source>
         <translation>事件名称或 ID 无效。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4333"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4332"/>
         <source>Object ID {id} already exists.</source>
         <translation>对象 ID {id} 已存在。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4340"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4339"/>
         <source> from &apos;{name}&apos;</source>
         <translation> 来自“{name}”</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4341"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4340"/>
         <source>Added Event {id}{note}.</source>
         <translation>已添加事件 {id}{note}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4351"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4350"/>
         <source>Updated Event {id}.</source>
         <translation>已更新事件 {id}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4360"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4359"/>
         <source>Delete Event {id}? Actions remain in the bank.</source>
         <translation>删除事件 {id}？动作将保留在 Bank 中。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4368"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4367"/>
         <source>Deleted Event {id}.</source>
         <translation>已删除事件 {id}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4394"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4393"/>
         <source>PCK: media (partial package)</source>
         <translation>PCK：媒体（部分包）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4394"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4393"/>
         <source>PCK: complete media</source>
         <translation>PCK：完整媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4396"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4395"/>
         <source>Replace audio here. Event routing is stored in the matching BNK.</source>
         <translation>在此替换音频。事件路由存储在匹配的 BNK 中。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4399"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4398"/>
         <source>This file only indexes the audio. Open the full streaming PCK to preview or replace it; Event routing is stored in the matching BNK.</source>
         <translation>此文件仅索引音频。打开完整流式 PCK 进行预览或替换；事件路由存储在匹配的 BNK 中。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4404"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4403"/>
         <source>Open Matching BNK…</source>
         <translation>打开匹配的 BNK…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4407"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4406"/>
         <source>SBNK: split audio</source>
         <translation>SBNK：分割音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4408"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4407"/>
         <source>SBNK: complete media</source>
         <translation>SBNK：完整媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4411"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4410"/>
         <source>This bank stores the beginning of each sound. REasy finds the full audio and its Event bank for preview and replacement.</source>
         <translation>此 Bank 存储每个声音的开头。REasy 会找到完整音频及其事件 Bank，用于预览和替换。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4414"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4413"/>
         <source>Replace audio here. REasy finds the Event bank that uses it.</source>
         <translation>在此替换音频。REasy 会找到使用它的事件 Bank。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4416"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4415"/>
         <source>Open Matching Event SBNK…</source>
         <translation>打开匹配的事件 SBNK…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4418"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4417"/>
         <source>BNK: events and playback routing</source>
         <translation>BNK：事件和播放路由</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4420"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4419"/>
         <source>Choose an Event, edit its playback flow, or replace its audio. Matching media files are updated automatically.</source>
         <translation>选择事件、编辑其播放流程或替换其音频。匹配的媒体文件会自动更新。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4423"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4422"/>
         <source>Open Matching Media…</source>
         <translation>打开匹配的媒体…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4446"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4445"/>
         <source>Open Matching Media SBNK…</source>
         <translation>打开匹配的媒体 SBNK…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4447"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4446"/>
         <source>Open Matching PCK…</source>
         <translation>打开匹配的 PCK…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4458"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4457"/>
         <source>{count} sources</source>
         <translation>{count} 个源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4460"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4459"/>
         <source>Wwise v{version}</source>
         <translation>Wwise v{version}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4462"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4461"/>
         <source>{count} Events</source>
         <translation>{count} 个事件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4471"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4470"/>
         <source>Streaming PCK</source>
         <translation>流式 PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4478"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4500"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4477"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4499"/>
         <source>Streaming PCK Mismatch</source>
         <translation>流式 PCK 不匹配</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4482"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4481"/>
         <source>Opened the full streaming PCK after an exact AKPK index match.</source>
         <translation>精确匹配 AKPK 索引后已打开完整流式 PCK。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4489"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4488"/>
         <source>Locate Full Streaming PCK</source>
         <translation>定位完整流式 PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4504"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4503"/>
         <source>Opened the selected full PCK after an exact AKPK index match.</source>
         <translation>精确匹配 AKPK 索引后已打开所选完整 PCK。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4544"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4543"/>
         <source>Open Verified Companion</source>
         <translation>打开已验证的配套文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4545"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4544"/>
         <source>Select the Source-ID-matched file:</source>
         <translation>选择与源 ID 匹配的文件：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4554"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4553"/>
         <source>Open Matching BNK</source>
         <translation>打开匹配的 BNK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4555"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4554"/>
         <source>Open Matching Event SBNK</source>
         <translation>打开匹配的事件 SBNK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4556"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4555"/>
         <source>Open Matching Media</source>
         <translation>打开匹配的媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4569"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4568"/>
         <source>No matching media entry was parsed.</source>
         <translation>未解析出匹配的媒体条目。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4572"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4571"/>
         <source>audio</source>
         <translation>音频</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4572"/>
         <source>Wwise MIDI sequence</source>
         <translation>Wwise MIDI 序列</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4574"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4573"/>
         <source>Hybrid Reverb impulse media</source>
         <translation>Hybrid Reverb 脉冲媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4575"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4574"/>
         <source>Convolution Reverb impulse media</source>
         <translation>卷积混响脉冲媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4576"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4575"/>
         <source>Crankcase Audio REV vehicle model</source>
         <translation>Crankcase Audio REV 车辆模型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4577"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4576"/>
         <source>unknown media</source>
         <translation>未知媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4581"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4580"/>
         <source>Export only</source>
         <translation>仅导出</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4582"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4581"/>
         <source>The {kind} is complete, but replacement requires a profile for this game.</source>
         <translation>{kind} 完整，但替换需要此游戏的配置文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4584"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4583"/>
         <source>Game profile required</source>
         <translation>需要游戏配置文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4585"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4584"/>
         <source>Add a sound profile to resolve this media&apos;s external containers safely.</source>
         <translation>添加声音配置文件以安全解析此媒体的外部容器。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4588"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4587"/>
         <source>Split SBNK prefetch</source>
         <translation>分割 SBNK 预取</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4589"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4588"/>
         <source>This SBNK contains only the prefetch prefix. Preview, export, and replacement resolve the full Source-ID-matched PCK automatically.</source>
         <translation>此 SBNK 仅包含预取前缀。预览、导出和替换会自动解析完整的源 ID 匹配 PCK。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4593"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4592"/>
         <source>Ready in this PCK</source>
         <translation>此 PCK 中已就绪</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4593"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4592"/>
         <source>Ready in this BNK</source>
         <translation>此 BNK 中已就绪</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4595"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4594"/>
         <source>It can be previewed, replaced, or exported here.</source>
         <translation>可在此预览、替换或导出。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4596"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4595"/>
         <source>It can be inspected, replaced from MID, or exported here.</source>
         <translation>可在此检查、从 MID 替换或导出。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4597"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4596"/>
         <source>Its processed early reflections can be previewed/exported; WAV replacement is authored by Wwise.</source>
         <translation>其处理后的早期反射可预览/导出；WAV 替换由 Wwise 创作。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4598"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4597"/>
         <source>Its processed impulse can be previewed/exported; WAV replacement is authored by Wwise.</source>
         <translation>其处理后的脉冲可预览/导出；WAV 替换由 Wwise 创作。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4599"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4598"/>
         <source>It can be replaced or exported as a validated compiled REV model; creating one from recordings requires the licensed REV authoring tool.</source>
         <translation>可将其替换为已验证的已编译 REV 模型或导出；从录音创建模型需要获得许可的 REV 创作工具。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4600"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4599"/>
         <source>It can only be exported raw because its format is unknown.</source>
         <translation>只能导出原始数据，因为其格式未知。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4601"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4600"/>
         <source>This file contains the complete {kind}. </source>
         <translation>此文件包含完整的 {kind}。 </translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4603"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4602"/>
         <source>Indexed streaming media</source>
         <translation>索引流式媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4604"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4603"/>
         <source>Use Open Full Streaming PCK to inspect the actual media data. REasy verifies the complete AKPK index before opening it.</source>
         <translation>使用“打开完整流式 PCK”查看实际媒体数据。REasy 会在打开前验证完整 AKPK 索引。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4608"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4607"/>
         <source>Automatic BNK + PCK update</source>
         <translation>自动更新 BNK + PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4608"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4607"/>
         <source>This is a BNK prefetch fragment. REasy will update it and all verified PCK counterparts together.</source>
         <translation>这是 BNK 预取片段。REasy 会同时更新它和所有已验证的 PCK 对应文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4610"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4609"/>
         <source>Automatic SBNK media update</source>
         <translation>自动更新 SBNK 媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4610"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4609"/>
         <source>REasy resolves a complete sibling media bank by exact Source ID and updates it; if none exists, Replace can embed the expected media here.</source>
         <translation>REasy 会根据精确源 ID 找到完整的同级媒体 Bank 并更新它；如果不存在，“替换”可以在此嵌入预期媒体。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4611"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4610"/>
         <source>Automatic PCK update</source>
         <translation>自动更新 PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4611"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4610"/>
         <source>REasy will resolve the complete PCK by Source ID and update its index automatically.</source>
         <translation>REasy 会根据源 ID 找到完整 PCK 并自动更新其索引。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4620"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4619"/>
         <source>Replace MIDI…</source>
         <translation>替换 MIDI…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4620"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4619"/>
         <source>Export Wwise MIDI…</source>
         <translation>导出 Wwise MIDI…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4620"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4619"/>
         <source>Export MIDI…</source>
         <translation>导出 MIDI…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4623"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4627"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4622"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4626"/>
         <source>Replace Impulse…</source>
         <translation>替换脉冲…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4623"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4627"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4622"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4626"/>
         <source>Export Compiled IR…</source>
         <translation>导出已编译 IR…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4624"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4628"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4623"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4627"/>
         <source>Export Processed IR WAV…</source>
         <translation>导出处理后的 IR WAV…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4631"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4630"/>
         <source>Replace REV Model…</source>
         <translation>替换 REV 模型…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4631"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4630"/>
         <source>Export REV Model…</source>
         <translation>导出 REV 模型…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4632"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4631"/>
         <source>No Waveform Export</source>
         <translation>无波形导出</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4635"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4634"/>
         <source>Replace Media…</source>
         <translation>替换媒体…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4635"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4634"/>
         <source>Export Raw Media…</source>
         <translation>导出原始媒体…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4636"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4635"/>
         <source>No Editable Export</source>
         <translation>无可编辑导出</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4643"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4642"/>
         <source>Import an editable Standard MIDI File or an already compiled WMID. Wwise MIDI stores one global tempo, so tempo-changing MID files are rejected.</source>
         <translation>导入可编辑标准 MIDI 文件或已编译 WMID。Wwise MIDI 只存储一个全局速度，因此会拒绝包含速度变化的 MID 文件。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4648"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4647"/>
         <source>Import a mono/stereo PCM16 or PCM24 WAV through the matching, licensed iZotope Hybrid Reverb plug-in. Existing decay tuning is retained.</source>
         <translation>通过匹配且获得许可的 iZotope Hybrid Reverb 插件导入单声道/立体声 PCM16 或 PCM24 WAV。保留现有衰减调音。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4653"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4652"/>
         <source>Import a PCM16 or PCM24 WAV through the game&apos;s matching Wwise Convolution Reverb plug-in, or import an already compiled WIR.</source>
         <translation>通过游戏匹配的 Wwise Convolution Reverb 插件导入 PCM16 或 PCM24 WAV，或导入已编译的 WIR。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4664"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4663"/>
         <source>Import an already compiled Crankcase Audio REV ADM3 model. REV models are interactive vehicle-engine data, not WAV audio.</source>
         <translation>导入已编译的 Crankcase Audio REV ADM3 模型。REV 模型是交互式车辆引擎数据，而不是 WAV 音频。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4669"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4668"/>
         <source>Unknown payloads cannot be replaced until their format is proven.</source>
         <translation>在证明格式之前，无法替换未知负载。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4676"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4675"/>
         <source>Select a row to see where its media is stored.</source>
         <translation>选择行以查看其媒体存储位置。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4685"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4684"/>
         <source>Source {id} — {location}</source>
         <translation>源 {id} — {location}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4687"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4686"/>
         <source> Used by Event(s): {events}.</source>
         <translation> 使用此源的事件：{events}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4796"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4795"/>
         <source>Full media in PCK</source>
         <translation>PCK 中的完整媒体</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4785"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4784"/>
         <source>Partial</source>
         <translation>部分</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3649"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3651"/>
         <source>{count} object(s) still link to it. Deleting leaves those links unresolved; retarget or disconnect them first.</source>
         <translation>仍有 {count} 个对象链接到它。删除会使这些链接无法解析；请先重新指定这些链接的目标或将其断开。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4658"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4657"/>
         <source>WAV import uses the codec, quality and sample rate shown below; the defaults match the original WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV has none.</source>
         <translation>WAV 导入使用下方显示的编解码器、质量和采样率；默认值与原始 WEM 一致。循环、提示点和标记取自 WAV；若 WAV 中没有，则取自原始 WEM。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4801"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4800"/>
         <source>Prefetch fragment</source>
         <translation>预取片段</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4804"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4803"/>
         <source>{count} ch</source>
         <translation>{count} 声道</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4811"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4810"/>
         <source> · +{count} more</source>
         <translation> · 另有 {count} 个</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4845"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4844"/>
         <source>{name}Event {id} — {count} media source(s)</source>
         <translation>{name}事件 {id} — {count} 个媒体源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4853"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4852"/>
         <source>All media sources — {count} shown</source>
         <translation>所有媒体源 — 显示 {count} 个</translation>
+    </message>
+</context>
+<context>
+    <name>StateView</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="376"/>
+        <source>Paste Tracks</source>
+        <translation>粘贴轨道</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="381"/>
+        <source>This state&apos;s symbol holds no object named {0}: select the object the tracks go to.</source>
+        <translation>此状态的元件中没有名为 {0} 的对象：请选择这些轨道要应用到的对象。</translation>
+    </message>
+</context>
+<context>
+    <name>States</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="218"/>
+        <source>Show this state in the timeline</source>
+        <translation>在时间轴中显示此状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="223"/>
+        <source>Loop</source>
+        <translation>循环</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="224"/>
+        <source>Start again from frame 0 when the last frame is reached</source>
+        <translation>到达最后一帧时从第 0 帧重新开始</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="227"/>
+        <source>The state that plays once this one ends</source>
+        <translation>此状态结束后播放的状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="228"/>
+        <source>(stays)</source>
+        <translation>（保持）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="232"/>
+        <source>Move up: the first state plays when the GUI opens</source>
+        <translation>上移：GUI 打开时播放第一个状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="234"/>
+        <source>Move down</source>
+        <translation>下移</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="235"/>
+        <source>Remove the state</source>
+        <translation>移除状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="240"/>
+        <source>Add a state: an animation of this symbol&apos;s objects</source>
+        <translation>添加状态：此元件中对象的动画</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/inspector.py" line="241"/>
+        <source>State</source>
+        <translation>状态</translation>
     </message>
 </context>
 <context>
@@ -28674,13 +31585,13 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
 <context>
     <name>StringInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1358"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1360"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1356"/>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1377"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1358"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1379"/>
         <source>Open resource file</source>
         <translation>打开资源文件</translation>
     </message>
@@ -28695,49 +31606,49 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
         <translation>打开资源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1351"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1353"/>
         <source>Resource</source>
         <translation>资源</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1365"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1367"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1363"/>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1380"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1365"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1382"/>
         <source>Add resource file to project</source>
         <translation>将资源文件添加到项目</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1428"/>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1455"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1430"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1457"/>
         <source>Resource path is empty</source>
         <translation>资源路径为空</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1433"/>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1460"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1435"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1462"/>
         <source>Unable to access application window</source>
         <translation>无法访问应用程序窗口</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1439"/>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1466"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1441"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1468"/>
         <source>You are not in project mode. Please open a project (&quot;File&quot; &gt; &quot;New Mod/Open Project&quot;)</source>
         <translation>当前未处于项目模式。请打开一个项目（“文件”&gt;“新建模组/打开项目”）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1547"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1549"/>
         <source>File added to project:
 {}</source>
         <translation>文件已添加到项目：
 {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1556"/>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1591"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1558"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1593"/>
         <source>Error: Resource file not found.
 
 Resource: {}
@@ -28750,9 +31661,34 @@ Searched in both PAK files and system files.</source>
 已在 PAK 文件和系统文件中搜索。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1489"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1491"/>
         <source>No project is currently open.</source>
         <translation>当前未打开项目。</translation>
+    </message>
+</context>
+<context>
+    <name>SupportDialog</name>
+    <message>
+        <location filename="../../ui/support.py" line="17"/>
+        <location filename="../../ui/support.py" line="28"/>
+        <location filename="../../ui/support.py" line="34"/>
+        <source>Support REasy</source>
+        <translation>支持 REasy</translation>
+    </message>
+    <message>
+        <location filename="../../ui/support.py" line="29"/>
+        <source>REasy is free to use. If it helps your modding, you can support its development.</source>
+        <translation>REasy 可免费使用。如果它对你的模组制作有帮助，你可以支持它的开发。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/support.py" line="40"/>
+        <source>Star on GitHub</source>
+        <translation>在 GitHub 上加星</translation>
+    </message>
+    <message>
+        <location filename="../../ui/support.py" line="44"/>
+        <source>Close</source>
+        <translation>关闭</translation>
     </message>
 </context>
 <context>
@@ -28792,6 +31728,19 @@ Searched in both PAK files and system files.</source>
         <location filename="../../file_handlers/mmtr/surface_data.py" line="489"/>
         <source>UV the material&apos;s textures use</source>
         <translation>材质纹理使用的 UV</translation>
+    </message>
+</context>
+<context>
+    <name>TablePage</name>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="249"/>
+        <source>Add rows (copies of the selected rows)</source>
+        <translation>添加行（所选行的副本）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/bhvt/editor/raw_pages.py" line="250"/>
+        <source>Remove rows</source>
+        <translation>移除行</translation>
     </message>
 </context>
 <context>
@@ -29046,8 +31995,8 @@ Searched in both PAK files and system files.</source>
     <name>TexViewer</name>
     <message>
         <location filename="../../file_handlers/tex/tex_viewer.py" line="152"/>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="285"/>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="288"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="301"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="304"/>
         <source>Image:</source>
         <translation>图像：</translation>
     </message>
@@ -29067,208 +32016,412 @@ Searched in both PAK files and system files.</source>
         <translation>通道：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="183"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="182"/>
         <source>Zoom:</source>
         <translation>缩放：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="196"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="195"/>
         <source>Fit to Window</source>
         <translation>适应窗口</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="213"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="212"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="239"/>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="722"/>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="725"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="238"/>
+        <source>Export</source>
+        <translation>导出</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="244"/>
+        <source>DDS...</source>
+        <translation>DDS...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="245"/>
+        <source>Every image, mip and slice, as stored</source>
+        <translation>所有图像、mip 和切片，按存储原样</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="246"/>
+        <source>Image as PNG or TGA...</source>
+        <translation>图像为 PNG 或 TGA...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="247"/>
+        <source>The shown image&apos;s top mip with every channel as stored</source>
+        <translation>当前显示图像的最高级 mip，所有通道按存储原样</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="248"/>
+        <source>Lanes as PNG or TGA...</source>
+        <translation>各分量为 PNG 或 TGA...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="250"/>
+        <source>One image per lane, named after the texture and the lane: a value in grey, a normal map as an OpenGL normal map</source>
+        <translation>每个分量一张图像，按纹理和分量命名：数值为灰度图，法线贴图为 OpenGL 法线贴图</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="273"/>
+        <source>Import Lanes...</source>
+        <translation>导入分量...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="275"/>
+        <source>Rebuild the texture lane by lane from images, constants or its kind&apos;s neutral values</source>
+        <translation>逐个分量地用图像、常量或其类型的中性值重建纹理</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="321"/>
+        <source>Import DDS/PNG/TGA...</source>
+        <translation>导入 DDS/PNG/TGA...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="321"/>
+        <source>Create Texture...</source>
+        <translation>创建纹理...</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="337"/>
+        <source>{lane} (decoded)</source>
+        <translation>{lane}（已解码）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="349"/>
+        <source>A resident copy exports its streaming copy&apos;s full chain.</source>
+        <translation>常驻副本会导出其流式副本的完整链。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="521"/>
+        <source>kind {name}</source>
+        <translation>类型 {name}</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="658"/>
+        <source>Import image</source>
+        <translation>导入图像</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="663"/>
+        <source>Import Lanes</source>
+        <translation>导入分量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="664"/>
+        <source>Each lane keeps what the texture holds, or takes an image&apos;s channel, a constant or the kind&apos;s neutral value. Normal maps are read as OpenGL normal maps (green up) unless DirectX is ticked. A resident copy is rebuilt from its streaming copy&apos;s full chain.</source>
+        <translation>每个分量保留纹理中的现有内容，或取用图像的某个通道、常量或该类型的中性值。除非勾选 DirectX，否则法线贴图按 OpenGL 法线贴图（绿色朝上）读取。常驻副本会根据其流式副本的完整链重建。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="680"/>
+        <source>Import lanes</source>
+        <translation>导入分量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="747"/>
+        <source>Wrote {files}.</source>
+        <translation>已写入 {files}。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="750"/>
         <source>Export DDS</source>
         <translation>导出 DDS</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="251"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="758"/>
+        <source>Export Image</source>
+        <translation>导出图像</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="768"/>
+        <source>Export Lanes</source>
+        <translation>导出分量</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="262"/>
         <source>Cook:</source>
         <translation>烘制格式：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="254"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="265"/>
         <source>Choose a game...</source>
         <translation>选择游戏...</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="302"/>
-        <source>Import DDS...</source>
-        <translation>导入 DDS...</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="262"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="279"/>
         <source>Convert to this cook</source>
         <translation>转换为此烘制格式</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="285"/>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="288"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="301"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="304"/>
         <source>Face:</source>
         <translation>面：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="302"/>
-        <source>Import DDS/PNG...</source>
-        <translation>导入 DDS/PNG...</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="316"/>
-        <source>Exports every image, mip and slice: {images}, {mips}{slices}.</source>
-        <translation>导出所有图像、mip 和切片：{images}，{mips}{slices}。</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="324"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="351"/>
         <source>Already a DDS: {images} x {mips}.</source>
         <translation>已是 DDS：{images} x {mips}。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="337"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="364"/>
         <source>Mip chain</source>
         <translation>Mip 链</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="339"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="366"/>
         <source>The full chain ships as a separate resource under a streaming/ root; the resident copy is a tail of it, kept beside its full texture.</source>
         <translation>完整链作为单独资源位于 streaming/ 根目录下；常驻副本是其尾部，保存在完整纹理旁边。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="342"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="369"/>
         <source>Full texture (streamed)</source>
         <translation>完整纹理（流式）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="342"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="369"/>
         <source>Resident lower-detail copy</source>
         <translation>常驻低细节副本</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="344"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="371"/>
         <source>EV</source>
         <translation>EV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="344"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="371"/>
         <source>Exposure the effects apply as 2 ** EV.</source>
         <translation>效果按 2 ** EV 应用的曝光。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="345"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="372"/>
         <source>Type</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="345"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="372"/>
         <source>The build&apos;s own via.render.TextureType.</source>
         <translation>该构建自身的 via.render.TextureType。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="347"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="374"/>
         <source>Mips omitted</source>
         <translation>已省略 mip</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="348"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="375"/>
         <source>Top mip levels this copy leaves out; they are in the full texture.</source>
         <translation>此副本省略的顶部 mip 级别；它们位于完整纹理中。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="352"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="379"/>
         <source>Tail re-filtered</source>
         <translation>尾部已重新过滤</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="353"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="380"/>
         <source>This resident normal map&apos;s low mips were re-filtered, not sliced from the chain.</source>
         <translation>此常驻法线贴图的低级 mip 是重新过滤生成的，而非从链中截取。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="357"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="384"/>
         <source>Range compression exp</source>
         <translation>范围压缩指数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="358"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="385"/>
         <source>The loader stores this value as the texture&apos;s float RangeCompressionExp.</source>
         <translation>加载器将此值存储为纹理的浮点值 RangeCompressionExp。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="362"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="389"/>
         <source>High priority load streaming</source>
         <translation>高优先级加载流式传输</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="363"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="390"/>
         <source>The texture&apos;s HighPriorityLoadStreaming switch.</source>
         <translation>纹理的 HighPriorityLoadStreaming 开关。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="485"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="512"/>
         <source>Failed to decode: {error}</source>
         <translation>解码失败：{error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="617"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="639"/>
         <source>Choose a game before importing.</source>
         <translation>导入前请先选择游戏。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="623"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="647"/>
         <source>Import</source>
         <translation>导入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="638"/>
-        <source>Import PNG</source>
-        <translation>导入 PNG</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="680"/>
-        <source>Save .tex</source>
-        <translation>保存 .tex</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="700"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="717"/>
         <source>Texture type</source>
         <translation>纹理类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="704"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="721"/>
         <source>Texture type index</source>
         <translation>纹理类型索引</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="709"/>
+        <location filename="../../file_handlers/tex/tex_viewer.py" line="726"/>
         <source>Written as {name}.</source>
         <translation>已写入为 {name}。</translation>
     </message>
+</context>
+<context>
+    <name>TextureSetEdit</name>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="725"/>
-        <source>No TEX data loaded.</source>
-        <translation>未加载 TEX 数据。</translation>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="70"/>
+        <source>Left</source>
+        <translation>左</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/tex/tex_viewer.py" line="728"/>
-        <source>Save DDS</source>
-        <translation>保存 DDS</translation>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="70"/>
+        <source>Top</source>
+        <translation>顶部</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="70"/>
+        <source>Right</source>
+        <translation>右</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="70"/>
+        <source>Bottom</source>
+        <translation>底部</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="71"/>
+        <source>The rectangle the pattern is drawn in, in the object&apos;s own space, before its Scale</source>
+        <translation>绘制图案的矩形，位于对象自身空间中，在应用其 Scale 之前</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="78"/>
+        <source>Remove the entry</source>
+        <translation>移除条目</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="82"/>
+        <source>Add an entry: one pattern of the UV sequence file, drawn in a rectangle of its own</source>
+        <translation>添加条目：UV 序列文件中的一个图案，绘制在其自身的矩形中</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="83"/>
+        <source>Entry</source>
+        <translation>条目</translation>
+    </message>
+</context>
+<context>
+    <name>Timeline</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="410"/>
+        <source>The control whose states are listed. Click to select it: its states are renamed, ordered and removed in the inspector.</source>
+        <translation>列出其状态的控件。单击以选中它：可在检查器中重命名、排序和移除其状态。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="415"/>
+        <source>The state shown: one animation of the control&apos;s objects. Choosing a state starts it from its first frame, as a script does in the game.</source>
+        <translation>当前显示的状态：控件对象的一段动画。选择状态会从其第一帧开始播放，就像游戏中的脚本那样。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="417"/>
+        <source>Add a state to the control&apos;s symbol</source>
+        <translation>向控件的元件添加状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="419"/>
+        <source>Back to the first frame</source>
+        <translation>回到第一帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="420"/>
+        <source>Play: every control runs its state, as in the game</source>
+        <translation>播放：每个控件运行其状态，与游戏中一样</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="427"/>
+        <source>The frame shown</source>
+        <translation>当前显示的帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="429"/>
+        <source>Track</source>
+        <translation>轨道</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="430"/>
+        <source>Add a key at the playhead on the selected tracks</source>
+        <translation>在所选轨道的播放头处添加关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="431"/>
+        <source>Key</source>
+        <translation>关键帧</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="432"/>
+        <source>Delete the selected keys or tracks (Del)</source>
+        <translation>删除所选关键帧或轨道 (Del)</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="434"/>
+        <source>Curves: the selected tracks&apos; values over the frames. Keys drag in frame and value, a selected curved key shows its tangents to drag, a double click adds a key.</source>
+        <translation>曲线：所选轨道在各帧上的值。可沿帧和值拖动关键帧，选中的曲线关键帧会显示可拖动的切线，双击可添加关键帧。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="437"/>
+        <source>Curves</source>
+        <translation>曲线</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="439"/>
+        <source>Show the whole state</source>
+        <translation>显示整个状态</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="509"/>
+        <source>Animate a property of {0} in this state</source>
+        <translation>在此状态中为 {0} 的属性制作动画</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="510"/>
+        <source>Select an object of {0} to animate one of its properties</source>
+        <translation>选择 {0} 中的对象，为其某个属性制作动画</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="519"/>
+        <source>{0} has no states. A state is an animation of the objects of its symbol: add one with +.</source>
+        <translation>{0} 没有状态。状态是其元件中对象的动画：可用 + 添加。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="520"/>
+        <source>{0} has no states.</source>
+        <translation>{0} 没有状态。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="567"/>
+        <source>Animate a property of {0}</source>
+        <translation>为 {0} 的属性制作动画</translation>
     </message>
 </context>
 <context>
     <name>ToolDownloads</name>
     <message>
-        <location filename="../../tools/github_downloader.py" line="22"/>
+        <location filename="../../tools/github_downloader.py" line="23"/>
         <source>Download Failed</source>
         <translation>下载失败</translation>
     </message>
     <message>
-        <location filename="../../tools/github_downloader.py" line="76"/>
+        <location filename="../../tools/github_downloader.py" line="77"/>
         <source>{title} could not be downloaded: {error}
 
 Download it from {page} and extract it into:
@@ -29290,6 +32443,19 @@ Download it from {page} and extract it into:
         <location filename="../../file_handlers/motion/editor/curves.py" line="69"/>
         <source>Delete Keys</source>
         <translation>删除关键帧</translation>
+    </message>
+</context>
+<context>
+    <name>Tracks</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="63"/>
+        <source>Track</source>
+        <translation>轨道</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/timeline.py" line="63"/>
+        <source>Type</source>
+        <translation>类型</translation>
     </message>
 </context>
 <context>
@@ -29473,27 +32639,27 @@ Do you want to auto-download and update now?</source>
 <context>
     <name>UserDataInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1678"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1680"/>
         <source>Modify…</source>
         <translation>修改…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1676"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1678"/>
         <source>Edit userdata string and instance type</source>
         <translation>编辑 UserData 字符串和实例类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1717"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1719"/>
         <source>Modify UserData String</source>
         <translation>修改 UserData 字符串</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1718"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1720"/>
         <source>Enter new UserData string:</source>
         <translation>输入新的 UserData 字符串：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="1775"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1777"/>
         <source>Select UserData Instance Type</source>
         <translation>选择 UserData 实例类型</translation>
     </message>
@@ -29501,355 +32667,355 @@ Do you want to auto-download and update now?</source>
 <context>
     <name>UvarHandler</name>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="273"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="275"/>
         <source>(unnamed)</source>
         <translation>（未命名）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="27"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="29"/>
         <source>{count} items</source>
         <translation>{count} 项</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="30"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="32"/>
         <source>{count} files</source>
         <translation>{count} 个文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="33"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="35"/>
         <source>{count} variables</source>
         <translation>{count} 个变量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="439"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="441"/>
         <source>[ ] empty</source>
         <translation>[ ] 空</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="443"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="445"/>
         <source>[...] {count} items</source>
         <translation>[...] {count} 项</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="39"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="41"/>
         <source>{nodes} nodes, {relations} relations</source>
         <translation>{nodes} 个节点，{relations} 个关系</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="42"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="44"/>
         <source>Output Node</source>
         <translation>输出节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="48"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="50"/>
         <source>id {id}, {count} params</source>
         <translation>ID {id}，{count} 个参数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="57"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="59"/>
         <source>Edit Name</source>
         <translation>编辑名称</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="589"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="677"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="591"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="679"/>
         <source>Add Variable</source>
         <translation>添加变量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="590"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="725"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="592"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="727"/>
         <source>Add Many Variables</source>
         <translation>批量添加变量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="594"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="596"/>
         <source>Edit Value</source>
         <translation>编辑值</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="595"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="597"/>
         <source>Edit Type</source>
         <translation>编辑类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="597"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="599"/>
         <source>Add Expression</source>
         <translation>添加表达式</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="599"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="925"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="601"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="927"/>
         <source>Delete Variable</source>
         <translation>删除变量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="602"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1173"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="604"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1175"/>
         <source>Add Node</source>
         <translation>添加节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="60"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="62"/>
         <source>Add Relation</source>
         <translation>添加关系</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="63"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="65"/>
         <source>Set Output Node</source>
         <translation>设置输出节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="607"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="609"/>
         <source>Remove Expression</source>
         <translation>移除表达式</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="612"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="614"/>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1295"/>
         <source>Rename Node</source>
         <translation>重命名节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="613"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1309"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="615"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1307"/>
         <source>Change Node Id</source>
         <translation>更改节点 ID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="614"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1329"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="616"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1322"/>
         <source>Add Parameter</source>
         <translation>添加参数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="616"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="618"/>
         <source>Delete Node</source>
         <translation>删除节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="66"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="68"/>
         <source>Edit Parameter</source>
         <translation>编辑参数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="620"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="622"/>
         <source>Change Name Hash</source>
         <translation>更改名称哈希</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="622"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="624"/>
         <source>Delete Parameter</source>
         <translation>删除参数</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="69"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="71"/>
         <source>Edit Relation</source>
         <translation>编辑关系</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="627"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="629"/>
         <source>Delete Relation</source>
         <translation>删除关系</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="633"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="998"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="635"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1000"/>
         <source>Add Embedded File</source>
         <translation>添加嵌入文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="637"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1043"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="639"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1045"/>
         <source>Delete Embedded File</source>
         <translation>删除嵌入文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="642"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="644"/>
         <source>Copy GUID</source>
         <translation>复制 GUID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="643"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="645"/>
         <source>Generate New GUID</source>
         <translation>生成新 GUID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="646"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="648"/>
         <source>Copy Name Hash</source>
         <translation>复制名称哈希</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="649"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="651"/>
         <source>Change Type</source>
         <translation>更改类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="664"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="666"/>
         <source>Enter new file name:</source>
         <translation>输入新文件名：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="677"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="679"/>
         <source>Enter variable name:</source>
         <translation>输入变量名：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="72"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="74"/>
         <source>Variable Type</source>
         <translation>变量类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="36"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="38"/>
         <source>Expression</source>
         <translation>表达式</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="45"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="47"/>
         <source>Nodes</source>
         <translation>节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="51"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="53"/>
         <source>Outputs</source>
         <translation>输出</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="54"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="56"/>
         <source>Inputs</source>
         <translation>输入</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="75"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="77"/>
         <source>Select variable type:</source>
         <translation>选择变量类型：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="87"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="89"/>
         <source>Type</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="90"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="92"/>
         <source>Right-click for actions</source>
         <translation>右键单击查看操作</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="266"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="268"/>
         <source>Header</source>
         <translation>文件头</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="272"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="274"/>
         <source>Name</source>
         <translation>名称</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="279"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="383"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="281"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="385"/>
         <source>Variables</source>
         <translation>变量</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="301"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="340"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="303"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="342"/>
         <source>Embedded Files</source>
         <translation>嵌入文件</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="331"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1024"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="333"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1026"/>
         <source>Click to expand...</source>
         <translation>点击展开...</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="430"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="432"/>
         <source>null</source>
         <translation>空值</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="447"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="449"/>
         <source>True</source>
         <translation>真</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="447"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="449"/>
         <source>False</source>
         <translation>假</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="474"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="476"/>
         <source>GUID</source>
         <translation>GUID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="488"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="490"/>
         <source>Name Hash</source>
         <translation>名称哈希</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="726"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="728"/>
         <source>Number of variables to add:</source>
         <translation>要添加的变量数：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="763"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="765"/>
         <source>Base Name (Optional)</source>
         <translation>基础名称（可选）</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="764"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="766"/>
         <source>Enter base name (leave empty for auto: {name}):</source>
         <translation>输入基础名称（留空则自动使用：{name}）：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="821"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="823"/>
         <source>Enter new variable name:</source>
         <translation>输入新变量名：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="868"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="870"/>
         <source>Invalid Value</source>
         <translation>值无效</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="926"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1044"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="928"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1046"/>
         <source>Are you sure you want to delete &apos;{name}&apos;?</source>
         <translation>确定要删除“{name}”吗？</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="967"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="969"/>
         <source>Delete Failed</source>
         <translation>删除失败</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="967"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="969"/>
         <source>Failed to delete variable</source>
         <translation>删除变量失败</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="999"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1001"/>
         <source>Enter embedded file name:</source>
         <translation>输入嵌入文件名称：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1139"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1141"/>
         <source>No Nodes</source>
         <translation>无节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1140"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1142"/>
         <source>There are no nodes to select as output.</source>
         <translation>没有可选作输出的节点。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="78"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="80"/>
         <source>Node id:</source>
         <translation>节点 ID：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1173"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1175"/>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1295"/>
         <source>Node name:</source>
         <translation>节点名称：</translation>
@@ -29860,89 +33026,89 @@ Do you want to auto-download and update now?</source>
         <translation>选择新输出节点</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1329"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1322"/>
         <source>Type:</source>
         <translation>类型：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1336"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1329"/>
         <source>Parameter Name Hash</source>
         <translation>参数名称哈希</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1337"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1474"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1330"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1467"/>
         <source>Hex (e.g., 0x1234abcd):</source>
         <translation>十六进制（例如 0x1234abcd）：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1345"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1386"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1448"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1482"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1338"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1379"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1441"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1475"/>
         <source>Invalid</source>
         <translation>无效</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1345"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1482"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1338"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1475"/>
         <source>Invalid hex value</source>
         <translation>十六进制值无效</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="81"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="83"/>
         <source>Parameter Value</source>
         <translation>参数值</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1386"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1448"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1379"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1441"/>
         <source>Invalid GUID</source>
         <translation>GUID 无效</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1473"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1466"/>
         <source>Change Parameter Name Hash</source>
         <translation>更改参数名称哈希</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1494"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1551"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1487"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1543"/>
         <source>Source node id:</source>
         <translation>源节点 ID：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1502"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1559"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1495"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1551"/>
         <source>Source port:</source>
         <translation>源端口：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1510"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1567"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1503"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1559"/>
         <source>Destination node id:</source>
         <translation>目标节点 ID：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1518"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1575"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1511"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1567"/>
         <source>Destination port:</source>
         <translation>目标端口：</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="84"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="86"/>
         <source>Invalid Relation</source>
         <translation>关系无效</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1528"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1588"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1520"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1579"/>
         <source>Source or destination node id does not exist.</source>
         <translation>源节点或目标节点 ID 不存在。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1535"/>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1595"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1527"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="1586"/>
         <source>Self-connections are not allowed.</source>
         <translation>不允许节点自连接。</translation>
     </message>
@@ -29960,12 +33126,23 @@ Do you want to auto-download and update now?</source>
         <translation>类型：{type}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/pyside/uvar_value_dialog.py" line="83"/>
+        <location filename="../../file_handlers/pyside/uvar_value_dialog.py" line="75"/>
         <source>Value</source>
         <translation>值</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/pyside/uvar_value_dialog.py" line="187"/>
+        <source>Min:</source>
+        <translation>最小值：</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/uvar_value_dialog.py" line="187"/>
+        <source>Max:</source>
+        <translation>最大值：</translation>
+    </message>
+    <message>
         <location filename="../../file_handlers/pyside/uvar_value_dialog.py" line="19"/>
+        <location filename="../../file_handlers/pyside/uvar_value_dialog.py" line="187"/>
         <source>Value:</source>
         <translation>值：</translation>
     </message>
@@ -29973,12 +33150,12 @@ Do you want to auto-download and update now?</source>
 <context>
     <name>UvarViewer</name>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="198"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="200"/>
         <source>Name</source>
         <translation>名称</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/uvar/uvar_handler.py" line="198"/>
+        <location filename="../../file_handlers/uvar/uvar_handler.py" line="200"/>
         <source>Value</source>
         <translation>值</translation>
     </message>
@@ -30207,7 +33384,7 @@ Do you want to auto-download and update now?</source>
 <context>
     <name>Vec3ColorInput</name>
     <message>
-        <location filename="../../file_handlers/pyside/value_widgets.py" line="2466"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="2469"/>
         <source>Select Color</source>
         <translation>选择颜色</translation>
     </message>
@@ -30496,19 +33673,27 @@ Saved paths and folders you visit often.</source>
     </message>
 </context>
 <context>
+    <name>_ActionIconsDelegate</name>
+    <message>
+        <location filename="../../ui/project_manager/delegate.py" line="171"/>
+        <source>REasy has no editor for this file type</source>
+        <translation>REasy 没有此文件类型的编辑器</translation>
+    </message>
+</context>
+<context>
     <name>_ActionsDelegate</name>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="201"/>
+        <location filename="../../ui/project_manager/delegate.py" line="222"/>
         <source>Add or remove bookmark</source>
         <translation>添加或移除书签</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="203"/>
+        <location filename="../../ui/project_manager/delegate.py" line="224"/>
         <source>Remove from project</source>
         <translation>从项目中移除</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="203"/>
+        <location filename="../../ui/project_manager/delegate.py" line="224"/>
         <source>Extract to project</source>
         <translation>提取到项目</translation>
     </message>
@@ -30524,12 +33709,12 @@ Saved paths and folders you visit often.</source>
 <context>
     <name>_BookmarkRowDelegate</name>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="309"/>
+        <location filename="../../ui/project_manager/delegate.py" line="333"/>
         <source>Remove bookmark</source>
         <translation>移除书签</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="394"/>
+        <location filename="../../ui/project_manager/delegate.py" line="418"/>
         <source>Tags: {tags}</source>
         <translation>标签：{tags}</translation>
     </message>
@@ -30540,6 +33725,34 @@ Saved paths and folders you visit often.</source>
         <location filename="../../file_handlers/sound/sound_property_editor.py" line="277"/>
         <source>Unknown ({value})</source>
         <translation>未知（{value}）</translation>
+    </message>
+</context>
+<context>
+    <name>_Content</name>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="52"/>
+        <source>The content belongs to the object itself, not to a placement: open its symbol alone to change it.</source>
+        <translation>内容属于对象本身，而不属于某处放置：请单独打开其元件进行修改。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="62"/>
+        <source>Sequence</source>
+        <translation>序列</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="62"/>
+        <source>The pattern list of the object&apos;s UV sequence file (UVSequence) the picture is taken from</source>
+        <translation>图片所取自的对象 UV 序列文件（UVSequence）的图案列表</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="64"/>
+        <source>Pattern</source>
+        <translation>图案</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/gui/editor/payloads.py" line="64"/>
+        <source>The pattern of that list: one rectangle of a texture</source>
+        <translation>该列表中的图案：纹理中的一个矩形</translation>
     </message>
 </context>
 <context>
@@ -30801,13 +34014,13 @@ Saved paths and folders you visit often.</source>
 <context>
     <name>_MeshViewport</name>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2582"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2598"/>
         <source>Attribute colors are shown without lighting.</source>
         <translation>属性颜色以无光照方式显示。</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2655"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2662"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2671"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2678"/>
         <source>Game lighting draws the main geometry only.</source>
         <translation>游戏光照仅绘制主几何体。</translation>
     </message>
@@ -30923,12 +34136,12 @@ Texture Coordinates follow the mesh&apos;s UV unwrap, which suits textures paint
 <context>
     <name>_PakActionsDelegate</name>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="268"/>
+        <location filename="../../ui/project_manager/delegate.py" line="292"/>
         <source>Add or remove bookmark</source>
         <translation>添加或移除书签</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/delegate.py" line="269"/>
+        <location filename="../../ui/project_manager/delegate.py" line="293"/>
         <source>Extract to project</source>
         <translation>提取到项目</translation>
     </message>

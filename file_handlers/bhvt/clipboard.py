@@ -6,6 +6,8 @@ import bisect
 import copy
 from dataclasses import dataclass, field
 
+from PySide6.QtCore import QCoreApplication
+
 from file_handlers.document_commands import ReplaceContents, SetFields
 
 from .document import BhvtDocument
@@ -20,6 +22,8 @@ from .references import field_key, field_value, object_place, object_ref, object
 from .rules import attribute_bit, node_fields
 from .sections import signed
 from .structure import Structure
+
+translate = QCoreApplication.translate
 
 
 @dataclass(eq=False)
@@ -150,7 +154,7 @@ def _copy_tree(document: BhvtDocument, structure: Structure, roots: list, clip: 
 
 
 def _paste_tree(document: BhvtDocument, tree: Tree, parent: Node, index: int | None) -> list[Node]:
-    clip, structure, text = _clip, Structure(tree), document.tr("Paste")
+    clip, structure, text = _clip, Structure(tree), translate("BhvtDocument", "Paste")
     rules, graph = structure.rules, structure.graph
     fsm_bit = attribute_bit(tree.version, "IsFSMNode")
     roots = {key for key, _guard in clip.items}
@@ -273,7 +277,7 @@ def _copy_states(document: BhvtDocument, structure: Structure, roots: list, clip
 
 
 def _paste_states(document: BhvtDocument, hfsm: Hfsm, parent: Record, index: int | None) -> list[Record]:
-    clip, structure, text = _clip, Structure(hfsm), document.tr("Paste")
+    clip, structure, text = _clip, Structure(hfsm), translate("BhvtDocument", "Paste")
     graph, names = structure.graph, structure.graph["action_fields"]
     block, base = graph["objects"]["instance"]
     events, first = graph["objects"]["transition_events"]

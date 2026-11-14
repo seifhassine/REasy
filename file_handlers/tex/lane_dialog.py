@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QCoreApplication, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -64,7 +64,8 @@ def new_texture(app, parent=None, *, image: str = "") -> None:
     dialog = NewTextureDialog(kind_catalogs(), game=profile.game if profile else "", image=image, parent=parent or app)
     if dialog.exec() == QDialog.DialogCode.Accepted:
         paths, notes = dialog.written
-        written = dialog.tr("Wrote {files}.").format(files=", ".join(Path(path).name for path in paths))
+        written = QCoreApplication.translate("NewTextureDialog", "Wrote {files}.").format(
+            files=", ".join(Path(path).name for path in paths))
         app.status_bar.showMessage(" ".join([written, *notes]), 10000)
         app.add_tab(filename=paths[0])
     dialog.deleteLater()

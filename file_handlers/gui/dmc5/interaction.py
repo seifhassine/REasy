@@ -59,8 +59,7 @@ class _Bar:
     step: list[float]
 
 
-def _tr(text: str) -> str:
-    return QCoreApplication.translate("GuiStage", text)
+translate = QCoreApplication.translate
 
 
 def virtual_key(event) -> int:
@@ -650,22 +649,27 @@ class Dmc5GuiInteraction:
     def gaps(self, live: bool) -> list[tuple[str, str]]:
         scene, context = self.stage.scene, self.stage.icon_context
         filled = [node for node in scene.nodes if node.object.type_name in _FILLED]
-        found = [(node.path, _tr("the items show what the item they are copied from holds: the game's script fills "
-                                 "them")) for node in filled if node.path in self.items]
-        found += [(node.path, _tr("its items are not made: the game leaves a grid's ItemOffset unset when it stores "
-                                  "none")) for node in filled if node.path not in self.items and self._template(node)]
+        found = [(node.path, translate("GuiStage", "the items show what the item they are copied from holds: the "
+                                                   "game's script fills them"))
+                 for node in filled if node.path in self.items]
+        found += [(node.path, translate("GuiStage", "its items are not made: the game leaves a grid's ItemOffset "
+                                                    "unset when it stores none"))
+                  for node in filled if node.path not in self.items and self._template(node)]
         if not live:
             return found
         if not context.keyboard_mode:
-            return [*found, (scene.root.path, _tr("lists are moved by the gamepad, which the preview does not read"))]
+            return [*found, (scene.root.path,
+                             translate("GuiStage", "lists are moved by the gamepad, which the preview does not read"))]
         for owner in self._lists():
             commands = self.profile.grid_input if owner.path in self.grids else [
                 command for side, command in self._rule(owner).items() if side in ("prev", "next")]
             if any(self._key(command) is None for command in commands):
-                found.append((owner.path, _tr("the keys the player bound to this list's input are not known")))
+                found.append((owner.path,
+                              translate("GuiStage", "the keys the player bound to this list's input are not known")))
             if self.stage.pointer and self.stage.pointer != self.profile.enum_label(
                     owner.render_properties, "MouseSelectType"):
-                found.append((owner.path, _tr("this list takes the pointer as {0} here; the file says {1}").format(
+                found.append((owner.path, translate(
+                    "GuiStage", "this list takes the pointer as {0} here; the file says {1}").format(
                     self.stage.pointer, self.profile.enum_label(owner.render_properties, "MouseSelectType"))))
         return [*found, *self.missed.items()]
 
@@ -829,10 +833,11 @@ class Dmc5GuiInteraction:
                 return True
             try:
                 if self.stage.device is None:
-                    raise TextLayoutGap(_tr("no frame is drawn"))
+                    raise TextLayoutGap(translate("GuiStage", "no frame is drawn"))
                 shown = self.stage.device.display_size(node)
             except TextLayoutGap as gap:
-                self.missed[node.path] = _tr("its text size is not known, so the pointer misses it ({0})").format(gap)
+                self.missed[node.path] = translate(
+                    "GuiStage", "its text size is not known, so the pointer misses it ({0})").format(gap)
                 return False
             return min(shown) > 0.0 and quad(box(shown))
         if kind == "via.gui.TextureSet" and isinstance(node.object.special_data, GuiTextureSet):

@@ -6,6 +6,7 @@ import bisect
 import copy
 import random
 
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QUndoCommand
 
 from file_handlers.document_commands import Change, ReplaceContents, SetFields
@@ -18,6 +19,8 @@ from .references import (action_objects, asset, field_key, field_value, hfsm_act
                          object_ref, object_value, references)
 from .rules import attribute_bit, authoring, constructor_values, hfsm_rules, node_fields, rules_of, tree_rules
 from .tree_codec import NO_ID
+
+translate = QCoreApplication.translate
 
 READ_ONLY = {"id", "ex_id"}
 MANAGED = {"name", "name_offset", "name_hash", "full_name_hash", "reference_tree_path_offset", "parent", "parent_ex",
@@ -321,7 +324,7 @@ def first_selector(tree: Tree, parent: Node) -> str | None:
 
 
 def add_node(document: BhvtDocument, tree: Tree, parent: Node, name: str | None = None) -> Node:
-    rules, text = tree_rules(tree.version), document.tr("Add node")
+    rules, text = tree_rules(tree.version), translate("BhvtDocument", "Add node")
     if parent.attribute & attribute_bit(tree.version, "HasReferenceTree"):
         raise BhvtFormatError(f"{parent.name} runs a reference tree, which holds its children")
     fsm = bool(parent.attribute & attribute_bit(tree.version, "IsFSMNode"))
@@ -339,7 +342,7 @@ def add_node(document: BhvtDocument, tree: Tree, parent: Node, name: str | None 
 
 
 def set_selector(document: BhvtDocument, tree: Tree, node: Node, type_name: str | None) -> None:
-    set_reference(document, tree, node, "selector_id", None, type_name, text=document.tr("Set selector"))
+    set_reference(document, tree, node, "selector_id", None, type_name, text=translate("BhvtDocument", "Set selector"))
 
 
 def _referenced(document: BhvtDocument, tree: Tree, node: Node, field: str, value, old: list, text: str) -> None:
@@ -355,7 +358,7 @@ def _made(document: BhvtDocument, tree: Tree, field: str, type_name: str, create
 
 def set_reference(document: BhvtDocument, tree: Tree, node: Node, field: str, index: int | None,
                   type_name: str | None, created=None, text: str | None = None) -> None:
-    text, current = text or document.tr("Set object"), getattr(node, field)
+    text, current = text or translate("BhvtDocument", "Set object"), getattr(node, field)
     old = object_ref(tree, field, current if index is None else current[index])
     with document.macro(text):
         value = -1 if type_name is None else _made(document, tree, field, type_name, created)
@@ -365,7 +368,7 @@ def set_reference(document: BhvtDocument, tree: Tree, node: Node, field: str, in
 
 def add_reference(document: BhvtDocument, tree: Tree, node: Node, field: str, type_name: str, row: int | None = None,
                   created=None, text: str | None = None) -> None:
-    text = text or document.tr("Add object")
+    text = text or translate("BhvtDocument", "Add object")
     with document.macro(text):
         value = _made(document, tree, field, type_name, created)
         items = [list(item) if isinstance(item, list) else item for item in getattr(node, field)]
@@ -377,7 +380,7 @@ def remove_reference(document: BhvtDocument, tree: Tree, node: Node, field: str,
                      row: int | None = None, text: str | None = None) -> None:
     items = [list(item) if isinstance(item, list) else item for item in getattr(node, field)]
     old = object_ref(tree, field, (items if row is None else items[row]).pop(position))
-    _referenced(document, tree, node, field, items, [old], text or document.tr("Remove object"))
+    _referenced(document, tree, node, field, items, [old], text or translate("BhvtDocument", "Remove object"))
 
 
 def remove_node(document: BhvtDocument, tree: Tree, node: Node) -> None:
@@ -402,7 +405,7 @@ def remove_node(document: BhvtDocument, tree: Tree, node: Node) -> None:
         if start in values and not values[start] and record["children"]:
             values.update(default_entry(rules, record))
     objects = _tree_objects(tree, tree.nodes, {}) - _tree_objects(tree, kept, changes)
-    text = document.tr("Remove node")
+    text = translate("BhvtDocument", "Remove node")
     ids = transition_ids(tree, tree.nodes, {}) - transition_ids(tree, kept, changes)
     _push(document, [ReplaceContents(document, tree, "nodes", kept, text),
                      *_removal(document, tree, objects, kept, changes, text),
@@ -416,11 +419,12 @@ def set_attribute(document: BhvtDocument, tree: Tree, node: Node, attribute: int
                        if name not in vars(node)})
     referenced = bool(attribute & attribute_bit(tree.version, "HasReferenceTree"))
     reference = (node.reference_tree or "") if referenced else None
-    set_fields(document, node, document.tr("Node attributes"), attribute=attribute, reference_tree=reference)
+    set_fields(document, node, translate("BhvtDocument", "Node attributes"), attribute=attribute,
+               reference_tree=reference)
 
 
 def add_state(document: BhvtDocument, hfsm: Hfsm, parent: Record, name: str | None = None) -> Record:
-    rules, text = hfsm_rules(hfsm.version), document.tr("Add state")
+    rules, text = hfsm_rules(hfsm.version), translate("BhvtDocument", "Add state")
     fresh, new_id = _fresh(rules.node, rules.new_node), _new_id({item.id for item in walk(hfsm.root)})
     state = Record({**fresh, "id": new_id, "name": name or fresh["name"].format(new_id), "selector": None,
                     "children": []})
@@ -472,7 +476,7 @@ def remove_state(document: BhvtDocument, hfsm: Hfsm, parent: Record, state: Reco
         rows = [row for row in item.start_transitions if row.to_node_id not in gone]
         if len(rows) < len(item.start_transitions):
             changes.setdefault(item, {})["start_transitions"] = rows
-    text = document.tr("Remove state")
+    text = translate("BhvtDocument", "Remove state")
     _push(document, [SetFields(document, list(changes.items()), text),
                      *_unlinked(document, hfsm, states, changes, text),
                      *_action_layout(document, hfsm, changes, text)], text)
@@ -524,7 +528,7 @@ def add_object(document: BhvtDocument, model: Tree | Hfsm, block: str, type_name
     position = len(rsz.object_table) if position is None else position
     table = list(range(len(rsz.object_table)))
     table.insert(position, created)
-    document.push(Objects(document, model, rsz, table, document.tr("Add object")))
+    document.push(Objects(document, model, rsz, table, translate("BhvtDocument", "Add object")))
     return position
 
 
@@ -532,7 +536,7 @@ def add_action(document: BhvtDocument, tree: Tree, node: Node, type_name: str, c
     graph = tree_rules(tree.version).graph["actions"]
     used = {field_value(tree.blocks[block].parsed_elements[instance], graph["id_field"])
             for block in graph["blocks"] for instance in tree.blocks[block].object_table}
-    action_id, text = _new_id(used), document.tr("Add action")
+    action_id, text = _new_id(used), translate("BhvtDocument", "Add action")
     with document.macro(text):
         add_object(document, tree, object_block(tree, "actions", type_name), type_name, created=created,
                    **{graph["id_field"]: action_id})
@@ -541,7 +545,7 @@ def add_action(document: BhvtDocument, tree: Tree, node: Node, type_name: str, c
 
 
 def remove_action(document: BhvtDocument, model: Tree | Hfsm, node: Node | Record, index: int) -> None:
-    text = document.tr("Remove action")
+    text = translate("BhvtDocument", "Remove action")
     if isinstance(model, Hfsm):
         changes = {node: {"actions": node.actions[:index] + node.actions[index + 1:]}}
         _push(document, [SetFields(document, list(changes.items()), text),
@@ -557,7 +561,7 @@ def remove_action(document: BhvtDocument, model: Tree | Hfsm, node: Node | Recor
 
 
 def move_action(document: BhvtDocument, model: Tree | Hfsm, node: Node | Record, index: int, to: int) -> None:
-    text = document.tr("Move action")
+    text = translate("BhvtDocument", "Move action")
     names = ("actions",) if isinstance(model, Hfsm) else ("actions", "actions_ex")
     values = {}
     for name in names:
@@ -572,7 +576,7 @@ def move_action(document: BhvtDocument, model: Tree | Hfsm, node: Node | Record,
 def add_state_action(document: BhvtDocument, hfsm: Hfsm, state: Record, type_name: str, created=None) -> int:
     names = hfsm_rules(hfsm.version).graph["action_fields"]
     held = hfsm_action_objects(hfsm)
-    action_id, text, keys = _new_id({key[0] for key in held}), document.tr("Add action"), set()
+    action_id, text, keys = _new_id({key[0] for key in held}), translate("BhvtDocument", "Add action"), set()
     for node in walk(hfsm.root):
         keys.update(key for action in node.actions if (key := (action.id, action.list_no)) in held)
         if node is state:

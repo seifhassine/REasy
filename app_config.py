@@ -1,6 +1,6 @@
 """Application metadata shared by the UI and project tooling."""
 
-CURRENT_VERSION = "0.7.9"
+CURRENT_VERSION = "0.8.0"
 
 GAMES = (
     "RE4",
