@@ -41,10 +41,13 @@ function Fresh($stamp, $inputs, $outputs) {
     -not (Get-ChildItem $inputs -File -ErrorAction SilentlyContinue | Where-Object LastWriteTimeUtc -gt $t | Select-Object -First 1)
 }
 function Prep {
-    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "native\*.cpp", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fastdxiltext*.pyd", "fastsurface*.pyd", "fastgraph*.pyd", "fastjcns*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "fastkey*.pyd", "fastaudio*.pyd", "fasttexenc*.pyd", "resources\i18n\*.qm"))) { return $true }
-    if (-not $UseCurrentPython -and -not (OK $py @("-m", "ensurepip", "--upgrade"))) { return $false }
-    if (-not $UseCurrentPython -and -not (OK $py @("-m", "pip", "--disable-pip-version-check", "install", "-r", "requirements.txt"))) { return $false }
-    if (-not (OK $py @("setup.py", "build_ext", "--inplace"))) { return $false }
+    $native = @("setup.py", "native\*.c", "native\*.cpp")
+    $pyds = @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fastdxiltext*.pyd", "fastsurface*.pyd", "fastgraph*.pyd", "fastjcns*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "fastkey*.pyd", "fastaudio*.pyd", "fasttexenc*.pyd")
+    if (-not $UseCurrentPython -and (Fresh $pyStamp ($native + @("requirements.txt", "scripts\compile_qm.py", "resources\i18n\*.ts")) ($pyds + "resources\i18n\*.qm"))) { return $true }
+    $deps = $UseCurrentPython -or (Fresh $pyStamp @("requirements.txt") @())
+    if (-not $deps -and -not (OK $py @("-m", "ensurepip", "--upgrade"))) { return $false }
+    if (-not $deps -and -not (OK $py @("-m", "pip", "--disable-pip-version-check", "install", "-r", "requirements.txt"))) { return $false }
+    if (($UseCurrentPython -or -not (Fresh $pyStamp $native $pyds)) -and -not (OK $py @("setup.py", "build_ext", "--inplace", "-j", $env:NUMBER_OF_PROCESSORS))) { return $false }
     if (-not (OK $py @("scripts\compile_qm.py"))) { return $false }
     if (-not $UseCurrentPython) { Set-Content $pyStamp (Get-Date).ToUniversalTime().ToString("o") }
     return $true

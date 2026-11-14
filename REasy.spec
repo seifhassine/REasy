@@ -1,8 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 import re
+import types
 
+import pefile
 from PyInstaller.utils.hooks import collect_all, collect_submodules
+
+pefile.gc = types.SimpleNamespace(collect=lambda: None)
 
 datas = [('file_handlers/mesh/blender/reasy_blender.py', 'file_handlers/mesh/blender')]
 binaries = [('.cache/gdeflate/libGDeflate.dll', 'tools/runtimes/win-x64/native'), ('.cache/msvc/msvcp140.dll', '.'),

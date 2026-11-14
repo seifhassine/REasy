@@ -36,10 +36,11 @@ def bundled_distributions(exe):
     names |= {name.replace(".", "/").casefold() for name in archive.open_embedded_archive("PYZ.pyz").toc}
     owners = {}
     for dist in metadata.distributions():
+        name = dist.name.casefold()
         for file in dist.files or ():
             path = file.as_posix().casefold()
             for key in (path, path.removesuffix(".py").removesuffix("/__init__")):
-                owners.setdefault(key, {})[dist.name.casefold()] = dist
+                owners.setdefault(key, {})[name] = dist
     # A file several distributions record (PySide6/__init__.py) names none of them.
     found = (owner for name in names if len(owner := owners.get(name, {})) == 1)
     return {dist.name: dist for owner in found for dist in owner.values()}
