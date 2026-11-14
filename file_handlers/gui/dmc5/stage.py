@@ -250,7 +250,7 @@ class Dmc5GuiStage:
         pointers = {value: label for label, value in self._profile.enum("MouseSelectType").items() if value}
         places = placements(self.scene, self._dependencies.world, self.playback.overrides.get(
             self.scene.root.path)) if self.in_game else ()
-        parts, moves = bool(places) and "of" in places[0], self.world and self.world["moves"]
+        parts, moves = places and "of" in places[0], self.world and self.world["moves"]
 
         def moment(value: float) -> None:
             if not moves.start <= value <= moves.end:

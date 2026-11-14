@@ -94,8 +94,7 @@ class Lanes(LaneView):
     def mouseMoveEvent(self, event) -> None:
         super().mouseMoveEvent(event)
         drag = self._drag
-        low = min(_frames(drag["targets"]), default=0.0) if drag is not None and drag.get("targets") else 0.0
-        if low < 0.0:
+        if drag is not None and drag.get("targets") and (low := min(_frames(drag["targets"]), default=0.0)) < 0.0:
             clip_edits.shift(self.state.document, drag["targets"], -low, drag["merge"])
             drag["applied"] -= low
 
