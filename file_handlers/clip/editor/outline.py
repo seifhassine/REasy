@@ -8,7 +8,7 @@ from file_handlers.document_commands import Change
 from ui.outline_model import OutlineModel as TreeOutline
 
 from ..document import ClipDocument
-from ..model import Clip, Node, Property, SequenceTrackInfo, Track
+from ..model import Clip, Node, Property, ResourceKind, SequenceTrackInfo, Track
 from ..rules import NodeType, display_names, property_type
 from .lanes import tone
 
@@ -24,7 +24,7 @@ def children_of(item) -> list:
         return [*item.children, *item.properties]
     if isinstance(item, (Property, SequenceTrackInfo)):
         return item.children
-    return [*item.tracks, *item.sequences]
+    return item.roots if item.kind is ResourceKind.MOT_CLIP else [*item.tracks, *item.sequences]
 
 
 class OutlineModel(TreeOutline):
@@ -72,6 +72,8 @@ class OutlineModel(TreeOutline):
         if isinstance(item, Clip):
             return f"{item.frame_in:g} - {item.frame_out:g}"
         if isinstance(item, Node):
+            if "node_type" not in self.document.rules.records["node"].names:
+                return ""
             return display_names("NodeType", self.document.timeline.version).get(item.node_type, str(item.node_type))
         if isinstance(item, SequenceTrackInfo):
             return self.tr("{0} ranges").format(len(item.ranges)) if item.ranges else self.tr("Sequence track")

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import functools
 import struct
 from collections import Counter
 
@@ -35,7 +34,7 @@ _F32 = struct.Struct("<f")
 
 
 def node_hashes(node: Node) -> tuple[int, int]:
-    return node.name_hashes or (murmur3_hash(node.name.encode("utf-8")), murmur3_hash(node.name.encode("utf-16-le")))
+    return murmur3_hash(node.name.encode("utf-8")), murmur3_hash(node.name.encode("utf-16-le"))
 
 
 def read_timeline(data: bytes, kind: ResourceKind | None = None, start: int = 0, first_unique_id: int = 0) -> Timeline:
@@ -201,13 +200,6 @@ class _Decoder:
         self._strings[(pool, offset)] = text
         return text
 
-    @functools.cached_property
-    def _pool_names(self) -> dict[tuple[int, int], str]:
-        start, end = self.pools["c16"]
-        texts = self.data[start:end].decode("utf-16-le", "replace").split("\0")
-        return {(murmur3_hash(text.encode("utf-8")), murmur3_hash(text.encode("utf-16-le"))): text
-                for text in texts if text}
-
     def _same_name(self, record: dict, field: str, pool: str, name: str) -> None:
         if field in record and self._string(pool, record[field]) != name:
             raise ClipFormatError(f"The two copies of the name {name!r} differ")
@@ -229,15 +221,13 @@ class _Decoder:
         return refs
 
     def _node(self, record: dict, index: int) -> Node:
-        if "name" not in record:
-            hashes = (record["name_hash"], record["unicode_hash"])
-            name = self._pool_names.get(hashes)
-            return Node(name or "", name_hashes=None if name is not None else hashes, unique_id=record["unique_id"])
         expected = self.first_unique_id + index
         if record.get("unique_id", expected) != expected:
             raise ClipFormatError(f"Node {index} has uniqueId {record['unique_id']}, not {expected}")
         name = self._string("c16", record["name"])
         self._same_name(record, "name_c8", "c8", name)
+        if "guid" not in record:
+            return Node(name)
         return Node(name, record["node_type"], record["begin_frame"], record["end_frame"], record["guid"],
                     record.get("node_id", bytes(16)), self._string("c16", record["tag"]) if "tag" in record else "",
                     record.get("editor_id", 0), record.get("type_hash", 0))

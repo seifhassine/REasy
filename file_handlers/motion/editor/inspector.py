@@ -179,7 +179,7 @@ class Inspector(FieldPanel):
         return [Field(self.tr("Category"), "enum", lambda: sequence.category,
                       self._set(sequence, self.tr("Edit Sequence"))("category"), display_names("SequenceCategory")),
                 Field(self.tr("Clip"), "readonly", lambda: self.tr("{0} tracks, {1:g} frames; edited below").format(
-                    len(sequence.clip.tracks), sequence.clip.total_frame))]
+                    sum(len(root.children) for root in sequence.clip.roots), sequence.clip.total_frame))]
 
     def _tree_fields(self, tree: MotionTree) -> list[Field]:
         setter = self._set(tree, self.tr("Edit MotTree"))

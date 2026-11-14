@@ -256,13 +256,11 @@ class _Encoder:
         return records
 
     def _node_record(self, node: Node, index: int) -> dict:
-        if "name" not in self.rules.records["node"].names and node.name_hashes is None:
-            self._intern("c16", node.name)
         name_hash, unicode_hash = node_hashes(node)
         return {"name": node.name, "name_c8": node.name, "node_type": node.node_type, "begin_frame": node.begin_frame,
                 "end_frame": node.end_frame, "guid": node.guid, "node_id": node.node_id, "tag": node.tag,
                 "editor_id": node.editor_id, "type_hash": node.type_hash,
-                "unique_id": self.first_unique_id + index if node.unique_id is None else node.unique_id,
+                "unique_id": self.first_unique_id + index,
                 "extra_mask": self._extra_mask(node), "name_hash": name_hash, "unicode_hash": unicode_hash,
                 "child_count": len(node.children),
                 "child_index": self.node_index[id(node.children[0])] if node.children else 0,

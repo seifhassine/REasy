@@ -139,6 +139,7 @@ class MotionEditor(QWidget):
         self._edited.setSingleShot(True)
         self._edited.timeout.connect(self._repose)
         document.changed.connect(self._document_changed)
+        document.clip_changed.connect(self._edited.start)
         for pane in (self.tree, self.preview, self.curves, self.trees, self.inspector, self.transport):
             for keys, slot in ((QKeySequence.Undo, document.undo_stack.undo),
                                (QKeySequence.Redo, document.undo_stack.redo), ("Ctrl+D", self._duplicate)):

@@ -124,7 +124,7 @@ class Inspector(FieldPanel):
             fields.append(Field(self.tr("Header GUID"), "guid", lambda: timeline.header_guid,
                                 lambda value: edits.set_fields(document, timeline, "GUID", header_guid=value),
                                 tooltip=self.tr("Stored by the authoring tool; the game does not read it.")))
-        if timeline.root_order is not None:
+        if timeline.root_order is not None and timeline.kind is not ResourceKind.MOT_CLIP:
             fields.append(Field(self.tr("Root Order"), "readonly", lambda: self.tr("Differs from the track order")))
         return fields
 
@@ -153,16 +153,17 @@ class Inspector(FieldPanel):
 
     def _node_fields(self, node: Node) -> list[Field]:
         setter = self._set(node, self.tr("Edit Node"))
-        fields = [
-            Field(self.tr("Name"), "text", lambda: node.name,
-                  lambda value: edits.rename(self.state.document, node, value)),
-            Field(self.tr("Type"), "enum", lambda: node.node_type, setter("node_type"),
-                  display_names("NodeType", self.state.document.timeline.version)),
-            Field(self.tr("Begin"), "float", lambda: node.begin_frame, setter("begin_frame")),
-            Field(self.tr("End"), "float", lambda: node.end_frame, setter("end_frame")),
-            Field(self.tr("GUID"), "guid", lambda: node.guid, setter("guid"),
-                  tooltip=self.tr("The GameObject a fixed bind finds this node's object by.")),
-        ]
+        fields = [Field(self.tr("Name"), "text", lambda: node.name,
+                        lambda value: edits.rename(self.state.document, node, value))]
+        if self._stored("node", "guid"):
+            fields += [
+                Field(self.tr("Type"), "enum", lambda: node.node_type, setter("node_type"),
+                      display_names("NodeType", self.state.document.timeline.version)),
+                Field(self.tr("Begin"), "float", lambda: node.begin_frame, setter("begin_frame")),
+                Field(self.tr("End"), "float", lambda: node.end_frame, setter("end_frame")),
+                Field(self.tr("GUID"), "guid", lambda: node.guid, setter("guid"),
+                      tooltip=self.tr("The GameObject a fixed bind finds this node's object by.")),
+            ]
         if self._stored("node", "node_id"):
             fields.append(Field(self.tr("Node ID"), "guid", lambda: node.node_id, setter("node_id")))
         if self._stored("node", "tag"):

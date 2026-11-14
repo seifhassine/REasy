@@ -10,7 +10,7 @@ from file_handlers.document_commands import Change, EditDocument
 from .decode import read_timeline
 from .encode import write_timeline
 from .model import Clip, ResourceKind, Timeline, walk_nodes
-from .rules import FormatRules, VersionProfile, profile
+from .rules import FormatRules, VersionProfile, profile, rules_for
 from .bake import bake_changes
 from .sequences import derived_ranges, sequence_leaves
 from .validation import Issue, validate
@@ -35,7 +35,7 @@ class ClipDocument(EditDocument):
 
     @property
     def rules(self) -> FormatRules:
-        return self.profile.rules
+        return rules_for(self.timeline.version, self.timeline.kind)
 
     def issues(self) -> list[Issue]:
         if self._issues is None:

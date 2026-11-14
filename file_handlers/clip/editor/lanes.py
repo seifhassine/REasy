@@ -164,7 +164,8 @@ class LaneView(QWidget):
                 self._paint_block(painter, clip, top, height, id(clip) in selected)
         elif isinstance(item, Clip):
             self._paint_block(painter, item, top, height, id(item) in selected)
-        elif isinstance(item, (Node, Property)):
+        elif isinstance(item, Property) or isinstance(item, Node) and edits.stores(
+                self.state.document, "node", "begin_frame"):
             offset = self.state.document.time_offset(item)
             color = QColor(NODE_COLORS.get(item.node_type, NODE_COLORS[0])) if isinstance(item, Node) \
                 else tone("text_subtle")
@@ -244,7 +245,8 @@ class LaneView(QWidget):
             return [(clip, clip.frame_in, clip.frame_out) for clip in item.clips]
         if isinstance(item, Clip):
             return [(item, item.frame_in, item.frame_out)]
-        if isinstance(item, (Node, Property)):
+        if isinstance(item, Property) or isinstance(item, Node) and edits.stores(
+                self.state.document, "node", "begin_frame"):
             offset = self.state.document.time_offset(item)
             return [(item, item.begin_frame + offset, item.end_frame + offset)]
         return []

@@ -12,7 +12,8 @@ lazy from file_handlers.clip.document import ClipDocument
 from .decode import read_file
 from .encode import write_file
 from .model import (
-    JointChannels, Motion, MotionList, MotionListEntry, MotionPack, MotionPackEntry, MotionTree, Sequence, TreeNode)
+    JointChannels, Motion, MotionList, MotionListEntry, MotionPack, MotionPackEntry, MotionTree, Sequence,
+    SequenceTrack, TreeNode)
 
 ENTRIES = (MotionListEntry, MotionPackEntry)
 
@@ -31,6 +32,17 @@ def children(item: object) -> list:
     if isinstance(item, TreeNode):
         return list(item.params or ())
     return []
+
+
+def _rows_follower(sequence: Sequence):
+    root = sequence.clip.roots[0]
+    rows = {id(node): (node, row) for node, row in zip(root.children, sequence.tracks)}
+
+    def follow(change: Change) -> None:
+        if change.target is root and change.field == "children":
+            sequence.tracks[:] = [rows.setdefault(id(node), (node, SequenceTrack()))[1] for node in root.children]
+
+    return follow
 
 
 class MotionDocument(EditDocument):
@@ -66,6 +78,7 @@ class MotionDocument(EditDocument):
         if (found := self._clips.get(id(sequence.clip))) is None:
             found = self._clips[id(sequence.clip)] = ClipDocument(sequence.clip, self)
             found.undo_stack.cleanChanged.connect(self._clean_changed)
+            found.changed.connect(_rows_follower(sequence))
             found.changed.connect(self.clip_changed)
         return found
 

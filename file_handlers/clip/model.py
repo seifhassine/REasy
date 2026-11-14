@@ -74,8 +74,6 @@ class Node:
     tag: str = ""
     editor_id: int = 0
     type_hash: int = 0
-    name_hashes: tuple[int, int] | None = None
-    unique_id: int | None = None
     children: list[Node] = field(default_factory=list)
     properties: list[Property] = field(default_factory=list)
 

@@ -29,7 +29,7 @@ lazy from ui.icons import line_icon
 
 from .. import edits
 from ..document import ClipDocument
-from ..model import Clip, Key, Node, Property, SequenceTrackInfo, SpeedPoint, Timeline, Track
+from ..model import Clip, Key, Node, Property, ResourceKind, SequenceTrackInfo, SpeedPoint, Timeline, Track
 from ..rules import display_names, property_type
 from .curves import ClipCurves
 from .inspector import Inspector
@@ -167,7 +167,11 @@ class ClipEditor(QWidget):
         layout.addWidget(self.splitter, 1)
         self.transport = Transport(self.state)
         layout.addWidget(self.transport)
-        self.add_clip_button.setVisible("clip" in self.document.rules.records)
+        sequence = self.document.timeline.kind is ResourceKind.MOT_CLIP
+        self.add_node_button.setVisible(not sequence)
+        self.add_clip_button.setVisible(not sequence and "clip" in self.document.rules.records)
+        if sequence:
+            self.tree.expand(self.tree.model().index(0, 0))
         profile = self.document.profile
         self.version_label.setText(f"CLIP v{profile.version}"
                                    + ("" if profile.checked else " " + self.tr("(unchecked)")))
@@ -260,6 +264,8 @@ class ClipEditor(QWidget):
         self.duplicate_button.setEnabled(has_rows)
         self.add_key_button.setEnabled(bool(self._keyed_targets()))
         self.add_clip_button.setEnabled(isinstance(self._owner(Track), Track))
+        timeline = self.document.timeline
+        self.add_track_button.setEnabled(timeline.kind is not ResourceKind.MOT_CLIP or bool(timeline.roots))
 
     def _show_issue(self) -> None:
         issues = [issue for issue in self.document.issues() if issue.error]

@@ -87,7 +87,9 @@ def _span(item: Clip | Node | Property) -> tuple[float, float]:
     return item.begin_frame, item.end_frame
 
 
-def add_track(document: ClipDocument, index: int | None = None) -> Track:
+def add_track(document: ClipDocument, index: int | None = None) -> Track | Node:
+    if document.timeline.kind is ResourceKind.MOT_CLIP:
+        return add_node(document, document.timeline.roots[0], 0)
     track = Track(name="Track")
     _insert(document, document.timeline, "tracks", index, track, "Add Track")
     return track
@@ -117,13 +119,19 @@ def add_node(document: ClipDocument, parent: Track | Clip | Node, node_type: int
     node = make_node(document, node_type, begin, end)
     with document.macro("Add Node"):
         _insert(document, parent, "children" if isinstance(parent, Node) else "nodes", None, node, "Add Node")
-        _sync_root_order(document)
+        _sync_node_lists(document)
     return node
 
 
-def _sync_root_order(document: ClipDocument) -> None:
+def _sync_node_lists(document: ClipDocument) -> None:
     timeline = document.timeline
-    if timeline.root_order is None or timeline.kind is ResourceKind.MOT_CLIP:
+    if timeline.kind is ResourceKind.MOT_CLIP:
+        tracks = [node for root in timeline.roots for node in root.children]
+        kept = [[interval for interval in table if interval.track in tracks] for table in timeline.intervals or ()]
+        if kept != (timeline.intervals or []):
+            document.push(ReplaceContents(document, timeline, "intervals", kept, "Intervals"))
+        return
+    if timeline.root_order is None:
         return
     held = [node for track in timeline.tracks for node in track.roots]
     left, order = Counter(map(id, held)), []
@@ -211,7 +219,7 @@ def remove(document: ClipDocument, items: list) -> None:
             else:
                 contents = [entry for entry in container if entry is not item]
             document.push(ReplaceContents(document, owner, field, contents, "Delete"))
-        _sync_root_order(document)
+        _sync_node_lists(document)
 
 
 def duplicate(document: ClipDocument, items: list) -> list:
@@ -236,7 +244,7 @@ def duplicate(document: ClipDocument, items: list) -> list:
                     _renew(document, node)
             _insert(document, owner, field, index, twin, "Duplicate")
             copies.append(twin)
-        _sync_root_order(document)
+        _sync_node_lists(document)
     return copies
 
 

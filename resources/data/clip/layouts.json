@@ -855,7 +855,7 @@
      [2, "u16", "property_count"],
      [8, "u32", "name_hash"],
      [12, "u32", "unicode_hash"],
-     [16, "u32", "unique_id"],
+     [16, "c16", "name"],
      [24, "u64", "child_index"],
      [32, "u64", "property_index"]
     ]}
@@ -919,7 +919,7 @@
      [2, "u16", "property_count"],
      [8, "u32", "name_hash"],
      [12, "u32", "unicode_hash"],
-     [16, "u32", "unique_id"],
+     [16, "c16", "name"],
      [24, "u64", "child_index"],
      [32, "u64", "property_index"]
     ]}
@@ -983,7 +983,7 @@
      [2, "u16", "property_count"],
      [8, "u32", "name_hash"],
      [12, "u32", "unicode_hash"],
-     [16, "u32", "unique_id"],
+     [16, "c16", "name"],
      [24, "u64", "child_index"],
      [32, "u64", "property_index"]
     ]}
@@ -1045,7 +1045,7 @@
      [2, "u16", "property_count"],
      [8, "u32", "name_hash"],
      [12, "u32", "unicode_hash"],
-     [16, "u32", "unique_id"],
+     [16, "c16", "name"],
      [24, "u64", "child_index"],
      [32, "u64", "property_index"]
     ]}
@@ -1119,7 +1119,7 @@
      [2, "u16", "property_count"],
      [8, "u32", "name_hash"],
      [12, "u32", "unicode_hash"],
-     [16, "u32", "unique_id"],
+     [16, "c16", "name"],
      [24, "u64", "child_index"],
      [32, "u64", "property_index"]
     ]}
