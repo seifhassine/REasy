@@ -752,6 +752,8 @@ class ScenePoser:
 
         for index in range(len(self.rigs)):
             pose(index)
+        # The closure holds itself: let go of it.
+        pose = None
         for phase in self.phases:
             for index, (_channels, results) in held.items():
                 for evaluation, blend_rate, timing in self.rigs[index].constraints.layers:

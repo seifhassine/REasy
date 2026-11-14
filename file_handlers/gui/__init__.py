@@ -1,7 +1,6 @@
-from .adapter import GuiRuntimeAdapter, GuiRuntimeEditorConfig
+from .adapter import GuiRuntimeAdapter, GuiStage
 from .codec import gui_version, parse_gui, parse_gui_file
-from .errors import GuiAssetError, GuiFormatError, GuiSceneError, GuiWriteError
-from .gui_file import GuiFile
+from .errors import GuiAssetError, GuiEditError, GuiFormatError, GuiSceneError, GuiWriteError
 from .gui_handler import GuiHandler
 from .model import GuiDocument
 from .profiles import GUI_ADAPTERS, GuiRuntimeProfile, gui_runtime, runtime_for_game
@@ -12,13 +11,13 @@ __all__ = [
     "GUI_ADAPTERS",
     "GuiAssetError",
     "GuiDocument",
-    "GuiFile",
+    "GuiEditError",
     "GuiFormatError",
     "GuiHandler",
     "GuiRuntimeAdapter",
-    "GuiRuntimeEditorConfig",
     "GuiRuntimeProfile",
     "GuiSceneError",
+    "GuiStage",
     "GuiWriteError",
     "encode_value",
     "gui_layout",

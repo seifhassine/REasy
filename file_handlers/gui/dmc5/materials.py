@@ -29,7 +29,8 @@ def slotted(node, rule, material, version: int) -> PreviewMaterial:
     values, textures = list(made.values), dict(made.textures)
     for slot in range(rule["slots"]):
         kind = node.runtime.enum_label(properties, f"{rule['type']}{slot}", rule["enum"])
-        if kind not in rule["values"]:
+        if kind not in rule["values"] or "material" in rule and murmur3_hash_utf16le(
+                str(properties[f"{rule['material']}{slot}"])) != int(material.header.mat_name_hash):
             continue
         key, value = murmur3_hash_utf16le(str(properties[f"{rule['name']}{slot}"])), properties[
             f"{rule['values'][kind]}{slot}"]

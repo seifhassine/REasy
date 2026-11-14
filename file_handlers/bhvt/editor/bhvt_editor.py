@@ -15,7 +15,9 @@ from .canvas import GraphCanvas
 from .crumbs import Crumbs
 from .inspector import Inspector
 from .navigator import Navigator
-from .pickers import SearchPopup, below, node_entries
+from ui.search_popup import SearchPopup, below
+
+from .pickers import node_entries
 from .raw_view import RawView
 from .state import EditorState
 

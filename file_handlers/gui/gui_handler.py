@@ -1,51 +1,47 @@
+"""See docs/internals/gui-editor.md."""
+
 from __future__ import annotations
 
-from file_handlers.base_handler import BaseFileHandler
-lazy from utils.resource_file_utils import resolve_handler_resource_data
+from file_handlers.base_handler import DocumentHandler
 
-lazy from .gui_file import GuiFile
+lazy from utils.resource_file_utils import (listed_resource_paths, locate_handler_resource,
+                                            resolve_handler_resource_data, resource_context_for_handler)
+
+lazy from .codec import gui_version
+lazy from .document import GuiEditDocument
 lazy from .editor import GuiEditor
+lazy from .errors import GuiFormatError
+lazy from .rules import gui_layout
 
 
-class GuiHandler(BaseFileHandler):
-    """REasy file-handler integration for supported GUIR resources."""
-
-    def __init__(self) -> None:
+class GuiHandler(DocumentHandler):
+    def __init__(self):
         super().__init__()
-        self.gui_file: GuiFile | None = None
-        self.viewer = None
+        self.document: GuiEditDocument | None = None
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
-        return GuiFile.can_handle(data)
+        try:
+            gui_layout(gui_version(data))
+        except GuiFormatError:
+            return False
+        return True
 
     def read(self, data: bytes) -> None:
-        self.gui_file = GuiFile.from_bytes(data, self.filepath or "<bytes>")
+        self.document = GuiEditDocument.read(data, self.filepath or "<bytes>", self)
         self.modified = False
-
-    def rebuild(self) -> bytes:
-        if self.gui_file is None:
-            raise ValueError("no GUIR file is loaded")
-        result = self.gui_file.write()
-        self.modified = False
-        if self.viewer is not None:
-            self.viewer.on_saved()
-        return result
 
     def resolve_resource(self, resource_path: str) -> tuple[str, bytes] | None:
-        return resolve_handler_resource_data(
-            self,
-            resource_path,
-            allow_selection_dialog=False,
-        )
+        return resolve_handler_resource_data(self, resource_path, allow_selection_dialog=False)
+
+    def locate_resource(self, resource_path: str):
+        return locate_handler_resource(self, resource_path)
+
+    def listed(self, extension: str) -> tuple[str, ...]:
+        return listed_resource_paths(self, extension)
 
     def create_viewer(self):
-        if self.gui_file is None:
-            return None
-
-        self.viewer = GuiEditor(self)
-        self.viewer.modified_changed.connect(self.modified_changed.emit)
-        self.viewer.modified_changed.connect(
-            lambda value: setattr(self, "modified", bool(value))
-        )
-        return self.viewer
+        context = resource_context_for_handler(self)
+        editor = GuiEditor(self.document, self, context.game if context is not None else "")
+        editor.modified_changed.connect(self._set_modified)
+        return editor

@@ -23,7 +23,9 @@ from .. import object_edits
 from ..edits import Embedded
 from ..references import base_name
 from ..summaries import label
-from .pickers import below, type_entries, user_data_entries, variable_entries
+from ui.search_popup import below
+
+from .pickers import type_entries, user_data_entries, variable_entries
 
 
 class Fold(QWidget):

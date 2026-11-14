@@ -21,9 +21,9 @@ class Change:
 class EditDocument(QObject):
     changed = Signal(object)
 
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self, parent: QObject | None = None, undo_stack: QUndoStack | None = None):
         super().__init__(parent)
-        self.undo_stack = QUndoStack(self)
+        self.undo_stack = undo_stack or QUndoStack(self)
 
     @property
     def modified(self) -> bool:
@@ -49,6 +49,9 @@ class EditDocument(QObject):
                 stack.undo()
             raise
         stack.endMacro()
+        if stack.canUndo() and not (made := stack.command(stack.index() - 1)).childCount():
+            made.setObsolete(True)
+            stack.undo()
 
 
 class SetFields(QUndoCommand):

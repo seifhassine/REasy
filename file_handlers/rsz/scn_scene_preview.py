@@ -422,6 +422,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self.preview.cleanup()
         self._sources_getter = self._graphs_changed_callback = None
         self.handler = None
+        self.loader = ScnSceneLoader()
 
     def _clear_runtime_state(self, *, keep_hidden: bool = False) -> None:
         self._pending_renderables.clear()

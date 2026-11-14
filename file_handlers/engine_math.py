@@ -86,6 +86,26 @@ def affine_inverse(world: np.ndarray) -> np.ndarray:
     return out
 
 
+def camera_view(world: np.ndarray) -> np.ndarray:
+    f = np.float32
+    m = np.asarray(world, f).reshape(4, 4)
+    eye, (i, j, k), out = m[3, :3], m[1, :3], np.eye(4, dtype=f)
+
+    def unit(x, y, z):
+        length = np.sqrt((x * x + y * y) + z * z)
+        scale = f(1) if f(EPSILON) > length else f(1) / length
+        return x * scale, y * scale, z * scale
+
+    def along(x, y, z):
+        return (eye[0] * x + eye[1] * y) + eye[2] * z
+    a, b, c = unit(*((eye - m[2, :3]) - eye))
+    p, q, r = unit(c * j - b * k, a * k - c * i, b * i - a * j)
+    above = b * r - q * c, p * c - a * r, a * q - p * b
+    out[:3, 0], out[:3, 1], out[:3, 2] = (-p, -q, -r), above, (-a, -b, -c)
+    out[3, :3] = along(p, q, r), -along(*above), along(a, b, c)
+    return out
+
+
 def row_lengths(matrix: np.ndarray) -> np.ndarray:
     return np.array([np.sqrt(((a * a + b * b) + c * c) + d * d) for a, b, c, d in matrix[:3]], np.float32)
 
@@ -544,3 +564,112 @@ def _msvc_introsort(a: list[tuple], first, last, ideal):
         else:
             _msvc_introsort(a, plast, last, ideal)
             last = pfirst
+
+
+def _crt_value(name: str, *values) -> np.float32:
+    return np.float32(crt(name)(*(float(value) for value in values)))
+
+
+def _scaled(value, at, count: int):
+    for _ in range(count):
+        value = value * at
+    return value
+
+
+def _raised(at, count: int):
+    return _scaled(at, at, count - 1)
+
+
+def _in_out(start, end, at, inner, outer):
+    half, twice = (end - start) * np.float32(0.5), at * np.float32(2.0)
+    return inner(half, twice) if np.float32(1.0) > twice else outer(half, twice)
+
+
+def _out_bounce(start, end, at):
+    span = end - start
+    if np.float32(0.3636363744735718) > at:
+        return at * np.float32(7.5625) * at * span + start
+    for limit, shift, lift in ((0.7272727489471436, -0.5454545617103577, 0.75),
+                               (0.9090909361839294, -0.8181818127632141, 0.9375)):
+        if np.float32(limit) > at:
+            break
+    else:
+        shift, lift = -0.9545454382896423, 0.984375
+    moved = at + np.float32(shift)
+    return (moved * np.float32(7.5625) * moved + np.float32(lift)) * span + start
+
+
+def _elastic(start, end, at, rising: bool, falling: bool):
+    if not at:
+        return start
+    if at == 1:
+        return end
+    span, twice = end - start, at * np.float32(2.0)
+    if rising and falling:
+        rising = np.float32(1.0) > twice
+        at, gap, period, part = (twice - np.float32(1.0), np.float32(0.11250000447034836), np.float32(
+            0.45000001788139343), np.float32(0.5))
+    else:
+        at = at - np.float32(1.0) if rising else at
+        gap, period, part = np.float32(0.075), np.float32(0.3), np.float32(1.0)
+    power = _crt_value("powf", 2.0, at * np.float32(10.0 if rising else -10.0)) * span
+    wave = _crt_value("sinf", (at - gap) * np.float32(6.2831854820251465) / period)
+    if part != 1:
+        power = power * part
+    return start - power * wave if rising else power * wave + span + start
+
+
+_BACK, _BACK_SHIFT = np.float32(2.701580047607422), np.float32(1.7015800476074219)
+EASES = {
+    "Linear": lambda a, b, t: (b - a) * t + a,
+    "InSine": lambda a, b, t: (b - a) - _crt_value("cosf", t * np.float32(1.5707963705062866)) * (b - a) + a,
+    "OutSine": lambda a, b, t: _crt_value("sinf", t * np.float32(1.5707963705062866)) * (b - a) + a,
+    "InOutSine": lambda a, b, t: a - (_crt_value("cosf", t * np.float32(3.1415927410125732)) - np.float32(1.0)) * (
+        (b - a) * np.float32(0.5)),
+    "InQuad": lambda a, b, t: _scaled(b - a, t, 2) + a,
+    "OutQuad": lambda a, b, t: a - (b - a) * t * (t - np.float32(2.0)),
+    "InOutQuad": lambda a, b, t: _in_out(a, b, t, lambda half, x: _scaled(half, x, 2) + a, lambda half, x: a - (
+        ((x - np.float32(1.0)) - np.float32(2.0)) * (x - np.float32(1.0)) - np.float32(1.0)) * half),
+    "InCubic": lambda a, b, t: _scaled(b - a, t, 3) + a,
+    "OutCubic": lambda a, b, t: (_raised(t - np.float32(1.0), 3) + np.float32(1.0)) * (b - a) + a,
+    "InOutCubic": lambda a, b, t: _in_out(a, b, t, lambda half, x: _scaled(half, x, 3) + a, lambda half, x: (
+        _raised(x - np.float32(2.0), 3) + np.float32(2.0)) * half + a),
+    "InQuart": lambda a, b, t: _scaled(b - a, t, 4) + a,
+    "OutQuart": lambda a, b, t: a - (_raised(t - np.float32(1.0), 4) - np.float32(1.0)) * (b - a),
+    "InOutQuart": lambda a, b, t: _in_out(a, b, t, lambda half, x: _scaled(half, x, 4) + a, lambda half, x: a - (
+        _raised(x - np.float32(2.0), 4) - np.float32(2.0)) * half),
+    "InQuint": lambda a, b, t: _scaled(b - a, t, 5) + a,
+    "OutQuint": lambda a, b, t: (_raised(t - np.float32(1.0), 5) + np.float32(1.0)) * (b - a) + a,
+    "InOutQuint": lambda a, b, t: _in_out(a, b, t, lambda half, x: _scaled(half, x, 5) + a, lambda half, x: (
+        _raised(x - np.float32(2.0), 5) + np.float32(2.0)) * half + a),
+    "InExpo": lambda a, b, t: _crt_value("powf", 2.0, (t - np.float32(1.0)) * np.float32(10.0)) * (b - a) + a,
+    "OutExpo": lambda a, b, t: (np.float32(1.0) - _crt_value("powf", 2.0, t * np.float32(-10.0))) * (b - a) + a,
+    "InOutExpo": lambda a, b, t: _in_out(a, b, t, lambda half, x: _crt_value(
+        "powf", 2.0, (x - np.float32(1.0)) * np.float32(10.0)) * half + a, lambda half, x: (np.float32(2.0) - _crt_value(
+            "powf", 2.0, (x - np.float32(1.0)) * np.float32(-10.0))) * half + a),
+    "InCirc": lambda a, b, t: a - (_crt_value("sqrtf", np.float32(1.0) - t * t) - np.float32(1.0)) * (b - a),
+    "OutCirc": lambda a, b, t: _crt_value("sqrtf", np.float32(1.0) - (t - np.float32(1.0)) * (t - np.float32(1.0))) * (
+        b - a) + a,
+    "InOutCirc": lambda a, b, t: _in_out(a, b, t, lambda half, x: a - (_crt_value("sqrtf", np.float32(1.0) - x * x) - (
+        np.float32(1.0))) * half, lambda half, x: (_crt_value("sqrtf", np.float32(1.0) - (x - np.float32(2.0)) * (
+            x - np.float32(2.0))) + np.float32(1.0)) * half + a),
+    "InBack": lambda a, b, t: (b - a) * t * t * (t * _BACK - _BACK_SHIFT) + a,
+    "OutBack": lambda a, b, t: ((t - np.float32(1.0)) * (t - np.float32(1.0)) * ((t - np.float32(1.0)) * _BACK + (
+        _BACK_SHIFT)) + np.float32(1.0)) * (b - a) + a,
+    "InOutBack": lambda a, b, t: _in_out(a, b, t, lambda half, x: x * x * (x * _BACK - _BACK_SHIFT) * half + a * (
+        np.float32(1.524999976158142)), lambda half, x: ((x - np.float32(2.0)) * (x - np.float32(2.0)) * ((
+            x - np.float32(2.0)) * _BACK + _BACK_SHIFT) + np.float32(2.0)) * half + a * np.float32(1.524999976158142)),
+    "InElastic": lambda a, b, t: _elastic(a, b, t, True, False),
+    "OutElastic": lambda a, b, t: _elastic(a, b, t, False, True),
+    "InOutElastic": lambda a, b, t: _elastic(a, b, t, True, True),
+    "InBounce": lambda a, b, t: (b - a) - _out_bounce(np.float32(0.0), b - a, np.float32(1.0) - t) + a,
+    "OutBounce": _out_bounce,
+    "InOutBounce": lambda a, b, t: ((b - a) - _out_bounce(np.float32(0.0), b - a, np.float32(1.0) - t * np.float32(
+        2.0)) + np.float32(0.0)) * np.float32(0.5) + a if np.float32(0.5) > t else _out_bounce(
+        np.float32(0.0), b - a, t * np.float32(2.0) - np.float32(1.0)) * np.float32(0.5) + (b - a) * np.float32(
+        0.5) + a,
+}
+
+
+def ease(kind: str, start: float, end: float, at: float) -> float:
+    return float(EASES[kind](np.float32(start), np.float32(end), np.float32(at)))

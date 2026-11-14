@@ -6,9 +6,6 @@
  "runtime_target": "stm",
  "safe_area_ratio": 0.9,
  "preview_language": "English",
- "mesh_pixels_per_unit": 100.0,
- "controller_index_path": "resources/data/gui/dmc5_controller_index.json",
- "preview_scenario_catalog_path": "resources/data/gui/dmc5_preview_scenarios.json",
  "degree_factors": [0.0055555556900799274, 3.1415927410125732],
  "srgb_to_linear": [0.04045, 12.92, 0.055, 1.055, 2.4],
  "uv_orientations": [["LT", "RT", "LB", "RB"], ["LB", "LT", "RB", "RT"], ["RB", "LB", "RT", "LT"], ["RT", "RB", "LT", "LB"], ["RT", "LT", "RB", "LB"], ["RB", "RT", "LB", "LT"], ["LB", "RB", "LT", "RT"], ["LT", "LB", "RT", "RB"]],
@@ -23,14 +20,278 @@
  "undeclared": {"MaskType": "Target", "MaskMode": "Keep", "ControlPoint": "LeftTop", "Segment": "Keep"},
  "control_fields": {"play": "Play", "frame": "PlayFrame", "state": "PlayState", "segment": "Segment", "pattern": "StatePattern", "next_state": "NextStateEnable"},
  "clip_mode": 0,
- "track_aliases": {
-  "Size": {"w": 0, "h": 1}
- },
  "list_input": {
-  "UpDown": [8, 9],
-  "LeftRight": [10, 11],
-  "LBRB": [16, 4]
+  "MenuManager.defaultListInputEvent": {"prev": "Up", "next": "Down"},
+  "MenuBase.listInputCheckEvent": {"prev": "Up", "next": "Down", "InputType": {"LeftRight": {"prev": "Left", "next": "Right"}, "LBRB": {"press": true}}},
+  "MenuBase.leftRightInputEvent": {"prev": "Left", "next": "Right"},
+  "MenuBase.tabListInputEvent": {"prev": "LTop", "next": "RTop", "press": true},
+  "MenuBase.modeListInputEvent": {"prev": "Sort", "next": "Sort", "press": true},
+  "ui5010GUI.LR_arrowListInputEvent": {"prev": "Left", "next": "Right"},
+  "ConfirmForm.listInputEvent": {"prev": "Left", "next": "Right"},
+  "ResultDetail.extraListInputEvent": {"prev": "Up", "next": "Down", "more": true},
+  "ui1020GUI.VoidListInputEvent": {}
  },
+ "list_default": "MenuManager.defaultListInputEvent",
+ "list_handlers": {
+  "alphatest/ui/bootload.gui": {
+   "/c_top/c_confirm/c_window/c_simplelist": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui0000/gui/ui0002.gui": {
+   "/c_window_normal_0/c_window/c_SimpleList0": "MenuBase.leftRightInputEvent",
+   "/c_window_select_0/c_window/c_simplelist": "MenuBase.leftRightInputEvent",
+   "/c_window_arm_shop/c_window/c_simplelist": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui0000/gui/ui0040.gui": {
+   "/c_top/c_navi": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui1000/gui/ui1020.gui": {
+   "/c_all/c_consumption/c_count": "ui1020GUI.VoidListInputEvent"
+  },
+  "ui/gui/ui2000/gui/ui2003.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2000/gui/ui2004.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2000/gui/ui2027.gui": {
+   "/c_top/c_common/c_4tab/c_SimpleList_4tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_3tab/c_SimpleList_3tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_2tab/c_SimpleList_2tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_contents/c_Weapon_move/c_ScrollList_Weapon/c_SelectItem/c_select_list": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_Skill_move/c_Skill/c_ScrollList_Skill/c_SelectItem/c_select_list": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_Item_move/c_ScrollList_Item/c_SelectItem/c_select_list": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_Deck_dante_move_1st/c_WeaponCategory/c_Deck_dante/c_deck_scrolllist/c_deck_simpleitem0/c_select_list": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_Deck_dante_move/c_WeaponCategory/c_Deck_dante/c_deck_scrolllist/c_deck_simpleitem/c_select_list": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_Deck_dante_move_1st/c_WeaponCategory/c_Deck_dante/c_deck_scrolllist/c_deck_simpleitem0/c_slot_simplelist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_dante_move/c_WeaponCategory/c_Deck_dante/c_deck_scrolllist/c_deck_simpleitem/c_slot_simplelist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_move/c_Deck/c_deck_scrolllist/c_deck_simpleitem/c_select_list": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_Deck_move/c_Deck/c_deck_scrolllist/c_deck_simpleitem/c_slot_simplelist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_dante_move/c_WeaponCategory/c_WeaponCategory_List": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_dante_move_1st/c_WeaponCategory/c_WeaponCategory_List": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_dante_move/c_WeaponCategory/c_Deck_dante/c_deck_scrolllist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_dante_move_1st/c_WeaponCategory/c_Deck_dante/c_deck_scrolllist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Deck_move/c_Deck/c_deck_scrolllist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Skill_move/c_Skill/c_SkillCategory_List": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_Skill_move/c_Skill/c_ScrollList_Skill": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2000/gui/ui2044.gui": {
+   "/c_top/c_common/c_tab/c_2tab/c_SimpleList_2tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_3tab/c_SimpleList_3tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_4tab/c_SimpleList_4tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_5tab/c_SimpleList_5tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_6tab/c_SimpleList_6tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_contents/c_mission_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2000/gui/ui2046.gui": {
+   "/c_top/c_common/c_tab/c_2tab/c_SimpleList_2tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_3tab/c_SimpleList_3tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_4tab/c_SimpleList_4tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_5tab/c_SimpleList_5tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_tab/c_6tab/c_SimpleList_6tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_gamemode/SimpleList0": "MenuBase.modeListInputEvent",
+   "/c_top/c_contents/c_mission_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2000/gui/ui2050.gui": {
+   "/c_top/c_contents/c_TotalRank/c_TotalRank_list/c_TotalRank_item/c_TotalRank_sublist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_TotalRank/c_TotalRank_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2000/gui/ui2052.gui": {
+   "/c_top/c_contents/c_TotalRank/c_TotalRank_list/c_TotalRank_item/c_TotalRank_sublist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_common/c_gamemode/c_select": "MenuBase.modeListInputEvent",
+   "/c_top/c_contents/c_TotalRank/c_TotalRank_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui2100/gui/ui2120.gui": {
+   "/c_top/c_contents/c_CosList": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_CharaList_4item": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_CharaList_3item": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_CharaList_2item": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui3000/gui/ui3007.gui": {
+   "/c_top/c_gameover/c_ScrollList_Menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui3000/gui/ui3008.gui": {
+   "/c_top/c_continue/c_SimpleList_Orb/c_SelectItem_Orb/c_SimpleList_Orb_child": "MenuBase.leftRightInputEvent",
+   "/c_top/c_continue/c_ScrollList_Cost": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui3100/gui/ui3105.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui3100/gui/ui3110.gui": {
+   "/c_top/c_contents/c_CategoryList": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_SkillList": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui3100/gui/ui3111.gui": {
+   "/c_top/c_common/c_tab/c_2tab/c_SimpleList_2tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_contents/c_page_list": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents/c_scroll_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui3200/gui/ui3203.gui": {
+   "/c_all/c_detail/c_detail_list/c_OrbBonus_list": "ResultDetail.extraListInputEvent"
+  },
+  "ui/gui/ui3200/gui/ui3204.gui": {
+   "/c_top/c_OrbBonus_list": "ResultDetail.extraListInputEvent"
+  },
+  "ui/gui/ui4000/gui/ui4000.gui": {
+   "/c_top/c_contents_fade/c_contents/c_subtitle/c_2tab_SimpleList": "MenuBase.tabListInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_subtitle/c_3tab_SimpleList": "MenuBase.tabListInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_subtitle/c_4tab_SimpleList": "MenuBase.tabListInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_brightness_bright/c_line_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_brightness_dark/c_line_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_brightness/c_cutin/c_parts_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_HDR_brightness_max/c_parts_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_HDR_brightness/c_parts_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_setting_list/c_setting_item/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_menulist": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_setting_list": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_keyconfig_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui4000/gui/ui4016.gui": {
+   "/c_top/c_contents_fade/c_contents/c_brightness_bright/c_line_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_brightness_dark/c_line_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_brightness/c_parts_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_HDR_brightness_max/c_parts_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_HDR_brightness/c_parts_gauge": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_setting_list_AT/c_setting_item/c_custom_column": "MenuBase.listInputCheckEvent",
+   "/c_top/c_contents_fade/c_contents/c_game_option/c_gameoption_list/c_setting_item_1/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_game_option/c_gameoption_list/c_setting_item_2/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_game_option/c_gameoption_list/c_setting_item_3/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_game_option/c_gameoption_list/c_setting_item_4/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_network_boost/c_network_list/c_setting_item_1/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_network_boost/c_network_list/c_setting_item_2/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_network_boost/c_network_list/c_setting_item_3/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_network_boost/c_network_list/c_setting_item_4/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents_fade/c_contents/c_difficulty/c_difficulty_list/c_setting_item/c_select": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui4000/gui/ui4020.gui": {
+   "/c_top/c_window/c_simplelist": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui5000/gui/ui5010.gui": {
+   "/c_top/c_common/c_2tab/c_SimpleList_2tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_3tab/c_SimpleList_3tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_4tab/c_SimpleList_4tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_5tab/c_SimpleList_5tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_list_master/c_ListMenu_move/c_ScrollList_Common": "MenuBase.listInputCheckEvent",
+   "/c_top/c_list_master/c_Sound_move/c_SoundList/c_Check_Window/c_ScrollList_Check": "MenuBase.listInputCheckEvent",
+   "/c_top/c_list_master/c_Sound_move/c_SoundList/c_Check_Window/c_ScrollList_Select": "MenuBase.listInputCheckEvent",
+   "/c_top/c_list_master/c_Sound_move/c_SoundList/c_Check_Window/c_SimpleList_Switch": "MenuBase.leftRightInputEvent",
+   "/c_top/c_list_master/c_Movie_move/c_ScrollList_Movie/c_SelectItem_Movie/c_SimpleList_CutScene": "ui5010GUI.LR_arrowListInputEvent",
+   "/c_top/c_list_master/c_Movie_move/c_ScrollList_Movie": "MenuBase.listInputCheckEvent",
+   "/c_top/c_list_master/c_Skill_move/c_Skill/c_SkillCategory_List": "MenuBase.listInputCheckEvent",
+   "/c_top/c_list_master/c_Skill_move/c_Skill/c_ScrollList_Skill": "MenuBase.listInputCheckEvent",
+   "/c_top/c_list_master/c_Sound_move/c_SoundList/c_ScrollList_Sound": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8000.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8001.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8007.gui": {
+   "/c_top/c_common/c_2tab/c_SimpleList_2tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_3tab/c_SimpleList_3tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_4tab/c_SimpleList_4tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_5tab/c_SimpleList_5tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_common/c_6tab/c_SimpleList_6tab": "MenuBase.tabListInputEvent",
+   "/c_top/c_menu/c_ScrollList": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8010.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8011.gui": {
+   "/c_top/c_set_menu/c_menu": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8012.gui": {
+   "/c_top/c_contents/c_setting_list/c_setting_item/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_setting_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8015.gui": {
+   "/c_top/c_contents/c_setting_list/c_setting_item/c_custom_column": "MenuBase.leftRightInputEvent",
+   "/c_top/c_contents/c_setting_list": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8020.gui": {
+   "/c_top/c_contents/c_ScrollList_SMission": "MenuBase.listInputCheckEvent"
+  },
+  "ui/gui/ui8000/gui/ui8021.gui": {
+   "/c_top/c_select_btn": "ConfirmForm.listInputEvent"
+  },
+  "ui/gui/ui8000/gui/ui8030.gui": {
+   "/c_all/c_detail/c_detail_list/c_OrbBonus_list": "ResultDetail.extraListInputEvent"
+  },
+  "ui/gui/ui8000/gui/ui8032.gui": {
+   "/c_top/c_practice_result/c_select_btn": "MenuBase.leftRightInputEvent"
+  },
+  "ui/gui/ui8000/gui/ui8034.gui": {
+   "/c_all/c_detail/c_detail_list/c_OrbBonus_list": "ResultDetail.extraListInputEvent"
+  },
+  "ui/gui/ui8000/gui/ui8040.gui": {
+   "/c_top/c_common/c_gamemode/SimpleList0": "MenuBase.modeListInputEvent",
+   "/c_top/c_contents/c_ScrollList_SMission": "MenuBase.listInputCheckEvent"
+  }
+ },
+ "list_values": {
+  "ui/gui/ui0000/gui/ui0040.gui": {
+   "/c_top/c_navi": {"Loop": true}
+  },
+  "ui/gui/ui2000/gui/ui2003.gui": {
+   "/c_top/c_set_menu/c_menu": {"ScrollTime": 3.0}
+  },
+  "ui/gui/ui2000/gui/ui2046.gui": {
+   "/c_top/c_common/c_gamemode/SimpleList0": {"Loop": true}
+  },
+  "ui/gui/ui2000/gui/ui2050.gui": {
+   "/c_top/c_contents/c_TotalRank/c_TotalRank_list/c_TotalRank_item/c_TotalRank_sublist": {"InputType": "LeftRight"}
+  },
+  "ui/gui/ui2000/gui/ui2052.gui": {
+   "/c_top/c_contents/c_TotalRank/c_TotalRank_list/c_TotalRank_item/c_TotalRank_sublist": {"InputType": "LeftRight"},
+   "/c_top/c_common/c_gamemode/c_select": {"Loop": true}
+  },
+  "ui/gui/ui2100/gui/ui2120.gui": {
+   "/c_top/c_contents/c_CharaList_4item": {"Loop": true},
+   "/c_top/c_contents/c_CharaList_3item": {"Loop": true},
+   "/c_top/c_contents/c_CharaList_2item": {"Loop": true}
+  },
+  "ui/gui/ui4000/gui/ui4016.gui": {
+   "/c_top/c_contents_fade/c_contents/c_setting_list_AT/c_setting_item/c_custom_column": {"InputType": "LeftRight"}
+  },
+  "ui/gui/ui5000/gui/ui5010.gui": {
+   "/c_top/c_list_master/c_Art_move/c_ScrollGrid_ArtWork": {"ScrollTime": 10.0, "LoopTypeColumn": "Loop", "LoopTypeRow": "Loop"}
+  },
+  "ui/gui/ui8000/gui/ui8040.gui": {
+   "/c_top/c_common/c_gamemode/SimpleList0": {"Loop": true}
+  }
+ },
+ "grid_input": ["Up", "Right", "Down", "Left"],
+ "key_repeat": [500.0, 50.0],
+ "try_pointer": "LeftClick",
+ "world": {
+  "entry_scenes": ["scene/masterscene.scn"],
+  "gui": {"class": "via.gui.GUI", "asset": "v1", "segment": "Segment"},
+  "messages": {"class": "via.gui.AdditionalMessage", "field": "MessageList"},
+  "light": {"class": "via.gui.GUIPointLight",
+            "fields": ["Enabled", "Color", "Intensity", "MinRoughness", "LightGroup", "Radius", "IlluminanceThreshold"]},
+  "camera": {"class": "via.gui.GUICamera", "enabled": "Enabled", "fov": "v1", "near": "NearClipPlane",
+             "far": "FarClipPlane"},
+  "camera_list": {"class": "app.MenuManager", "field": "guiCameraList", "path": "Path",
+                  "names": "app.MenuManager.GUICameraType"},
+  "camera_rest": {"class": "app.GUICamera_test", "field": "DEFAULT_ZPOSITION"},
+  "commands": {"class": "app.UICommandUpdater", "field": "CommandPrefabs", "path": "Path",
+               "set": "app.Command.CommandInfoSet", "list": "CommandList", "names": "Names",
+               "conditions": "Conditions", "kind": "Command", "kinds": "app.Command.CommandType",
+               "buttons": ["ButtonTrigger", "ButtonDown"], "button": "Button"},
+  "object": {"draw": "DrawSelf", "time_scale": "TimeScale"},
+  "timeline": {"class": "via.timeline.Timeline", "resource": "v3", "start": "StartFrame", "end": "EndFrame",
+               "speed": "PlaySpeed", "bind": "BindType", "binds": "via.timeline.BindType", "fixed": "Fixed",
+               "base_fps": 60.0, "scene_time_scale": 1.0, "first_back": 0.1,
+               "transform": "Transform", "position": "LocalPosition", "rotation": "LocalRotation"},
+  "holders": {"class": "app.MenuHolder", "label": "_HolderName", "entries": "_MenuPrefabs", "name": "Name",
+              "prefab": ["Prefab", "Path"]},
+  "supplier": {"class": "app.HudSupplier", "common": "ComHudPackageList", "players": "PlHudPackageList",
+               "path": "Path",
+               "instanced": {"ComHudPackageList": 1, "PlHudPackageList": 4, "NoStoryPackageList": null}},
+  "mission_time": "scene/event/",
+  "drawn": {"ui/gui/ui0000/gui/ui0003_1.gui": "HUD"}
+ },
+ "world_view_output": [1920.0, 1080.0],
  "types": {
   "via.gui.BlurFilter": {
    "parent": "via.gui.DrawableElement",
@@ -277,6 +538,7 @@
   "via.gui.MaterialText": {
    "parent": "via.gui.Text",
    "glow_family": "glyph_glow",
+   "effect_alpha_multiplied": [],
    "material_property": "Material",
    "material_uv_span": 2.0,
    "material_variables": {"slots": 8, "name": "VariableName", "type": "VariableType", "enum": "MaterialText.ParamType",
@@ -347,6 +609,14 @@
   "via.gui.Mesh": {
    "parent": "via.gui.DrawableElement",
    "scale": "Scale",
+   "mesh": {
+    "mesh": "Mesh", "material": "Material", "position": "Position", "rotation": "Rotation", "scale": "Scale",
+    "light_groups": "LightGroupID"
+   },
+   "material_variables": {"slots": 8, "material": "MaterialName", "name": "VariableName", "type": "VariableType",
+    "enum": "MaterialParamType",
+    "values": {"Float": "VariableFloat", "Float4": "VariableVec", "Color": "VariableColor", "Texture": "VariableTexture"},
+    "components": {"Float": 1, "Float4": 4, "Color": 4}, "color_divisor": 255.0, "loaded_textures": true},
    "properties": [
     "Position", "Rotation", "Scale", "Mesh", "Material", "LightGroup", "LightGroupID", "MaterialName0",
     "MaterialName1", "MaterialName2", "MaterialName3", "MaterialName4", "MaterialName5", "MaterialName6",
@@ -366,7 +636,15 @@
     "Scale": [1.0, 1.0, 1.0],
     "Material": "",
     "LightGroupID": 255,
-    "Mesh": ""
+    "Mesh": "",
+    "VariableType0": "Unknown",
+    "VariableType1": "Unknown",
+    "VariableType2": "Unknown",
+    "VariableType3": "Unknown",
+    "VariableType4": "Unknown",
+    "VariableType5": "Unknown",
+    "VariableType6": "Unknown",
+    "VariableType7": "Unknown"
    }
   },
   "via.gui.Panel": {
@@ -452,7 +730,8 @@
     "ItemMax": 0,
     "ScrollIndex": 0,
     "CursorType": "Move"
-   }
+   },
+   "bar": {"child": "Bar", "types": ["via.gui.Rect", "via.gui.Texture", "via.gui.Material", "via.gui.Scale9Grid"]}
   },
   "via.gui.ScrollGrid": {
    "parent": "via.gui.Control",
@@ -502,7 +781,13 @@
   "via.gui.SelectItem": {
    "parent": "via.gui.Control",
    "properties": ["Selected", "CanSelect", "Enabled", "ListIndex", "DefaultStateName"],
-   "defaults": {"Selected": false, "CanSelect": true, "Enabled": true, "ListIndex": 0}
+   "defaults": {"Selected": false, "CanSelect": true, "Enabled": true, "ListIndex": 0},
+   "finished": {
+    "Enabled": {
+     "true": {"FOCUS": "SELECT", "UNFOCUS": "DEFAULT"},
+     "false": {"DISABLE_FOCUS": "DISABLE_SELECT", "DISABLE_UNFOCUS": "DISABLE"}
+    }
+   }
   },
   "via.gui.SimpleList": {
    "parent": "via.gui.Control",
@@ -533,11 +818,13 @@
   },
   "via.gui.Text": {
    "parent": "via.gui.MaskableElement",
+   "message": "MessageId",
    "program_family": "glyph",
    "icon_family": "poly",
    "size": "RegionSize",
    "hit_layout_size": true,
    "glyph_colors": {"Fill": ["Color", "Color"], "Vertical": ["ColorTop", "ColorBottom"]},
+   "effect_alpha_multiplied": ["MultiplyTextColorAlpha"],
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
     "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "RegionSize", "ScissorRect",

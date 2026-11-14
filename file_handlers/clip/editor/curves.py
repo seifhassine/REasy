@@ -22,8 +22,8 @@ LIMIT = 12
 
 
 class ClipCurves(CurveView):
-    def __init__(self, state: EditorState, parent: QWidget | None = None):
-        super().__init__(_PropertyCurves(state), parent)
+    def __init__(self, state: EditorState, parent: QWidget | None = None, source: PropertyCurves | None = None):
+        super().__init__(source or PropertyCurves(state), parent)
         self.source.setParent(self)
 
     def properties(self) -> list[Property]:
@@ -60,7 +60,7 @@ class _Curve:
         return [(*start, *first), (*end, *second)]
 
 
-class _PropertyCurves(CurveSource):
+class PropertyCurves(CurveSource):
     def __init__(self, state: EditorState):
         super().__init__()
         self.state = state
@@ -136,13 +136,16 @@ class _PropertyCurves(CurveSource):
     def marker(self) -> float:
         return self.state.frame
 
+    def value(self, prop: Property, number: float):
+        return coerce(property_type(prop.type).value, number)
+
     def move_keys(self, track: int, keys: list[int], frames, values, dx: float, dy: float, component: int,
                   merge) -> None:
         prop = self.properties[track]
         if self._moving[0] != merge:
             self._moving = merge, [(prop.keys[at], prop.keys[at].frame, float(prop.keys[at].value)) for at in keys]
-        kind, step = property_type(prop.type).value, self.state.snapped(dx)
-        edits.set_keys(self.state.document, [(key, float(frame + step), coerce(kind, value + dy))
+        step = self.state.snapped(dx)
+        edits.set_keys(self.state.document, [(key, float(frame + step), self.value(prop, value + dy))
                                              for key, frame, value in self._moving[1]], "Edit Curve", merge)
 
     def move_handle(self, track: int, at: int, handle: int, x: float, y: float, merge) -> None:

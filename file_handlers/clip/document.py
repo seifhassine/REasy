@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QObject
+from PySide6.QtGui import QUndoStack
 
 from file_handlers.document_commands import Change, EditDocument
 
@@ -16,8 +17,8 @@ from .validation import Issue, validate
 
 
 class ClipDocument(EditDocument):
-    def __init__(self, timeline: Timeline, parent: QObject | None = None):
-        super().__init__(parent)
+    def __init__(self, timeline: Timeline, parent: QObject | None = None, undo_stack: QUndoStack | None = None):
+        super().__init__(parent, undo_stack)
         self.timeline = timeline
         self.profile: VersionProfile = profile(timeline.version)
         self._issues: list[Issue] | None = None
@@ -51,7 +52,9 @@ class ClipDocument(EditDocument):
                     parents[id(clip)] = (track, "clips")
                     parents.update((id(node), (clip, "nodes")) for node in clip.nodes)
                 parents.update((id(node), (track, "nodes")) for node in track.nodes)
-            for node in walk_nodes(root for track in tracks for root in track.roots):
+            for node in self.timeline.roots:
+                parents.setdefault(id(node), (self.timeline, "root_order"))
+            for node in walk_nodes(self.timeline.roots):
                 parents.update((id(child), (node, "children")) for child in node.children)
                 stack = [(node, "properties", node.properties)]
                 while stack:

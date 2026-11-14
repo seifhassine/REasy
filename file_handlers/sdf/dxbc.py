@@ -2,7 +2,9 @@ from __future__ import annotations
 
 lazy import ctypes
 from dataclasses import dataclass
+from functools import cache
 import hashlib
+import math
 import os
 import struct
 
@@ -1215,8 +1217,58 @@ def disassemble_dxbc(
     return text.rstrip(b"\x00").decode("utf-8", "replace")
 
 
+_MD5_SHIFTS = (7, 12, 17, 22) * 4 + (5, 9, 14, 20) * 4 + (4, 11, 16, 23) * 4 + (6, 10, 15, 21) * 4
+_MD5_SINES = tuple(int(abs(math.sin(at + 1)) * 2 ** 32) & 0xFFFFFFFF for at in range(64))
+_REFACTORING_ALLOWED = 1 << 11
+
+
+def _md5_block(state: tuple[int, ...], chunk: bytes) -> tuple[int, ...]:
+    a, b, c, d = state
+    words = struct.unpack("<16I", chunk)
+    for at in range(64):
+        if at < 16:
+            mixed, word = (b & c) | (~b & d), at
+        elif at < 32:
+            mixed, word = (d & b) | (~d & c), (5 * at + 1) % 16
+        elif at < 48:
+            mixed, word = b ^ c ^ d, (3 * at + 5) % 16
+        else:
+            mixed, word = c ^ (b | ~d), (7 * at) % 16
+        mixed = (mixed + a + _MD5_SINES[at] + words[word]) & 0xFFFFFFFF
+        a, d, c = d, c, b
+        b = (b + ((mixed << _MD5_SHIFTS[at]) | (mixed >> (32 - _MD5_SHIFTS[at])))) & 0xFFFFFFFF
+    return tuple((x + y) & 0xFFFFFFFF for x, y in zip(state, (a, b, c, d)))
+
+
+def dxbc_checksum(data: bytes) -> bytes:
+    body = bytes(data[20:])
+    bits, full = len(body) * 8, len(body) & ~63
+    tail, closing = body[full:], struct.pack("<I", (len(body) * 8 >> 2) | 1)
+    blocks = body[:full] + (tail + b"\x80" + bytes(63 - len(tail)) + struct.pack("<I", bits) + bytes(56) + closing
+                            if len(tail) >= 56 else
+                            struct.pack("<I", bits) + tail + b"\x80" + bytes(55 - len(tail)) + closing)
+    state = (0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476)
+    for at in range(0, len(blocks), 64):
+        state = _md5_block(state, blocks[at:at + 64])
+    return struct.pack("<4I", *state)
+
+
+@cache
+def strict_dxbc(data: bytes) -> bytes:
+    out = bytearray(data)
+    for at in struct.unpack_from(f"<{struct.unpack_from('<I', data, 28)[0]}I", data, 32):
+        token = struct.unpack_from("<I", data, at + 16)[0]
+        if data[at:at + 4] in (b"SHEX", b"SHDR") and token & 0x7FF == 106:
+            struct.pack_into("<I", out, at + 16, token & ~_REFACTORING_ALLOWED)
+    if out != data:
+        out[4:20] = dxbc_checksum(out)
+    return bytes(out)
+
+
 __all__ = [
     *[name for name in globals() if name.startswith("Dxbc") or name.endswith("_NAMES")],
     "disassemble_dxbc",
+    "dxbc_checksum",
     "parse_dxbc",
+    "strict_dxbc",
 ]

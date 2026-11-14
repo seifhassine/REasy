@@ -1,142 +1,80 @@
-"""See docs/internals/gui-format.md."""
+"""See docs/internals/gui-editor.md, Stage."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Protocol
 
-lazy from file_handlers.clip.rules import PropertyType
-lazy from utils.resource_file_utils import ResourceDataLoader
+lazy from PySide6.QtCore import QPointF
+lazy from PySide6.QtGui import QImage, QPainterPath
+
+lazy from ui.field_form import Field
 
 lazy from .dependencies import GuiDependencyCatalog
-lazy from .profiles import GuiRuntimeProfile
+lazy from .model import GuiAnimation
 lazy from .scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
 
 
-@dataclass(frozen=True, slots=True)
-class GuiRuntimeEditorConfig:
-    """Runtime controls exposed by the generic editor for one exact format."""
+class GuiStage(Protocol):
+    position_field: str
+    visible_field: str
+    language: int
+    gaps: list[tuple[str, str]]
 
-    safe_area_tooltip: str
-    input_devices: tuple[str, ...]
-    input_tooltip: str
-    interaction_tooltip: str
-    interaction_description: str
-    scenario_tooltip: str
+    def set_scene(self, scene: GuiScene) -> None: ...
 
+    @property
+    def size(self) -> tuple[float, float]: ...
 
-@dataclass(frozen=True, slots=True)
-class GuiPreviewScenario:
-    """One coherent set of external state used to evaluate a GUI preview."""
+    @property
+    def frame(self) -> float: ...
 
-    key: str
-    label: str
-    description: str
-    coverage: str
-    state: Any
-    preferred: bool = False
-    issues: tuple[str, ...] = ()
-    custom: bool = False
-    base_key: str | None = None
+    def show_state(self, node: GuiSceneNode | None, animation: GuiAnimation | None) -> None: ...
 
+    def state(self, node: GuiSceneNode | None) -> GuiAnimation | None: ...
 
-@dataclass(frozen=True, slots=True)
-class GuiPreviewOption:
-    """One semantic value offered by a preview-state control."""
+    def set_frame(self, frame: float) -> None: ...
 
-    value: Any
-    label: str
-    description: str = ""
+    def value(self, node: GuiSceneNode, name: str): ...
 
+    def script(self, node: GuiSceneNode, name: str, value) -> None: ...
 
-@dataclass(frozen=True, slots=True)
-class GuiPreviewControl:
-    """Format-described control rendered by the generic preview-state editor."""
+    def advance(self, seconds: float) -> None: ...
 
-    key: Any
-    group: str
-    label: str
-    description: str
-    value: Any
-    value_type: "PropertyType | None" = None
-    options: tuple[GuiPreviewOption, ...] = ()
-    can_inherit: bool = False
-    inherited: bool = False
-    minimum: float | None = None
-    maximum: float | None = None
-    decimals: int | None = None
+    def layout(self, transient: tuple | None = None) -> None: ...
+
+    def anchor(self, node: GuiSceneNode) -> tuple[float, float]: ...
+
+    def local(self, node: GuiSceneNode, x: float, y: float) -> tuple[float, float]: ...
+
+    def size_field(self, node: GuiSceneNode) -> str | None: ...
+
+    def handles(self, node: GuiSceneNode) -> dict[tuple[int, int], QPointF]: ...
+
+    def resize(self, node: GuiSceneNode, handle: tuple[int, int], x: float,
+               y: float) -> tuple[tuple[float, float], tuple[float, float]]: ...
+
+    def settings(self, changed) -> list[Field]: ...
+
+    def sources(self) -> list[tuple[str, str, str]]: ...
+
+    def interact(self, on: bool) -> None: ...
+
+    def press(self, x: float, y: float) -> None: ...
+
+    def hover(self, x: float, y: float) -> bool: ...
+
+    def key(self, event) -> bool: ...
+
+    def release(self, event=None) -> None: ...
+
+    def image(self) -> QImage: ...
+
+    def outline(self, node: GuiSceneNode, hit: bool = False) -> QPainterPath: ...
+
+    def pick(self, x: float, y: float) -> list[GuiSceneNode]: ...
 
 
 class GuiRuntimeAdapter(Protocol):
-    """All semantics that vary with a game's GUI runtime."""
+    def create_scene(self, workspace: GuiWorkspace, resource: GuiResource, root: GuiSceneNode) -> GuiScene: ...
 
-    editor: GuiRuntimeEditorConfig
-
-    def create_scene(
-        self,
-        workspace: "GuiWorkspace",
-        resource: "GuiResource",
-        root: "GuiSceneNode",
-    ) -> "GuiScene": ...
-
-    def create_canvas(
-        self,
-        dependencies: "GuiDependencyCatalog",
-        game: str,
-    ) -> Any: ...
-
-    def preview_scenarios(
-        self,
-        gui_path: str,
-        loader: "ResourceDataLoader | None",
-        profile: "GuiRuntimeProfile",
-        scene: "GuiScene",
-    ) -> tuple[GuiPreviewScenario, ...]: ...
-
-    def apply_preview_scenario(
-        self,
-        canvas: Any,
-        scenario: GuiPreviewScenario | None,
-    ) -> None: ...
-
-    def preview_controls(
-        self,
-        scenarios: tuple[GuiPreviewScenario, ...],
-        scenario: GuiPreviewScenario,
-        scene: "GuiScene",
-        selected_path: str | None,
-    ) -> tuple[GuiPreviewControl, ...]: ...
-
-    def set_preview_control(
-        self,
-        scenarios: tuple[GuiPreviewScenario, ...],
-        scenario: GuiPreviewScenario,
-        scene: "GuiScene",
-        key: Any,
-        value: Any,
-        *,
-        inherit: bool = False,
-    ) -> GuiPreviewScenario: ...
-
-    def rebase_custom_preview(
-        self,
-        scenarios: tuple[GuiPreviewScenario, ...],
-        scenario: GuiPreviewScenario,
-        scene: "GuiScene",
-    ) -> GuiPreviewScenario: ...
-
-    def export_preview_preset(
-        self,
-        gui_path: str,
-        gui_version: int,
-        scenario: GuiPreviewScenario,
-    ) -> dict[str, Any]: ...
-
-    def import_preview_preset(
-        self,
-        gui_path: str,
-        gui_version: int,
-        payload: dict[str, Any],
-        scenarios: tuple[GuiPreviewScenario, ...],
-        scene: "GuiScene",
-    ) -> GuiPreviewScenario: ...
+    def create_stage(self, dependencies: GuiDependencyCatalog, game: str) -> GuiStage: ...

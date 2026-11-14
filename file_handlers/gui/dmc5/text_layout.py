@@ -97,6 +97,7 @@ class GlyphQuad:
     height: F
     color: tuple[int, int] | None
     reading: bool
+    index: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,7 +143,7 @@ class LayoutFonts:
             return self._glyphs[key]
         if face.asset_path not in self._rasterizers:
             if "CFF " not in face.font.tables:
-                raise TextLayoutGap(f"TrueType face {face.asset_path}")
+                raise TextLayoutGap(f"its font {face.asset_path} is a TrueType face, which is not drawn")
             self._rasterizers[face.asset_path] = GlyphRasterizer(face.font, self.darkening)
         rasterizer, (x, y), font = self._rasterizers[face.asset_path], raster, face.font
         bitmap = rasterizer.bitmap(glyph_id, x, y)
@@ -269,7 +270,7 @@ class Dmc5TextLayout:
                  icon_font: tuple[float, float] | None):
         direction = program.direction
         if direction.effective_rtl:
-            raise TextLayoutGap("right-to-left text")
+            raise TextLayoutGap("right-to-left text is not drawn")
         self.program, self.params, self.fonts, self.rules = program, params, fonts, rules
         self.vertical = direction.effective_vertical_layout
         self.flip = direction.auto_rtl_alignment_flip
@@ -394,7 +395,7 @@ class Dmc5TextLayout:
 
     def _icon(self, node: _Node) -> None:
         if self.icon_font is None:
-            raise TextLayoutGap("icon font")
+            raise TextLayoutGap("it shows an icon, and the game's icon font is not found")
         base, descent = self.icon_font
         size, icon = self.state.size, node.icon
         if self.params.icon_size <= np.finfo(F).eps:
@@ -712,12 +713,14 @@ class Dmc5TextLayout:
         return keep
 
     def _quads(self) -> tuple[GlyphQuad, ...]:
-        quads, color = [], None
+        quads, color, index = [], None, 0
         for node in self.state.nodes:
             if node.op == TextOpcode.COLOR:
                 color = None if node.reset else node.color
-            elif node.op == TextOpcode.GLYPH and not node.removed and (node.glyph is not None or node.icon):
-                top = node.top if self.vertical else -node.top
-                quads.append(GlyphQuad(node.icon or node.glyph, node.x_offset + node.x, top + node.y, node.width,
-                                       node.height, color, node.reading))
+            elif node.op == TextOpcode.GLYPH and not node.removed:
+                if node.glyph is not None or node.icon:
+                    top = node.top if self.vertical else -node.top
+                    quads.append(GlyphQuad(node.icon or node.glyph, node.x_offset + node.x, top + node.y, node.width,
+                                           node.height, color, node.reading, index))
+                index += not node.reading
         return tuple(quads)

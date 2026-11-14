@@ -26,7 +26,9 @@ from .model import (
     GuiTextureEntry,
     GuiTextureSet,
 )
+lazy from .profiles import gui_runtime
 from .rules import STRINGS, gui_layout
+from .storage import Stored, merged
 
 
 def gui_version(data: bytes) -> int:
@@ -82,7 +84,6 @@ class _Reader:
             symbols=symbols,
             bindings=self.bindings(header["bindings"]),
             imported_gui_paths=[row["path"] for row in self.table("path", header["imports"])],
-            asset_paths=[row["path"] for row in self.table("path", header["assets"])],
             source=source,
             objects=objects,
             animations=animations,
@@ -147,8 +148,14 @@ class _Reader:
         record = self.read("object", offset)
         obj = self.objects[offset] = GuiObject(uuid.UUID(bytes_le=record["guid"]),
                                                uuid.UUID(bytes_le=record["prototype"]), record["name"], record["type"])
-        obj.properties = self.properties(record["properties"])
-        obj.animation_defaults = self.properties(record["defaults"])
+        properties, name = self.properties(record["properties"]), self.layout.name_property[0]
+        if any(item.name == name and item.value != obj.name for item in properties):
+            raise GuiFormatError(f"object {obj.name!r} holds another {name}")
+        try:
+            obj.properties = merged([item for item in properties if item.name != name],
+                                    self.properties(record["defaults"]), self.order(obj.type_name))
+        except ValueError as exc:
+            raise GuiFormatError(f"object {obj.name!r}: {exc}") from exc
         if record["special"]:
             kind = self.layout.special.get(obj.type_name)
             if kind is None:
@@ -156,15 +163,19 @@ class _Reader:
             obj.special_data = {"texture_set": self.texture_set, "nine_slice": self.nine_slice}[kind](record["special"])
         return obj
 
-    def properties(self, offset: int) -> list[GuiProperty]:
+    def order(self, type_name: str) -> dict[str, int]:
+        runtime = gui_runtime(self.layout.version)
+        return runtime.runtime_type(type_name).order if type_name in runtime.types else {}
+
+    def properties(self, offset: int) -> list[Stored]:
         return [self.property(row) for row in self.table("property", offset)] if offset else []
 
-    def property(self, row: dict) -> GuiProperty:
+    def property(self, row: dict) -> Stored:
         try:
             kind = PropertyType(row["type"])
         except ValueError as exc:
             raise GuiFormatError(f"property {row['name']!r} uses unknown property type {row['type']}") from exc
-        return GuiProperty(row["name"], kind, self.value(kind, row["value"]), row["mask"])
+        return Stored(row["name"], kind, self.value(kind, row["value"]), row["mask"])
 
     def value(self, kind: PropertyType, raw: int):
         storage = self.layout.values.get(kind)
@@ -238,6 +249,8 @@ class _Reader:
         result = []
         for index in range(listing.decode(self.data, offset)["count"]):
             at = offset + listing.size + index * (binding + prop)
-            row = self.read("binding", at)
-            result.append(GuiBinding(row["path"], row["type"], self.property(self.read("property", at + binding))))
+            row, value = self.read("binding", at), self.property(self.read("property", at + binding))
+            if value.mask != -1:
+                raise GuiFormatError(f"the binding of {row['path']!r} sets only some components of {value.name}")
+            result.append(GuiBinding(row["path"], row["type"], GuiProperty(value.name, value.type, value.value)))
         return result

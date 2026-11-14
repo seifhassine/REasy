@@ -22,6 +22,7 @@ CATALOG_FORMAT = 1
 class GuiRuntimeType:
     classes: tuple[str, ...]
     declared: frozenset[str]
+    order: Mapping[str, int]
     defaults: Mapping[str, Any]
     facts: Mapping[str, Any]
 
@@ -35,9 +36,6 @@ class GuiRuntimeProfile:
     runtime_target: str
     safe_area_ratio: float
     preview_language: str
-    mesh_pixels_per_unit: float
-    controller_index_path: str
-    preview_scenario_catalog_path: str
     degree_factors: tuple[float, float]
     srgb_to_linear: tuple[float, float, float, float, float]
     uv_orientations: tuple[tuple[str, str, str, str], ...]
@@ -45,8 +43,15 @@ class GuiRuntimeProfile:
     undeclared: Mapping[str, str]
     control_fields: Mapping[str, str]
     clip_mode: int
-    track_aliases: Mapping[str, Mapping[str, int]]
-    list_input: Mapping[str, tuple[int, int]]
+    list_input: Mapping[str, Mapping[str, Any]]
+    list_default: str
+    list_handlers: Mapping[str, Mapping[str, str]]
+    list_values: Mapping[str, Mapping[str, Mapping[str, Any]]]
+    grid_input: tuple[str, str, str, str]
+    key_repeat: tuple[float, float]
+    try_pointer: str
+    world: Mapping[str, Any]
+    world_view_output: tuple[float, float]
     types: Mapping[str, Mapping[str, Any]]
     text: Mapping[str, Any]
     message_tags: Mapping[str, Any]
@@ -58,6 +63,10 @@ class GuiRuntimeProfile:
     def language(self, label: str) -> int:
         return _languages(self.game)[label]
 
+    @property
+    def languages(self) -> Mapping[str, int]:
+        return _languages(self.game)
+
     def enum(self, name: str) -> Mapping[str, int]:
         return _enums(self.game)[name]
 
@@ -65,9 +74,7 @@ class GuiRuntimeProfile:
         enum, value = enum or name, properties[name] if name in properties else self.undeclared[name]
         labels = self.enum(enum)
         if isinstance(value, str):
-            if value not in labels:
-                raise GuiSceneError(f"unknown {enum} label {value!r}")
-            return labels[value]
+            return labels.get(value, 0)
         try:
             result = int(value)
         except (TypeError, ValueError) as exc:
@@ -124,6 +131,7 @@ def _runtime_type(game: str, type_name: str) -> GuiRuntimeType:
     return GuiRuntimeType(
         tuple(names),
         frozenset(name for kind in chain for name in kind["properties"]),
+        {name: place for place, name in enumerate(name for kind in chain for name in kind["properties"])},
         {key: value for kind in chain for key, value in kind.get("defaults", {}).items()},
         {key: value for kind in chain for key, value in kind.items()
          if key not in ("parent", "properties", "defaults")},

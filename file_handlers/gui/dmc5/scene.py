@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
+from dataclasses import replace
 from functools import lru_cache
 
+import numpy as np
+
 lazy from ..errors import GuiSceneError
+lazy from file_handlers.engine_math import crt
 lazy from file_handlers.native_math import f32 as _f32
 lazy from file_handlers.native_math import fadd as _fadd
 lazy from file_handlers.native_math import fdiv as _fdiv
@@ -14,19 +19,16 @@ lazy from file_handlers.native_math import fsub as _fsub
 from ..scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
 
 
-_ORDER_FIELDS = frozenset({"Priority", "MaskType", "MaskMode"})
+_ORDER_FIELDS = frozenset({"Priority", "MaskType", "MaskMode", "Segment"})
 
 
 class Dmc5GuiScene(GuiScene):
-    def __init__(
-        self,
-        workspace: GuiWorkspace,
-        resource: GuiResource,
-        root: GuiSceneNode,
-    ) -> None:
+    def __init__(self, workspace: GuiWorkspace, resource: GuiResource, root: GuiSceneNode) -> None:
         super().__init__(workspace, resource, root)
-        self.draw_nodes = list(self.nodes)
+        self.draw_nodes = self.tree_nodes = list(self.nodes)
         self.display_size = self.viewport_size = self.screen_size
+        self.withheld: set[str] = set()
+        self.held_segment: Callable[[], int | None] = lambda: None
         self._order_dirty = True
         self._order_override_signature: tuple[
             tuple[str, tuple[tuple[str, str], ...]], ...
@@ -40,6 +42,33 @@ class Dmc5GuiScene(GuiScene):
 
     def _invalidate_runtime(self) -> None:
         self._order_dirty = True
+
+    def clone(self, source: GuiSceneNode, name: str) -> GuiSceneNode:
+        owner = source.parent
+        held, base = {child.path for child in owner.children}, f"{owner.path.rstrip('/')}/{name}"
+        path, suffix = base, 2
+        while path in held:
+            path, suffix = f"{base}#{suffix}", suffix + 1
+
+        def build(node: GuiSceneNode, parent: GuiSceneNode, path: str, obj) -> GuiSceneNode:
+            made = GuiSceneNode(path, node.resource, obj, node.prototype, node.runtime, parent,
+                                properties=dict(node.properties), source=node)
+            made.children = [build(child, made, f"{path}/{child.path.rsplit('/', 1)[1]}", child.object)
+                             for child in node.children]
+            return made
+
+        made = build(source, owner, path, replace(source.object, name=name))
+        owner.children.append(made)
+        self._order_dirty = True
+        return made
+
+    def drop_clones(self, under: GuiSceneNode | None = None) -> list[GuiSceneNode]:
+        dropped = []
+        for node in self.nodes if under is None else [item for item in under.walk() if item.source is None]:
+            dropped += [child for child in node.children if child.source is not None]
+            node.children = [child for child in node.children if child.source is None]
+        self._order_dirty = True
+        return dropped
 
     def runtime_properties(self, item: GuiSceneNode, overrides: dict[str, object] | None = None) -> dict[str, object]:
         return self.type_properties(item.object.type_name, {**item.properties, **(overrides or {})})
@@ -69,7 +98,8 @@ class Dmc5GuiScene(GuiScene):
         *,
         output_size: tuple[float, float] | None = None,
         safe_area_ratio: float | None = None,
-        transient: tuple[GuiSceneNode, float, float] | None = None,
+        transient: tuple | None = None,
+        projection: Callable | None = None,
     ) -> None:
         """Lay out a runtime projection without changing authored properties."""
 
@@ -81,7 +111,8 @@ class Dmc5GuiScene(GuiScene):
         component_output_size = tuple(max(_f32(1.0), _f32(value)) for value in root_properties["ScreenSize"])
         self.display_size = output_size or component_output_size
         viewport_size = _logical_viewport_size(self.display_size, component_output_size)
-        self.viewport_size = viewport_size
+        self.viewport_size = viewport_size if projection is None else self.display_size
+        placed = None if projection is None else projection(component_output_size, self.display_size)
         transient_node = transient[0] if transient else None
 
         def visit(item: GuiSceneNode, parent_world: Matrix4, parent_raw: Matrix4, parent_visible: bool,
@@ -90,7 +121,9 @@ class Dmc5GuiScene(GuiScene):
             facts = profile.runtime_type(item.object.type_name).facts
             properties = self.runtime_properties(item, self._preview_overrides.get(item.path))
             if item is transient_node and transient is not None:
-                properties["Position"] = (*transient[1:], properties["Position"][2])
+                properties["Position"] = (*transient[1:3], properties["Position"][2])
+                if len(transient) > 3:
+                    properties[facts["size"]] = transient[3]
             item.render_properties = properties
             position = tuple(properties["Position"])
             rotation = tuple(properties["Rotation"])
@@ -107,9 +140,9 @@ class Dmc5GuiScene(GuiScene):
                 world = _multiply4(raw_local, parent_world)
             item.local_position = position[:2]
             item.world_matrix = world
-            item.world_transform = _matrix2(world)
-            item.world_position = world[3][:2]
-            item.effective_visible = parent_visible and bool(properties["Visible"])
+            if placed is None:
+                _show(item, world)
+            item.effective_visible = parent_visible and bool(properties["Visible"]) and item.path not in self.withheld
 
             if "ColorScale" in properties:
                 local_scale = tuple(_f32(value) for value in properties["ColorScale"])
@@ -134,20 +167,29 @@ class Dmc5GuiScene(GuiScene):
                       item.saturation, safe_area)
 
         visit(self.root, _IDENTITY4, _IDENTITY4, True, (1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0), 1.0, False)
+        if placed is not None:
+            nodes = list(self.root.walk())
+            for item, shown in zip(nodes, (np.array([item.world_matrix for item in nodes]) @ placed).tolist()):
+                _show(item, shown)
         order_override_signature = tuple(
             (path, tuple((name, repr(values[name])) for name in sorted(_ORDER_FIELDS.intersection(values))))
             for path, values in sorted(self._preview_overrides.items()) if _ORDER_FIELDS.intersection(values))
         if self._order_dirty or order_override_signature != self._order_override_signature:
-            self.draw_nodes = []
+            self.tree_nodes, keep = [], profile.enum("Segment")["Keep"]
 
-            def order(item: GuiSceneNode) -> None:
-                self.draw_nodes.append(item)
+            def order(item: GuiSceneNode, held: int | None) -> None:
+                own = profile.enum_value(item.render_properties, "Segment")
+                item.segment = held = held if own == keep else own
+                self.tree_nodes.append(item)
                 children = sorted(enumerate(item.children, start=1), key=lambda pair: _child_sort_key(
                     pair[1].render_properties, pair[0], profile))
                 for _index, child in children:
-                    order(child)
+                    order(child, held)
 
-            order(self.root)
+            order(self.root, None if all(profile.enum_value(item.render_properties, "Segment") == keep
+                                         for item in self.root.walk()) else self.held_segment())
+            self.draw_nodes = self.tree_nodes if self.root.segment is None else sorted(
+                self.tree_nodes, key=lambda item: item.segment)
             self._order_dirty = False
             self._order_override_signature = order_override_signature
 
@@ -157,12 +199,15 @@ class Dmc5GuiScene(GuiScene):
         x: float,
         y: float,
     ) -> tuple[float, float]:
-        parent = node.parent.world_transform if node.parent else _IDENTITY
-        a, b, c, d, tx, ty = parent
+        (a, b, _, p), (c, d, _, q), (e, f, _, r), (tx, ty, _, s) = node.parent.scene_matrix if node.parent else (
+            _IDENTITY4)
+        z = node.render_properties["Position"][2]
+        a, b, c, d, w = a - x * p, b - y * p, c - x * q, d - y * q, z * r + s
         determinant = a * d - b * c
         if abs(determinant) < 1e-8:
-            raise GuiSceneError("cannot move a node below a singular parent transform")
-        x, y = x - tx, y - ty
+            raise GuiSceneError(f"{node.parent.object.name} is scaled to nothing: an object inside it cannot be "
+                                "placed with the pointer")
+        x, y = x * w - (z * e + tx), y * w - (z * f + ty)
         return (d * x - c * y) / determinant, (-b * x + a * y) / determinant
 
 def _logical_viewport_size(
@@ -185,7 +230,6 @@ Matrix4 = tuple[
     tuple[float, float, float, float],
     tuple[float, float, float, float],
 ]
-_IDENTITY = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
 _IDENTITY4: Matrix4 = (
     (1.0, 0.0, 0.0, 0.0),
     (0.0, 1.0, 0.0, 0.0),
@@ -204,18 +248,18 @@ def _local_matrix(position, rotation, scale, degree_factors) -> Matrix4:
         return _fmul(_fmul(value, degree_factors[0]), degree_factors[1])
 
     rx, ry, rz = (to_radians(value) for value in (rx, ry, rz))
-    sx, sy, sz = (_f32(math.sin(value)) for value in (rx, ry, rz))
-    cx, cy, cz = (_f32(math.cos(value)) for value in (rx, ry, rz))
+    sx, sy, sz = (_f32(crt("sinf")(value)) for value in (rx, ry, rz))
+    cx, cy, cz = (_f32(crt("cosf")(value)) for value in (rx, ry, rz))
     row0 = (_fmul(cy, cz), _fmul(cy, sz), _f32(-sy), 0.0)
     row1 = (
-        _fsub(_fmul(_fmul(sx, sy), cz), _fmul(cx, sz)),
-        _fadd(_fmul(_fmul(sx, sy), sz), _fmul(cx, cz)),
+        _fsub(_fmul(_fmul(sy, cz), sx), _fmul(cx, sz)),
+        _fadd(_fmul(_fmul(sy, sz), sx), _fmul(cx, cz)),
         _fmul(sx, cy),
         0.0,
     )
     row2 = (
-        _fadd(_fmul(_fmul(cx, sy), cz), _fmul(sx, sz)),
-        _fsub(_fmul(_fmul(cx, sy), sz), _fmul(sx, cz)),
+        _fadd(_fmul(_fmul(sy, cz), cx), _fmul(sx, sz)),
+        _fsub(_fmul(_fmul(sy, sz), cx), _fmul(sx, cz)),
         _fmul(cx, cy),
         0.0,
     )
@@ -242,11 +286,11 @@ def _multiply4(left: Matrix4, right: Matrix4) -> Matrix4:
     return tuple(rows)
 
 
-def _matrix2(matrix: Matrix4) -> tuple[float, float, float, float, float, float]:
-    return (
-        matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1],
-        matrix[3][0], matrix[3][1],
-    )
+def _show(item: GuiSceneNode, matrix) -> None:
+    item.scene_matrix = matrix
+    item.world_transform = (matrix[0][0], matrix[0][1], matrix[0][3], matrix[1][0], matrix[1][1], matrix[1][3],
+                            matrix[3][0], matrix[3][1], matrix[3][3])
+    item.world_position = (matrix[3][0] / matrix[3][3], matrix[3][1] / matrix[3][3]) if matrix[3][3] else (0.0, 0.0)
 
 
 def project_gui_point(point, matrix: Matrix4) -> tuple[float, float, float]:

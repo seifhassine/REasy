@@ -69,6 +69,8 @@
     "nine_slice_repeat": {"size": 8, "fields": [[0, "f32", "width"], [4, "f32", "height"]]}
    },
    "special": {"via.gui.TextureSet": "texture_set", "via.gui.Scale9Grid": "nine_slice", "via.gui.BlurFilter": "nine_slice"},
+   "name_property": ["Name", "Str16"],
+   "clip_version": 27,
    "pools": ["c16", "c8", "guid", "uint2", "float2", "float3", "float4", "color", "special"],
    "payloads": {"guid": "16s", "uint2": "2I", "float2": "2f", "float3": "3f", "float4": "4f", "color": "4B"},
    "values": {

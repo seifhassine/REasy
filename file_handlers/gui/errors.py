@@ -6,6 +6,10 @@ class GuiWriteError(ValueError):
     """Raised when an edit cannot be represented by the proven GUIR model."""
 
 
+class GuiEditError(ValueError):
+    """Raised when the document refuses an edit; nothing was changed."""
+
+
 class GuiSceneError(ValueError):
     """Raised for an unresolved/cyclic graph or invalid animation request."""
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import dataclasses
+import weakref
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 
@@ -547,14 +548,15 @@ def with_files(files: GameFiles, held: Mapping[str, tuple[str, bytes]]) -> GameF
 
 
 def handler_files(handler, game: str) -> GameFiles:
+    alive = weakref.ref(handler)
     def mesh(path: str, data: bytes, light: bool = False):
-        return MeshHandler.from_bytes(path, data, resource_context=resource_context_for_handler(handler),
-                                      game_version=getattr(handler, "game_version", ""),
+        return MeshHandler.from_bytes(path, data, resource_context=resource_context_for_handler(alive()),
+                                      game_version=getattr(alive(), "game_version", ""),
                                       load_mode=MeshLoadMode.LIGHT if light else MeshLoadMode.FULL).mesh
     def nearby(extension: str, source: str, beside: bool = False) -> tuple[str, ...]:
-        return nearby_resource_paths(handler, extension, source_path=source, parent_levels=1,
+        return nearby_resource_paths(alive(), extension, source_path=source, parent_levels=1,
                                      child_levels=1 if beside else 0)
-    return GameFiles(lambda path, owner: resolve_companion_resource(handler, path, owner), nearby,
+    return GameFiles(lambda path, owner: resolve_companion_resource(alive(), path, owner), nearby,
                      _registry(handler, game), mesh)
 
 

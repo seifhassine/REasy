@@ -165,14 +165,15 @@ def direct_texture_gap(node) -> str | None:
     if node.object.type_name != "via.gui.Texture" or node.runtime.enum_label(
             properties, "AssetType", "TextureAssetType") != "Texture":
         return None
-    reference = str(properties["Texture"])
-    return "no texture" if not reference else "runtime render target" if runtime_texture(reference) else None
+    return "its texture is one the game renders while it runs" if runtime_texture(str(properties["Texture"])) else None
 
 
 def texture_source(node, assets):
     properties = node.render_properties
     if node.runtime.enum_label(properties, "AssetType", "TextureAssetType") == "Texture":
         reference = str(properties["Texture"])
+        if not reference:
+            return None, (0.0, 0.0, 1.0, 1.0)
         header = assets.load_tex(reference)[1].header
         u0, v0, u1, v1 = (f32(properties[name]) for name in ("U0", "V0", "U1", "V1"))
         width, height = float(header.width), float(header.height)

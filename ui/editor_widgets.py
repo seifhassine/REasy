@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QSizePolicy,
+    QStyle,
+    QStyleOptionComboBox,
     QToolButton,
     QWidget,
 )
@@ -161,7 +163,11 @@ class EmbeddedPopupComboBox(QComboBox):
         popup = self._popup_container
         popup.setParent(parent, Qt.WindowType.Widget)
         rows = min(self.count(), max(1, self.maxVisibleItems()))
-        height = rows * max(1, view.sizeHintForRow(0)) + 2 * popup.frameWidth()
+        option, style = QStyleOptionComboBox(), self.style()
+        self.initStyleOption(option)
+        margin = style.pixelMetric(QStyle.PixelMetric.PM_MenuVMargin, option, self) if style.styleHint(
+            QStyle.StyleHint.SH_ComboBox_Popup, option, self) else 0
+        height = rows * max(1, view.sizeHintForRow(0)) + 2 * (popup.frameWidth() + view.frameWidth() + margin)
         text_width = max(
             view.fontMetrics().horizontalAdvance(self.itemText(row))
             for row in range(self.count())

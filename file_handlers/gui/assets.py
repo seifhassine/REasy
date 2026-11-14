@@ -99,7 +99,7 @@ class GuiAssetCatalog:
             mesh.read(
                 data,
                 file_version=version,
-                load_mode=MeshLoadMode.LIGHT,
+                load_mode=MeshLoadMode.SCENE,
             )
         except Exception as exc:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc

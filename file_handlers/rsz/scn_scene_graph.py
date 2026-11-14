@@ -900,6 +900,8 @@ def compose_document_worlds(document, on_cycle: Callable | None = None) -> None:
 
     for item in document.objects.values():
         world_of(item)
+    # The closure holds itself: let go of it.
+    world_of = None
 
 
 def turned_worlds(document, rotations: Mapping[ScnObjectId, tuple[float, float, float, float]],
@@ -1170,6 +1172,7 @@ class ScnSceneGraphBuilder(ScnSceneAssembly, ScnPartSwapper, ScnSceneFolders, Sc
                        f"Unable to read {path} ({reason}): the start-up rules reading it keep the files' states.",
                        document_id, path=path)
         self._unread_resources.clear()
+        self._entries_cache.clear()
         return graph
 
     def _hide_ancestor_copies(self, graph: ScnSceneGraph) -> None:

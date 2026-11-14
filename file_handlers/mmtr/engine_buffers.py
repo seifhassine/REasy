@@ -169,7 +169,8 @@ def _scene_values(camera: Camera) -> dict[str, np.ndarray]:
     ratio = f32(near / far)
     culling = (f32(1) / near, f32(1) / f32(crt("log2f")(f32(far / near))))
     return {"viewProjMat": view_projection, "prevViewProjMat": previous, "transposeViewMat": view[:3],
-            "transposeViewInvMat": np.linalg.inv(view)[:3], "viewProjInvMat": engine_inverse(view_projection).astype(np.float64),
+            "transposeViewInvMat": engine_inverse(view.T).T[:3].astype(np.float64),
+            "viewProjInvMat": engine_inverse(view_projection).astype(np.float64),
             "projElement": elements,
             "projInvElements": engine_inverse(projection).astype(np.float64)[[0, 1, 2, 2, 3, 3, 3, 3],
                                                                              [0, 1, 2, 3, 0, 1, 2, 3]],

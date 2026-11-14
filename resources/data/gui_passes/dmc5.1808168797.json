@@ -16,12 +16,13 @@
   },
   "blur": {
    "family": {"blur": "GUI"},
-   "space": {"screen": "2D", "camera": "2DPers", "world": "3D"},
+   "space": {"screen": "2D", "camera": "3D", "world": "3D"},
    "type": {"Instant": "BlurInstant", "System": "BlurGaussian"},
    "test": {"off": "", "on": "Test"}
   }
  },
  "mask_write_space": {"camera": "world"},
+ "blend_only": {"Add": {"mask": ["none", "inside", "outside"]}, "Disable": {"family": ["poly"], "mask": ["none"], "test": ["off"]}},
  "world_view": {"axes": [-1.0, -1.0, 1.0], "pixel_scale": 0.01},
  "blur_chain": {
   "programs": ["GUIGaussianFilter_Horizontal", "GUIGaussianFilter_Vertical"], "source": "tTex", "constants": "CBGlowTextFilter",
@@ -79,6 +80,23 @@
    "GUIGlyphGlowPersAddMaskReverseTest"
   ]
  },
+ "mesh": {
+  "shader_type": 9,
+  "route": "Static",
+  "turn": [0.0, 3.1415927410125732, 0.0],
+  "scale": [-100.0, -100.0, 100.0],
+  "least_alpha": 1.1920928955078125e-07,
+  "joint_offset": -1,
+  "frame": {"cbr": [1.0, 0.0], "cbr_bias": [0.0], "cbr_using": [0.0], "constant32Bits": [0]},
+  "scene_texture": "SrcImage",
+  "ies_texture": "IESLightTableSRV",
+  "ies": {"format": 54, "shape": [512, 1, 64, 1]},
+  "light_buffer": "GUILightParameterSRV",
+  "lights": {
+   "rows": 32, "range_scale": 1.0, "least_radius": 9.999999747378752e-06, "largest_tolerance": 0.9999989867210388,
+   "shadow": -1, "ies": -1, "reserved": [1, 0]
+  }
+ },
  "camera": {"fov": 40.0, "near": 0.1, "far": 1000.0, "degree": 0.0055555556900799274, "pi": 3.1415927410125732, "half": 0.5},
  "null_texture": "systems/rendering/nullwhite.tex",
  "samplers": {
@@ -95,6 +113,7 @@
  },
  "element_sampler": "primSampler",
  "element_texture": "primTex",
+ "depth_texture": "ReadonlyDepth",
  "mask_textures": ["guiMask", "guiMask2"],
  "kind_samplers": {"via.gui.Rect": "PointClamp", "via.gui.Text": "BilinearClamp", "via.gui.MaterialText": "BilinearClamp"},
  "system": {
@@ -114,6 +133,8 @@
  "targets": {
   "colour": {"format": 26},
   "ui_mask": {"format": 61},
+  "scene_depth": {"format": 41},
+  "gui_depth": {"format": 40},
   "mask": {"format": 65},
   "blur": {"format": 26},
   "scene_copy": {"format": 26},

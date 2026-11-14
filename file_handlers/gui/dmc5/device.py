@@ -3,29 +3,31 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import replace
+from math import inf
 
 import numpy as np
 
 from file_handlers.native_math import f32, fdiv, fmul, fsub
-lazy from file_handlers.engine_math import crt
+lazy from file_handlers.engine_math import transform_product
 lazy from file_handlers.mmtr.engine_buffers import (
     FRAME_BUFFERS, Camera, frame_values, laid_out, scene_values, with_words,
 )
+lazy from file_handlers.mmtr.draw_rules import program_flags
 lazy from file_handlers.mmtr.frame_clock import FrameClock, clock_words, frame_clock_catalog_for
 lazy from file_handlers.mmtr.light_passes import light_pass_catalog_for, parsed_pass_file
 lazy from file_handlers.mmtr.material_context import MaterialInstanceContext
 lazy from file_handlers.mmtr.material_family import bind_drawn_master
 lazy from file_handlers.mmtr.material_preview import (
-    RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, SHADER_VISIBILITY, VIEW_DIMENSIONS, Following, _engine_heap_fields,
-    _texture_texels,
-    shader_bindings,
+    RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, SHADER_VISIBILITY, VIEW_DIMENSIONS, Following, TranslatedError,
+    _engine_heap_fields, _texture_texels, shader_bindings,
 )
-lazy from file_handlers.mmtr.mesh_draw import input_elements, program_states
+lazy from file_handlers.mmtr.mesh_draw import MeshBuffer, SubmeshRange, input_elements, program_states, submesh_geometry
 lazy from file_handlers.mmtr.mmtr_file import parse_drawn_master
-lazy from file_handlers.mmtr.resident import RENDER_TARGET, TEXTURE_2D
+lazy from file_handlers.mmtr.pass_choice import GUI_MESH, own_program_name
+lazy from file_handlers.mmtr.resident import DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D
 lazy from file_handlers.mmtr.sampler_states import sampler_catalog_for
 lazy from file_handlers.sdf.contracts import program_contracts
-lazy from file_handlers.sdf.dxbc import PRIMITIVE_TOPOLOGY_NAMES
+lazy from file_handlers.sdf.dxbc import PRIMITIVE_TOPOLOGY_NAMES, strict_dxbc
 lazy from file_handlers.sdf.models import program_names
 lazy from file_handlers.tex.dxgi import DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R32_UINT
 lazy from utils.resource_file_utils import resource_version_from_path
@@ -34,10 +36,12 @@ lazy from ..errors import GuiAssetError
 lazy from ..model import ZERO_GUID
 lazy from ..passes import gui_pass_catalog_for
 lazy from .blur_chain import chain_values, level_sizes
+lazy from .cameras import gui_camera, gui_view, lens_camera
 lazy from .glyph_draws import GlyphAtlas, GlyphBlurs, effect_draws, filter_constants, text_draws
 lazy from .icon_tags import resolve_dmc5_icon_tag
-lazy from .masks import mask_passes, mask_producers
+lazy from .masks import mask_passes
 lazy from .materials import MaterialGap, slotted, unread
+lazy from .meshes import entity_world, listed_lights, mesh_parts, mesh_world
 lazy from .text import dmc5_text_rules
 lazy from .text_layout import LayoutFonts, TextContext, TextLayoutGap, layout_dmc5_text
 lazy from .text_tags import resolve_dmc5_text_tag
@@ -87,10 +91,11 @@ class GuiDevice:
         atlas, targets = self.catalog.targets["glyph_atlas"], self.catalog.targets
         self.atlas = GlyphAtlas(tuple(atlas["size"]), tuple(atlas["largest"]), atlas["padding"])
         self._pages, self._text, self.language = [], None, runtime.language(runtime.preview_language)
-        self._sizes, self._frame_size = {}, None
+        self._sizes, self._frame_size, self._world, self._view_key = {}, None, None, None
         self.blurs = GlyphBlurs(tuple(targets["glyph_blur"]["size"]), tuple(targets["glyph_scratch"]["size"]),
                                 atlas["padding"])
-        self._blur_pages, self._scratch_pages = [], []
+        self._blur_pages, self._scratch_pages, self.typed = [], [], {}
+        self._lit, self._lights, self._buffers = {}, None, {}
 
     def program(self, path: str, target: int, name: str):
         if path not in self._documents:
@@ -119,28 +124,28 @@ class GuiDevice:
             names = {pattern_source(self.assets, str(properties["UVSequence"]), cell.sequence, cell.pattern)[0]
                      for cell in cells}
             if len(names) > 1:
-                raise ValueError(f"{node.path}'s cells sample {len(names)} textures; the game draws them with one")
+                raise GuiAssetError(f"its cells sample {len(names)} textures; the game draws them with one")
             return next(iter(names), None)
         return None
 
-    def scene_camera(self, pixels: tuple[int, int]) -> Camera:
-        if pixels not in self._cameras:
-            lens = self.camera
-            scale = fdiv(1.0, crt("tanf")(fmul(fmul(fmul(lens["fov"], lens["degree"]), lens["pi"]), lens["half"])))
-            ratio = fdiv(lens["far"], fsub(lens["far"], lens["near"]))
-            depth, far = fsub(ratio, 1.0), fmul(ratio, lens["near"]) / fsub(ratio, 1.0)
-            self._cameras[pixels] = Camera(np.eye(3, 4), (scale, fmul(scale, fdiv(*map(float, pixels)))),
-                                           depth * far / (1.0 + depth), far, pixels)
-        return self._cameras[pixels]
+    def scene_camera(self, pixels: tuple[int, int], lens=None) -> Camera:
+        if (pixels, lens) not in self._cameras:
+            self._cameras[pixels, lens] = lens_camera(self.camera, np.eye(3, 4), pixels) if lens is None else (
+                gui_camera(self.catalog, lens, pixels))
+        return self._cameras[pixels, lens]
 
     def _values(self, node, facts, pixels: tuple[int, int], size: tuple[float, float], fields: dict) -> dict:
         width, height = size
-        system, world = self.catalog.system, world_matrix(node, facts).ravel()
-        values = {**({} if self.camera is None else scene_values(self.scene_camera(pixels))),
-                  "guiViewMatrix": np.eye(4).ravel(),
+        system, world, placed = self.catalog.system, world_matrix(node, facts), self._world
+        camera = self.scene_camera(pixels, placed[1]) if placed else None if self.camera is None else (
+            self.scene_camera(pixels))
+        values = {**({} if camera is None else scene_values(camera)),
+                  "guiViewMatrix": (np.eye(4) if placed is None else placed[0]).ravel(),
                   "guiProjMatrix": [fdiv(2.0, width), 0, 0, 0, 0, fdiv(-2.0, height), 0, 0, 0, 0, 0, 0, -1, 1, 0, 1],
-                  "guiWorldMat": world, "worldMat": world, "guiIntensity": [1.0],
-                  "guiSaturation": [fsub(1.0, node.saturation)], "guiStencilScale": [1.0],
+                  "guiWorldMat": world.ravel(), "guiIntensity": [1.0],
+                  "worldMat": (world if placed is None else transform_product(world, placed[0])).ravel(),
+                  "guiSaturation": [fsub(1.0, node.saturation)],
+                  "guiStencilScale": [0.0 if placed and placed[2]["StencilZeroFill"] else 1.0],
                   "guiAlphaBlendRate": [system["LinearAlphaBlendRate"] if node.render_properties.get("LinearAlphaBlend")
                                         else 0.0], "screenSize": pixels,
                   "screenInverseSize": [fdiv(1.0, float(side)) for side in pixels], **self.engine, **fields}
@@ -184,19 +189,21 @@ class GuiDevice:
         return tables
 
     def _element_name(self, node, facts, family: str, role: str, masks) -> str:
-        blend = self.runtime.enum_label(node.render_properties, "BlendType")
-        return self.catalog.program_name(facts["program_names"], family=family, space="screen", blend=blend, mask=role,
-                                         nest=str(len(masks) if role == "write" else 0))
+        blend, placed = self.runtime.enum_label(node.render_properties, "BlendType"), self._world
+        return self.catalog.program_name(
+            facts["program_names"], family=family, space="camera" if placed else "screen", blend=blend, mask=role,
+            test="on" if placed and placed[2]["DepthTest"] else "off", nest=str(len(masks) if role == "write" else 0))
 
     def _textures(self, masks, texture) -> dict:
         return {**{name: (0, *surface) for name, surface in zip(self.catalog.mask_textures, masks)},
-                self.catalog.element_texture: texture}
+                self.catalog.element_texture: texture, **({} if self._world is None else {
+                    self.catalog.depth_texture: (0, *self._world[3])})}
 
     def _job(self, node, facts, name: str, target, pixels, size, textures: dict, vertices, indices,
              fields: dict | None = None) -> dict:
         found = self.program(*self.catalog.programs, name)
         if found is None:
-            raise ValueError(f"{self.catalog.programs[0]} has no program {name}")
+            raise GuiAssetError(f"{self.catalog.programs[0]} has no program {name}")
         program, contracts = found
         return self._draw(program, target, pixels, vertices, indices,
                           self._tables(contracts, node, facts, pixels, size, textures, fields or {}), [])
@@ -207,7 +214,7 @@ class GuiDevice:
         return Following(key, lambda: latest[key])
 
     def _draw(self, program, target, pixels, vertices, indices, tables: list, heap) -> dict:
-        listed, data = _triangles(indices), vertices.tobytes()
+        listed, data, states = _triangles(indices), vertices.tobytes(), program_states(program, 1, 0)
         width, height = pixels
         if self._slot is not None:
             self._slot[-1] += 1
@@ -216,13 +223,21 @@ class GuiDevice:
                 for at, table in enumerate(tables)]
             data = self.device.following(*self._kept((*self._slot, "vertices"), data), 1)
         return self.device.held({
-            "vertex_shader": bytes(program.shader("vertex").payload),
-            "pixel_shader": bytes(program.shader("pixel").payload),
+            "vertex_shader": strict_dxbc(bytes(program.shader("vertex").payload)),
+            "pixel_shader": strict_dxbc(bytes(program.shader("pixel").payload)),
             "vertex_buffers": [(data, vertices.dtype.itemsize)], "elements": input_elements(program),
             "indices": listed, "index_format": DXGI_FORMAT_R16_UINT, "draw": (len(listed) // 2, 1, 0, 0, 0),
             "size": (width, height), "viewport": (0.0, 0.0, float(width), float(height), 0.0, 1.0),
-            "scissor": (0, 0, width, height), "targets": [target], "depth": None, "tables": tables, "heap": heap,
-            **program_states(program, 1, 0), "topology": self._list})
+            "scissor": (0, 0, width, height), "targets": [target],
+            "depth": self._depth(pixels) if states["depth_stencil"][0] else None, "tables": tables, "heap": heap,
+            **states, "topology": self._list})
+
+    def _depth(self, size: tuple[int, int]) -> tuple[int, int]:
+        key = ("gui_depth", size, 0)
+        if key not in self._targets:
+            form = self.catalog.targets["gui_depth"]["format"]
+            self._targets[key] = (form, self.device.texture(form, size, DEPTH_STENCIL))
+        return self._targets[key]
 
     def element_jobs(self, node, role: str, target: tuple[int, int], pixels: tuple[int, int],
                      size: tuple[float, float], masks: tuple = ()) -> list[dict]:
@@ -239,42 +254,58 @@ class GuiDevice:
         source, mdf = self.assets.load_mdf(reference)
         if not mdf.materials or int(mdf.materials[0].header.shader_type) != rule["shader_type"]:
             return None
-        first = mdf.materials[0]
-        key = (str(first.header.mmtr_path), MaterialInstanceContext.from_material(first))
+        document = self._master(mdf.materials[0])
+        names = document.sdf.targets[self.master_target].program_indices
+        return None if not all(name in names for name in rule["techniques"]) else (document, slotted(
+            node, facts["material_variables"], mdf.materials[0], resource_version_from_path(source, "mdf2")))
+
+    def _master(self, material):
+        key = (str(material.header.mmtr_path), MaterialInstanceContext.from_material(material))
         if key not in self._masters:
-            document = bind_drawn_master(key[1], key[0], self.dependencies.resource_data_loader, lambda found, data: (
-                self._documents.get(found)
-                or self._documents.setdefault(found, parse_drawn_master(data, self.game, found))))
-            names = document.sdf.targets[self.master_target].program_indices
-            self._masters[key] = document if all(name in names for name in rule["techniques"]) else None
-        return None if self._masters[key] is None else (self._masters[key], slotted(
-            node, facts["material_variables"], first, resource_version_from_path(source, "mdf2")))
+            self._masters[key] = bind_drawn_master(
+                key[1], key[0], self.dependencies.resource_data_loader, lambda found, data: (
+                    self._documents.get(found)
+                    or self._documents.setdefault(found, parse_drawn_master(data, self.game, found))))
+        return self._masters[key]
 
     def _material_job(self, node, facts, bound, name: str, target, pixels, size, textures: dict, vertices, indices,
                       fields: dict | None = None) -> dict:
-        document, material = bound
-        programs = document.sdf.targets[self.master_target]
+        programs = bound[0].sdf.targets[self.master_target]
         if name not in programs.program_indices:
             raise MaterialGap(f"its master has no program {name}, and what the game draws instead is unread")
         program = programs.programs[programs.program_indices[name][0]]
-        values, graph = self._values(node, facts, pixels, size, fields or {}), document.profile.shader_graph_profile
+        return self._draw(program, target, pixels, vertices, indices, *self._material_tables(
+            node, bound, program, self._values(node, facts, pixels, size, fields or {}), textures))
+
+    def _material_tables(self, node, bound, program, values: dict, textures: dict, rows=None) -> tuple[list, tuple]:
+        document, material = bound
+        graph = document.profile.shader_graph_profile
         shaders = {shader.role: (graph.shader_contract(document, program, shader.role), bytes(shader.payload))
                    for shader in program.shaders if shader.present}
-        reason = unread(program, shaders, document.profile.user_material_buffer_names, material, values.keys() | set(
+        reason = unread(program, shaders, (*document.profile.user_material_buffer_names, *(
+            () if rows is None else (self.catalog.mesh["light_buffer"],))), material, values.keys() | set(
             () if self.clock is None else self.clock.catalog.fields), textures)
         if reason:
             raise MaterialGap(reason)
+
+        def engine_buffer(contract, resource):
+            if resource.register_class == "b":
+                return bytes(laid_out(contract.buffer(resource.name), values, True))
+            if rows is None or resource.name != self.catalog.mesh["light_buffer"]:
+                return None
+            layout = contract.structured_buffer(resource.name)
+            return b"".join(bytes(laid_out(layout, row, False)) for row in rows).ljust(
+                layout.byte_size * self.catalog.mesh["lights"]["rows"], b"\0")
         tables, heap, missing = shader_bindings(
-            document, shaders, material, self.load_file,
-            lambda contract, resource: bytes(laid_out(contract.buffer(resource.name), values, True))
-            if resource.register_class == "b" else None,
+            document, shaders, material, self.load_file, engine_buffer,
             lambda name: self._sampler(self.catalog.element_sampler, node) if name == self.catalog.material[
                 "glyph_sampler"] else self.samplers.states[name].descriptor(),
             engine_texture=lambda _contract, resource: textures[resource.name] if isinstance(
                 textures[resource.name], tuple) else None if (found := self._read(
                     textures[resource.name], resource.dimension)) is None else (0, *found),
-            made_texture=lambda path: None if (found := self._read(
-                path, "texture2d", self.catalog.material["streamed_smallest"])) is None else ("texture2d", *found))
+            made_texture=lambda path: None if (found := next(filter(None, (self._read(
+                at, "texture2d", self.catalog.material["streamed_smallest"]) for at in (f"streaming/{path}", path))),
+                None)) is None else ("texture2d", *found))
         if missing:
             raise FileNotFoundError(f"{node.path}'s material samples {', '.join(missing)}, which was not found")
         clocked = {} if self.clock is None else {
@@ -288,7 +319,53 @@ class GuiDevice:
                 layout, values, True), layout, clock_words(clock, clock.catalog.buffer, layout)))))),))
             if table[0] == RANGE_CBV and (layout := clocked.get((table[5], table[1], table[2]))) is not None else table
             for table in tables]
-        return self._draw(program, target, pixels, vertices, indices, tables, heap)
+        return tables, heap
+
+    def mesh_jobs(self, node, target: tuple[int, int], pixels: tuple[int, int]) -> list[dict]:
+        facts, rule = self.runtime.runtime_type(node.object.type_name).facts, self.catalog.mesh
+        names, held, (rows, masks) = facts["mesh"], node.render_properties, self._lights
+        if not held[names["mesh"]] or not held[names["material"]] or node.color_scale[3] < rule["least_alpha"]:
+            return []
+        reference = str(held[names["mesh"]])
+        mesh, (source, mdf) = self.assets.load_mesh(reference)[1], self.assets.load_mdf(str(held[names["material"]]))
+        world, named = mesh_world(node, names, rule, self.runtime.degree_factors, self._world[0], entity_world(
+            self._world[4]["world"], self._world[4]["rotation"])).ravel(), {}
+        for material in mdf.materials:
+            named.setdefault(str(material.header.mat_name), material)
+        colour, scene = self.catalog.targets["colour"]["format"], self.scene_camera(pixels, self._world[1])
+        values = {name: np.asarray(value, np.float64) for name, value in {
+            **scene_values(scene), "worldMat": world, "prevWorldMat": world, "jointOffset": [rule["joint_offset"]],
+            "prevJoinOffset": [rule["joint_offset"]], "colorTransform": node.color_scale,
+            "stencilScale": [0.0 if self._world[2]["StencilZeroFill"] else 1.0], "GUIPunctualLightCount": [len(rows)],
+            "LightMask": [sum(mask for group, mask in masks.items() if held[names["light_groups"]] >> group & 1)],
+            **rule["frame"], **self.engine}.items()}
+        textures = {rule["scene_texture"]: (0, colour, self.device.zeros(colour, pixels, 0, 4 * pixels[0] * pixels[1])),
+                    rule["ies_texture"]: (0, rule["ies"]["format"], *rule["ies"]["shape"], bytes(
+                        2 * rule["ies"]["shape"][0] * rule["ies"]["shape"][2]))}
+        jobs, width, height = [], *pixels
+        for name, submesh in mesh_parts(mesh):
+            if name not in named or int(named[name].header.shader_type) != rule["shader_type"]:
+                continue
+            document = self._master(named[name])
+            made = slotted(node, facts["material_variables"], named[name], resource_version_from_path(source, "mdf2"))
+            programs = document.sdf.targets[self.master_target]
+            program = own_program_name(program_flags(document.profile, made), GUI_MESH, rule["route"])
+            if program not in programs.program_indices:
+                raise MaterialGap(f"its master has no program {program}, and what the game draws instead is unread")
+            program = programs.programs[programs.program_indices[program][0]]
+            tables, heap = self._material_tables(node, (document, made), program, values, textures, rows)
+            key = reference, submesh.buffer_index
+            if key not in self._buffers:
+                self._buffers[key] = MeshBuffer.from_payload(mesh.mesh_buffer.buffer_payloads[key[1]])
+            vertex = document.profile.shader_graph_profile.shader_contract(document, program, "vertex")
+            jobs.append(self.device.held({
+                "vertex_shader": strict_dxbc(bytes(program.shader("vertex").payload)),
+                "pixel_shader": strict_dxbc(bytes(program.shader("pixel").payload)),
+                **submesh_geometry(program, vertex, self._buffers[key], SubmeshRange.from_submesh(submesh)),
+                "size": (width, height), "viewport": (0.0, 0.0, float(width), float(height), 0.0, 1.0),
+                "scissor": (0, 0, width, height), "targets": [target], "depth": self._depth(pixels),
+                "tables": tables, "heap": heap, **program_states(program, 1, 0)}))
+        return jobs
 
     def material_jobs(self, node, role: str, target: tuple[int, int], pixels: tuple[int, int],
                       size: tuple[float, float], masks: tuple = ()) -> list[dict]:
@@ -330,16 +407,17 @@ class GuiDevice:
 
     def blur_jobs(self, node, target: tuple[int, int], pixels: tuple[int, int], size: tuple[float, float],
                   sources: dict) -> list[dict]:
-        facts, kind, system = (self.runtime.runtime_type(node.object.type_name).facts, self.blur_type(node),
-                               self.catalog.system)
-        name = self.catalog.program_name(facts["program_names"], family=facts["program_family"], space="screen",
-                                         type=kind, test="off")
+        facts, kind, system, placed = (self.runtime.runtime_type(node.object.type_name).facts, self.blur_type(node),
+                                       self.catalog.system, self._world)
+        name = self.catalog.program_name(
+            facts["program_names"], family=facts["program_family"], space="camera" if placed else "screen",
+            type=kind, test="on" if placed and placed[2]["DepthTest"] else "off")
         scene = self.catalog.blur_chain["scene"]
         fields = {"guiFilterParam": [node.render_properties["BlurScale"] if kind == "Instant"
                                      else fdiv(system["BlurFilterScale"], float(pixels[1]))],
                   "guiFilterMipLevel": [system["BlurFilterMipLevel"]], "guiSaturation": [0.0]}
         return [self._job(node, facts, name, target, pixels, size, {
-            self.catalog.element_texture: texture or self.catalog.null_texture, scene["texture"]: sources[scene[kind]]},
+            **self._textures((), texture or self.catalog.null_texture), scene["texture"]: sources[scene[kind]]},
             *strip_vertices(quads), fields)
             for texture, quads in blur_quads(node, facts, self.assets, self.runtime.uv_orientations)]
 
@@ -404,7 +482,7 @@ class GuiDevice:
         state, held = (node.render_properties, self._frame_size), self._sizes.get(node.path)
         if held is None or held[0] != state:
             try:
-                reason = "no frame drawn" if self._frame_size is None else self.layout_gap(node)
+                reason = "no frame is drawn" if self._frame_size is None else self.layout_gap(node)
                 if reason:
                     raise TextLayoutGap(reason)
                 self._layout(node, *self._frame_size)
@@ -415,22 +493,28 @@ class GuiDevice:
             raise TextLayoutGap(held[1])
         return held[1]
 
+    def _typed(self, node) -> float:
+        return self.typed.get(node.path, 0) if node.render_properties.get("UseTyping") else inf
+
     def text_layers(self, node, pixels: tuple[int, int], size: tuple[float, float]) -> list[tuple]:
         facts, properties = self.runtime.runtime_type(node.object.type_name).facts, node.render_properties
         layout, raster_scale = self._layout(node, pixels, size), self._text_context(pixels, size).raster_scale
+        typed = self._typed(node)
         glow, inner, layers = bool(properties["GlowEnable"]), bool(properties["GlowInner"]), []
         for kind, drawn in (("Shadow", properties["ShadowEnable"]), ("Glow", glow and not inner), (None, True),
                             ("Glow", glow and inner)):
             if drawn and kind is None:
                 layers += [(facts["icon_family" if icon else "program_family"],
                             texture if icon else self._page(texture), vertices, indices, 1.0)
-                           for texture, icon, vertices, indices in text_draws(node, facts, layout, self.atlas)]
+                           for texture, icon, vertices, indices in text_draws(node, facts, layout, self.atlas,
+                                                                              typed)]
             elif drawn:
                 layers += [(facts.get("glow_family", facts["program_family"]),
                             self._target_page("glyph_blur", self._blur_pages, page), vertices, indices,
                             float(properties[f"{kind}Strength"]))
                            for page, _icon, vertices, indices in effect_draws(
-                               node, facts, layout, self.blurs, kind, raster_scale, self.runtime.degree_factors)]
+                               node, facts, layout, self.blurs, kind, raster_scale, self.runtime.degree_factors,
+                               typed)]
         return layers
 
     def text_jobs(self, node, role: str, target: tuple[int, int], pixels: tuple[int, int], size: tuple[float, float],
@@ -477,8 +561,8 @@ class GuiDevice:
                                    (textures[resource.name],)))
         (x, y, width, height), (columns, rows) = cell, size
         return self.device.held({
-            "vertex_shader": bytes(program.shader("vertex").payload),
-            "pixel_shader": bytes(program.shader("pixel").payload),
+            "vertex_shader": strict_dxbc(bytes(program.shader("vertex").payload)),
+            "pixel_shader": strict_dxbc(bytes(program.shader("pixel").payload)),
             "vertex_buffers": [], "elements": [], "indices": np.arange(3, dtype=np.uint32).tobytes(),
             "index_format": DXGI_FORMAT_R32_UINT, "draw": (3, 1, 0, 0, 0), "size": (columns, rows),
             "viewport": (float(x), float(y), float(width), float(height), 0.0, 1.0), "scissor": (0, 0, columns, rows),
@@ -506,12 +590,8 @@ class GuiDevice:
         return steps
 
     def layout_gap(self, node) -> str | None:
-        properties, root = node.render_properties, node
-        while root.parent is not None:
-            root = root.parent
-        if self.runtime.enum_label(root.render_properties, "ViewType") != "Screen":
-            return "Text in a world view (its raster scale is unread)"
-        return ("typing" if properties["UseTyping"] else "text animation" if properties["AnimationEnable"]
+        properties = node.render_properties
+        return ("text with a text animation is not drawn" if properties["AnimationEnable"]
                 and properties.get("TextAnimation") else None)
 
     def gap(self, node) -> str | None:
@@ -520,10 +600,15 @@ class GuiDevice:
             limit = self.catalog.glyph_filters["single_pass_limit"]
             wide = [kind for kind in ("Glow", "Shadow")
                     if properties[f"{kind}Enable"] and max(properties[f"{kind}BlurSize"]) > limit]
-            return self.layout_gap(node) or (f"{wide[0]} blur over {limit:g} texels" if wide else None)
+            return self.layout_gap(node) or (
+                f"a {wide[0].lower()} blur wider than {limit:g} texels is not drawn" if wide else None)
         if facts.get("program_names") == "blur" or "material_property" in facts:
             return None
-        return node.object.type_name if node.object.type_name not in RULES else direct_texture_gap(node)
+        if "mesh" in facts:
+            return None if self._world else ("a Mesh outside a placed GUI-camera view is drawn through a camera "
+                                             "the preview doesn't have")
+        kind = node.object.type_name
+        return f"{kind} is not drawn" if kind not in RULES else direct_texture_gap(node)
 
     def display_job(self, image: int, output: tuple[int, int], pixels: tuple[int, int]) -> dict:
         item = self.display
@@ -547,8 +632,8 @@ class GuiDevice:
                     raise ValueError(f"the display pass reads {resource.name}, which the GUI preview doesn't make")
         vertices, instances = item.count
         return self.device.held({
-            "vertex_shader": bytes(program.shader("vertex").payload),
-            "pixel_shader": bytes(program.shader("pixel").payload),
+            "vertex_shader": strict_dxbc(bytes(program.shader("vertex").payload)),
+            "pixel_shader": strict_dxbc(bytes(program.shader("pixel").payload)),
             "vertex_buffers": [], "elements": [], "indices": np.arange(vertices, dtype=np.uint32).tobytes(),
             "index_format": DXGI_FORMAT_R32_UINT, "draw": (vertices, instances, 0, 0, 0), "size": (width, height),
             "viewport": (0.0, 0.0, float(width), float(height), 0.0, 1.0), "scissor": (0, 0, width, height),
@@ -561,20 +646,39 @@ class GuiDevice:
             self._targets[key] = (form, self.device.texture(form, size, RENDER_TARGET))
         return self._targets[key]
 
-    def frame(self, scene, size: tuple[int, int],
-              visible: Callable = lambda node: node.effective_visible) -> tuple[int, list]:
+    def place(self, view, placed, size: tuple[int, int]) -> None:
+        self._world, self._view_key, self._lights = None, None, None
+        self._frame_size = size, tuple(float(side) for side in (
+            view["ScreenSize"] if placed is None else self.runtime.world_view_output))
+        if placed is not None:
+            form = self.catalog.targets["scene_depth"]["format"]
+            sides = tuple(max(1.0, side) for side in view["ScreenSize"])
+            self._world = (gui_view(self.catalog, sides, placed["world"]), placed["lens"], view,
+                           (form, self.device.zeros(form, size, 0, 4 * size[0] * size[1])), placed)
+            self._view_key = (placed["lens"], tuple(placed["world"]), sides, view["DepthTest"],
+                              view["StencilZeroFill"], placed["lights"], placed["rotation"])
+            if placed["lights"] not in self._lit:
+                self._lit[placed["lights"]] = listed_lights(placed["lit"], self.catalog.mesh["lights"])
+            self._lights = self._lit[placed["lights"]]
+
+    def frame(self, scene, size: tuple[int, int], visible: Callable = lambda node: node.effective_visible,
+              placed=None) -> tuple[int, list]:
         colour, shown = self.target("colour", size), self.target("display", size)
         root, left = scene.root, []
-        screen = tuple(float(side) for side in root.render_properties["ScreenSize"])
-        self._frame_size = size, screen
-        masks = mask_producers(scene.draw_nodes, lambda node: node is not root and visible(node))
-        clearing, steps = [self._step(target) for target in (colour, *(
-            self.target("mask", size, level)
-            for level in sorted({level for scope in masks.values() for level in scope})))], []
+        self.place(root.render_properties, placed, size)
+        screen, steps, written = self._frame_size[1], [], set()
         drawn = [node for node in scene.draw_nodes if node is not root and visible(node)
                  and self.runtime.runtime_type(node.object.type_name).facts.get("drawable")]
         blurs = [self.runtime.runtime_type(node.object.type_name).facts.get("program_names") == "blur"
                  for node in drawn]
+        elements = [node for node, blur in zip(drawn, blurs) if not blur]
+        drawing = {id(node) for node in elements}
+        passes = mask_passes(scene.tree_nodes, lambda node: node is root or visible(node),
+                             lambda node: id(node) in drawing)
+        clearing = [self._step(target) for target in (colour, self._depth(size), *(
+            self.target("mask", size, level) for level in sorted({
+            level for _role, writes, reads, _clears in passes.values()
+            for level in (*reads, *(() if writes is None else (writes,)))})))]
         if any(blurs):
             filters = [node for node, blur in zip(drawn, blurs) if blur]
             steps, sources = self.blur_sources(colour, size, "chain" in {
@@ -582,18 +686,24 @@ class GuiDevice:
             for node in filters:
                 steps += self._drawn(node, (size, screen, sources), lambda node=node: self.blur_jobs(
                     node, colour, size, screen, sources))[0]
-        for node, role, writes, reads, clears in mask_passes([node for node, blur in zip(drawn, blurs) if not blur],
-                                                             masks):
+        for node in elements:
+            role, writes, reads, clears = passes[node.path]
             target = colour if writes is None else self.target("mask", size, writes)
             if clears:
                 steps.append(self._step(target))
             reason, surfaces = self.gap(node), tuple(self.target("mask", size, level) for level in reads)
+            if written.issuperset(reads):
+                written.update(() if writes is None else (writes,))
+            else:
+                reason = "the mask level it reads is not drawn before it: the game shows what that level held"
             if reason:
                 left.append((node.path, reason))
                 continue
             facts = self.runtime.runtime_type(node.object.type_name).facts
             text, material = "glyph_colors" in facts, "material_property" in facts
-            made, reason = self._drawn(node, (size, screen, role, target, surfaces), lambda node=node: (
+            state = size, screen, role, target, surfaces, self._typed(node)
+            made, reason = self._drawn(node, state, lambda node=node: self.mesh_jobs(
+                node, target, size) if "mesh" in facts else (
                 self.material_text_jobs if text and material else self.text_jobs if text else self.material_jobs
                 if material else self.element_jobs)(node, role, target, size, screen, surfaces))
             if reason:
@@ -612,13 +722,13 @@ class GuiDevice:
 
     def _drawn(self, node, state: tuple, jobs: Callable[[], list]) -> tuple[list[int], str | None]:
         state = (node.render_properties, node.world_matrix, node.color_scale, node.color_offset, node.saturation,
-                 *state)
+                 self._view_key, *state)
         held = self._built.get(node.path)
         if held is None or held[0] != state:
             self._slot = [node.path, 0]
             try:
                 held = (state, [self._step(job) for job in jobs()], None)
-            except (TextLayoutGap, MaterialGap, FileNotFoundError, GuiAssetError) as gap:
+            except (TextLayoutGap, MaterialGap, FileNotFoundError, GuiAssetError, TranslatedError) as gap:
                 held = (state, [], str(gap))
             finally:
                 self._slot = None

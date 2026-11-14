@@ -11,7 +11,7 @@ lazy from ui.breadcrumbs import breadcrumb_separator
 lazy from ui.editor_widgets import styled_label, tool_button
 lazy from ui.styles import set_style_role
 
-from .pickers import below
+from ui.search_popup import below
 
 
 class Crumbs(QWidget):

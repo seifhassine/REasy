@@ -1,6 +1,8 @@
 """See docs/internals/gui-rendering.md, Glyph draws."""
 from __future__ import annotations
 
+from math import inf
+
 import numpy as np
 
 from file_handlers.engine_math import crt
@@ -180,7 +182,8 @@ def _corner(node, facts) -> tuple[float, float]:
     return bounds(node, [max(0.0, float(side)) for side in node.render_properties[facts["size"]]])[:2]
 
 
-def text_draws(node, facts, layout, atlas: GlyphAtlas) -> list[tuple[object, bool, np.ndarray, np.ndarray]]:
+def text_draws(node, facts, layout, atlas: GlyphAtlas,
+               typed: float = inf) -> list[tuple[object, bool, np.ndarray, np.ndarray]]:
     left, top = _corner(node, facts)
     groups = {}
     for quad in layout.quads:
@@ -190,7 +193,7 @@ def text_draws(node, facts, layout, atlas: GlyphAtlas) -> list[tuple[object, boo
             continue
         texture, uv = placed
         (u0, v0, u1, v1), x0, y0 = (F(value) for value in uv), F(left) + quad.x, F(top) + quad.y
-        upper, lower = _colors(node, facts, quad.color, icon)
+        upper, lower = _colors(node, facts, quad.color, icon) if quad.index < typed else [(0, 0, 0, 0)] * 2
         groups.setdefault((texture, icon), []).insert(0, (
             [upper, upper, lower, lower], [(u0, v0), (u1, v0), (u0, v1), (u1, v1)],
             (x0, y0, x0 + quad.width, y0 + quad.height), 0.0))
@@ -198,7 +201,8 @@ def text_draws(node, facts, layout, atlas: GlyphAtlas) -> list[tuple[object, boo
 
 
 def effect_draws(node, facts, layout, blurs: GlyphBlurs, kind: str, raster_scale: float,
-                 degree_factors: tuple[float, float]) -> list[tuple[object, bool, np.ndarray, np.ndarray]]:
+                 degree_factors: tuple[float, float],
+                 typed: float = inf) -> list[tuple[object, bool, np.ndarray, np.ndarray]]:
     properties, (left, top) = node.render_properties, _corner(node, facts)
     blur = tuple(F(side) for side in properties[f"{kind}BlurSize"])
     inner = kind == "Glow" and bool(properties["GlowInner"])
@@ -211,7 +215,7 @@ def effect_draws(node, facts, layout, blurs: GlyphBlurs, kind: str, raster_scale
         left, top = F(left) + F(crt("cosf")(angle)) * distance, F(top) + F(crt("sinf")(angle)) * distance
     z = float(F(properties["ShadowDistanceZ"])) if kind == "Shadow" else 0.0
     rgb = vertex_color(properties[f"{kind}Color"], node.color_scale, node.color_offset, node.runtime.srgb_to_linear)
-    multiply = node.runtime.enum_label(properties, "EffectAlphaType") == "MultiplyTextColorAlpha"
+    multiply = node.runtime.enum_label(properties, "EffectAlphaType") in facts["effect_alpha_multiplied"]
     groups = {}
     for quad in layout.quads:
         if isinstance(quad.glyph, IconGlyph):
@@ -221,7 +225,7 @@ def effect_draws(node, facts, layout, blurs: GlyphBlurs, kind: str, raster_scale
             continue
         page, (u0, v0, u1, v1) = found
         alphas = [rgb[3] * color[3] // 255 if multiply else rgb[3] for color in _colors(node, facts, quad.color, False)]
-        upper, lower = ((*rgb[:3], alpha) for alpha in alphas)
+        upper, lower = ((*rgb[:3], alpha) if quad.index < typed else (0, 0, 0, 0) for alpha in alphas)
         x, y = F(left) + quad.x, F(top) + quad.y
         groups.setdefault((page, False), []).insert(0, (
             [upper, upper, lower, lower], [(u0, v0), (u1, v0), (u0, v1), (u1, v1)],

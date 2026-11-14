@@ -24,6 +24,8 @@ class GuiLayout:
     pools: tuple[str, ...]
     payloads: dict[str, str]
     values: dict[int, str]
+    name_property: tuple[str, int]
+    clip_version: int
 
 
 @functools.cache
@@ -53,4 +55,5 @@ def gui_layout(version: int) -> GuiLayout:
                      {name: RecordCodec(name, spec["size"], spec["fields"], GuiFormatError)
                       for name, spec in data["records"].items()},
                      data["special"], tuple(data["pools"]), data["payloads"],
-                     {codes[name]: storage for name, storage in data["values"].items()})
+                     {codes[name]: storage for name, storage in data["values"].items()},
+                     (data["name_property"][0], codes[data["name_property"][1]]), data["clip_version"])

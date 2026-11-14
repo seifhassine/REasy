@@ -123,7 +123,7 @@ def add_node(document: ClipDocument, parent: Track | Clip | Node, node_type: int
 
 def _sync_root_order(document: ClipDocument) -> None:
     timeline = document.timeline
-    if timeline.root_order is None:
+    if timeline.root_order is None or timeline.kind is ResourceKind.MOT_CLIP:
         return
     held = [node for track in timeline.tracks for node in track.roots]
     left, order = Counter(map(id, held)), []
