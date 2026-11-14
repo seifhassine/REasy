@@ -93,6 +93,31 @@ class TexHeader:
         return max(1, self.depth >> level)
 
 
+def read_header(data: bytes) -> Tuple[TexHeader, int]:
+    (_, version, width, height, depth, count_a, count_b, tex_format, swizzle, cube, flags) = (
+        struct.unpack_from("<IihhhBBiiIi", data, 0)
+    )
+    if tex_profile(version).layout == LAYOUT_LEGACY:
+        mips_at, mip_count, image_count = 32, count_a, count_b
+    else:
+        packed = count_a | count_b << 8
+        mips_at, mip_count, image_count = 40, packed >> 12, packed & 0xFFF
+    header = TexHeader(
+        version=version,
+        width=width,
+        height=height,
+        depth=depth,
+        image_count=image_count,
+        mip_count=mip_count,
+        format=tex_format,
+        swizzle_control=swizzle,
+        cubemap_marker=cube,
+        flags=flags,
+        reserved=bytes(data[32:40]) if mips_at == 40 else b"\x00" * 8,
+    )
+    return header, mips_at
+
+
 @dataclass
 class MipHeader:
     offset: int
@@ -254,16 +279,8 @@ class TexFile:
 
     def _parse_layout(self, layout: int) -> bool:
         data = self._data
-        (_, version, width, height, depth, count_a, count_b, tex_format, swizzle, cube, flags) = (
-            struct.unpack_from("<IihhhBBiiIi", data, 0)
-        )
-        if layout == LAYOUT_LEGACY:
-            mips_at, mip_count, image_count = 32, count_a, count_b
-        elif layout in (LAYOUT_INLINE, LAYOUT_STORED):
-            packed = count_a | count_b << 8
-            mips_at, mip_count, image_count = 40, packed >> 12, packed & 0xFFF
-        else:
-            raise TexFormatError(f"unknown header layout {layout} for version {version}")
+        header, mips_at = read_header(data)
+        mip_count, image_count, depth = header.mip_count, header.image_count, header.depth
         if mip_count <= 0 or image_count <= 0:
             return False
 
@@ -288,19 +305,7 @@ class TexFile:
             if stored is None:
                 return False
 
-        self.header = TexHeader(
-            version=version,
-            width=width,
-            height=height,
-            depth=depth,
-            image_count=image_count,
-            mip_count=mip_count,
-            format=tex_format,
-            swizzle_control=swizzle,
-            cubemap_marker=cube,
-            flags=flags,
-            reserved=bytes(data[32:40]) if mips_at == 40 else b"\x00" * 8,
-        )
+        self.header = header
         self.mips = mips
         self.stored_mips = stored
         self._payload_offset = mips[0].offset + 8 * len(stored)

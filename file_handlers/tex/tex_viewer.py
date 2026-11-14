@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import weakref
 from pathlib import Path
 from typing import Optional
 
@@ -8,7 +9,7 @@ from PySide6.QtCore import Qt, Signal, QPoint
 lazy from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QCheckBox,
-    QGroupBox, QScrollArea, QFileDialog, QInputDialog, QMessageBox, QSlider
+    QGroupBox, QScrollArea, QFileDialog, QInputDialog, QMessageBox, QSlider, QToolButton, QMenu, QDialog
 )
 
 lazy from ui.background_jobs import run_job
@@ -18,12 +19,14 @@ lazy from ui.qt_timers import call_later
 lazy from ui.styles import current_colors, set_style_role
 
 from . import authoring
-lazy from .dxgi import describe_format
+lazy from .dxgi import describe_format, stored_channels
 lazy from .flags import CHOICE, SWITCH, TYPE_MASK, TexSetting
-lazy from .images import PNG_SIGNATURE
+lazy from .images import decoded_image, read_image_file, write_png, write_tga
+lazy from .lane_dialog import LanesDialog, lane_label, new_texture
+lazy from .lanes import compose, lane_tokens, unpack
 lazy from .profiles import tex_profile, tex_profiles, tex_version_for_game
+lazy from .tex_handler import tex_to_dds
 lazy from .texture_decoder import decode_dds_mip, decode_tex_mip, dds_info
-lazy from .dds import DDS_MAGIC
 
 # A cook carrying every member still fits in two rows.
 SETTINGS_PER_ROW = 4
@@ -32,13 +35,12 @@ SETTING_GAP = 16
 
 
 class DraggableLabel(QLabel):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, viewer: TexViewer):
+        super().__init__(viewer)
         self.setMouseTracking(True)
         self.dragging = False
         self.last_global_pos = QPoint()
-        self.scroll_area = None
-        self.viewer = None
+        self._viewer = weakref.ref(viewer)
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
@@ -48,12 +50,12 @@ class DraggableLabel(QLabel):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
-        if self.dragging and self.scroll_area:
+        if self.dragging:
             current_global_pos = event.globalPosition().toPoint()
             delta = current_global_pos - self.last_global_pos
             self.last_global_pos = current_global_pos
-            h_bar = self.scroll_area.horizontalScrollBar()
-            v_bar = self.scroll_area.verticalScrollBar()
+            h_bar = self._viewer().scroll.horizontalScrollBar()
+            v_bar = self._viewer().scroll.verticalScrollBar()
             h_bar.setValue(h_bar.value() - delta.x())
             v_bar.setValue(v_bar.value() - delta.y())
         super().mouseMoveEvent(event)
@@ -65,13 +67,10 @@ class DraggableLabel(QLabel):
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent):
-        if self.viewer:
-            current = self.viewer.zoom_slider.value()
-            delta = 10 if event.angleDelta().y() > 0 else -10
-            self.viewer.zoom_slider.setValue(max(10, min(500, current + delta)))
-            event.accept()
-        else:
-            super().wheelEvent(event)
+        slider = self._viewer().zoom_slider
+        delta = 10 if event.angleDelta().y() > 0 else -10
+        slider.setValue(max(10, min(500, slider.value() + delta)))
+        event.accept()
 
     def enterEvent(self, event):
         self.setCursor(QCursor(Qt.OpenHandCursor))
@@ -130,6 +129,7 @@ class TexViewer(QWidget):
         self.source_height = 0
         self.original_pixmap = None
         self.is_initial_load = True
+        self.kind, self.lanes = None, ()
         self._setup_ui()
         self._populate()
 
@@ -173,7 +173,6 @@ class TexViewer(QWidget):
         channel_label = styled_label(self.tr("Channel:"), tone="muted")
         top.addWidget(channel_label)
         self.channel_box = QComboBox()
-        self.channel_box.addItems(["RGBA", "R", "G", "B", "A", "RGB"])
         self.channel_box.currentIndexChanged.connect(self._apply_channel_filter)
         top.addWidget(self.channel_box)
         top.addSpacing(4)
@@ -221,9 +220,7 @@ class TexViewer(QWidget):
         self.scroll = TextureCanvas()
         self.scroll.setWidgetResizable(False)
         self.scroll.setAlignment(Qt.AlignCenter)
-        self.img_label = DraggableLabel()
-        self.img_label.scroll_area = self.scroll
-        self.img_label.viewer = self
+        self.img_label = DraggableLabel(self)
         self.img_label.setAlignment(Qt.AlignCenter)
         self.img_label.setScaledContents(False)
         self.scroll.setWidget(self.img_label)
@@ -236,18 +233,32 @@ class TexViewer(QWidget):
 
         exp = QHBoxLayout()
         exp.setSpacing(6)
-        self.export_dds_btn = QPushButton(self.tr("Export DDS"))
-        self.export_dds_btn.setIcon(line_icon("export"))
-        self.export_dds_btn.clicked.connect(self._export_dds)
-        exp.addWidget(self.export_dds_btn)
+        body.addLayout(exp)
+        self.export_btn = QToolButton()
+        self.export_btn.setText(self.tr("Export"))
+        self.export_btn.setIcon(line_icon("export"))
+        self.export_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.export_btn.setPopupMode(QToolButton.InstantPopup)
+        export_menu = QMenu(self.export_btn)
+        export_menu.setToolTipsVisible(True)
+        export_menu.addAction(self.tr("DDS..."), self._export_dds).setToolTip(
+            self.tr("Every image, mip and slice, as stored"))
+        export_menu.addAction(self.tr("Image as PNG or TGA..."), self._export_image).setToolTip(
+            self.tr("The shown image's top mip with every channel as stored"))
+        self.export_lanes_action = export_menu.addAction(self.tr("Lanes as PNG or TGA..."), self._export_lanes)
+        self.export_lanes_action.setToolTip(self.tr(
+            "One image per lane, named after the texture and the lane: a value in grey, a normal map as an OpenGL "
+            "normal map"))
+        self.export_btn.setMenu(export_menu)
+        exp.addWidget(self.export_btn)
         self.export_label = QLabel("")
         self.export_label.setWordWrap(True)
         set_style_role(self.export_label, tone="muted")
         exp.addWidget(self.export_label, 1)
-        body.addLayout(exp)
 
         author = QHBoxLayout()
         author.setSpacing(6)
+        body.addLayout(author)
         cook_label = styled_label(self.tr("Cook:"), tone="muted")
         author.addWidget(cook_label)
         self.cook_box = QComboBox()
@@ -259,6 +270,12 @@ class TexViewer(QWidget):
         self.import_btn.setIcon(line_icon("import"))
         self.import_btn.clicked.connect(self._import)
         author.addWidget(self.import_btn)
+        self.lanes_btn = QPushButton(self.tr("Import Lanes..."))
+        self.lanes_btn.setIcon(line_icon("layers"))
+        self.lanes_btn.setToolTip(self.tr("Rebuild the texture lane by lane from images, constants or its kind's "
+                                          "neutral values"))
+        self.lanes_btn.clicked.connect(self._import_lanes)
+        author.addWidget(self.lanes_btn)
         self.convert_btn = QPushButton(self.tr("Convert to this cook"))
         self.convert_btn.clicked.connect(self._convert_to_cook)
         author.addWidget(self.convert_btn)
@@ -267,7 +284,6 @@ class TexViewer(QWidget):
         self.authoring_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         set_style_role(self.authoring_label, tone="muted")
         author.addWidget(self.authoring_label, 1)
-        body.addLayout(author)
 
     def _populate(self):
         tex = getattr(self.handler, 'tex', None)
@@ -297,9 +313,13 @@ class TexViewer(QWidget):
         self._show_selector(self.image_label, self.image_index, images > 1)
         self._show_selector(self.mip_label, self.mip_index, mips > 1)
 
-        self.export_dds_btn.setVisible(tex is not None)
+        self.kind, self.lanes = self.handler.texture_kind() if tex is not None else (None, ())
+        self._channel_items()
+        self.export_btn.setVisible(tex is not None)
+        self.export_lanes_action.setEnabled(bool(self.lanes))
         self.export_label.setText(self._export_description(tex, info))
-        self.import_btn.setText(self.tr("Import DDS/PNG...") if tex is not None else self.tr("Import DDS..."))
+        self.import_btn.setText(self.tr("Import DDS/PNG/TGA...") if tex is not None else self.tr("Create Texture..."))
+        self.lanes_btn.setVisible(bool(self.lanes))
         self.convert_btn.setVisible(tex is not None)
         self._default_cook()
         self._build_settings(tex)
@@ -310,16 +330,23 @@ class TexViewer(QWidget):
         label.setVisible(visible)
         box.setVisible(visible)
 
+    def _channel_items(self):
+        single = {lane.channels: lane for lane in self.lanes if lane.codec not in ("pair", "xy")}
+        items = [("RGBA", "rgba")] + [
+            (lane_label(single[key]) if key in single else key.upper(), key) for key in ("rgb", "r", "g", "b", "a")
+        ] + [(self.tr("{lane} (decoded)").format(lane=lane_label(lane)), token)
+             for lane, token in zip(self.lanes, lane_tokens(self.lanes)) if lane.codec in ("pair", "xy")]
+        current = self.channel_box.currentData()
+        self.channel_box.blockSignals(True)
+        self.channel_box.clear()
+        for text, key in items:
+            self.channel_box.addItem(text, key)
+        self.channel_box.setCurrentIndex(max(0, self.channel_box.findData(current)))
+        self.channel_box.blockSignals(False)
+
     def _export_description(self, tex, info) -> str:
         if tex:
-            header = tex.header
-            return self.tr("Exports every image, mip and slice: {images}, {mips}{slices}.").format(
-                images=self._noun(header.image_count, "face" if header.is_cubemap else "image"),
-                mips=self._noun(header.mip_count, "mip"),
-                slices=(
-                    ", " + self._noun(header.depth, "slice") if header.is_volume else ""
-                ),
-            )
+            return self.tr("A resident copy exports its streaming copy's full chain.")
         if info:
             return self.tr("Already a DDS: {images} x {mips}.").format(
                 images=self._noun(info.image_count, "image"),
@@ -491,6 +518,7 @@ class TexViewer(QWidget):
             f"slice {slice_index + 1}/{slices}" if slices > 1 else "",
             f"{d['name']} | {'BC' if d['compressed'] else 'RGB'} | {d['bits_per_pixel']}bpp",
             shape,
+            self.tr("kind {name}").format(name=self.kind.name) if self.kind else "",
         ]
         self.info_label.setText(" | ".join(part for part in parts if part))
         set_style_role(self.info_label, tone="muted")
@@ -518,8 +546,13 @@ class TexViewer(QWidget):
     def _apply_channel_filter(self):
         if not self.source_rgba or self.source_width <= 0 or self.source_height <= 0:
             return
-        ch = self.channel_box.currentText()
-        filtered_raw = self.source_rgba if ch == 'RGBA' else self._filter_channels(self.source_rgba, ch)
+        key = self.channel_box.currentData()
+        if key == "rgba":
+            filtered_raw = self.source_rgba
+        elif key in ("rgb", "r", "g", "b", "a"):
+            filtered_raw = self._filter_channels(self.source_rgba, key)
+        else:
+            filtered_raw = self._decoded_lane(self.source_rgba, key)
         filtered = QPixmap.fromImage(
             QImage(filtered_raw, self.source_width, self.source_height, QImage.Format_RGBA8888).copy()
         )
@@ -531,28 +564,17 @@ class TexViewer(QWidget):
             self._apply_zoom()
 
     @staticmethod
-    def _filter_channels(raw: bytes, channel: str) -> bytes:
+    def _filter_channels(raw: bytes, key: str) -> bytes:
         px = np.frombuffer(raw, dtype=np.uint8).reshape((-1, 4))
-        out = np.empty_like(px)
+        out = np.full_like(px, 255)
+        out[:, :3] = px[:, :3] if key == "rgb" else px[:, ["rgba".index(key)] * 3]
+        return out.tobytes()
 
-        if channel == 'R':
-            out[:, :3] = px[:, [0, 0, 0]]
-            out[:, 3] = 255
-        elif channel == 'G':
-            out[:, :3] = px[:, [1, 1, 1]]
-            out[:, 3] = 255
-        elif channel == 'B':
-            out[:, :3] = px[:, [2, 2, 2]]
-            out[:, 3] = 255
-        elif channel == 'A':
-            out[:, :3] = px[:, [3, 3, 3]]
-            out[:, 3] = 255
-        elif channel == 'RGB':
-            out[:, :3] = px[:, :3]
-            out[:, 3] = 255
-        else:
-            raise ValueError(f"Unsupported channel filter: {channel}")
-
+    def _decoded_lane(self, raw: bytes, token: str) -> bytes:
+        lane = dict(zip(lane_tokens(self.lanes), self.lanes))[token]
+        px = np.frombuffer(raw, dtype=np.uint8).reshape((-1, 4))
+        out = np.full_like(px, 255)
+        out[:, :3] = np.rint(unpack(px / 255, (lane,))[lane.meaning] * 255)
         return out.tobytes()
 
     def _on_zoom_changed(self, value):
@@ -618,10 +640,11 @@ class TexViewer(QWidget):
         return version
 
     def _import(self):
-        tex = getattr(self.handler, "tex", None)
-        path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Import"), "", "Textures (*.dds *.png)" if tex is not None else "DDS files (*.dds)"
-        )
+        if getattr(self.handler, "tex", None) is None:
+            source = str(self.handler.filepath or "")
+            new_texture(self.handler.app, self, image=source if Path(source).is_file() else "")
+            return
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Import"), "", "Textures (*.dds *.png *.tga)")
         if not path:
             return
         try:
@@ -630,17 +653,31 @@ class TexViewer(QWidget):
             self._show_failure(str(error))
             return
         version = self._chosen_cook()
+        if version is not None:
+            self._author(self.handler.import_image, data, version=version, run=lambda work: run_job(
+                self, self.tr("Import image"), lambda _progress, _cancelled: work()))
+
+    def _import_lanes(self):
+        neutral = self.kind.neutral if self.kind else None
+        dialog = LanesDialog(
+            self.lanes, title=self.tr("Import Lanes"), stem=self._stem(), keep=True, neutral=neutral is not None,
+            intro=self.tr("Each lane keeps what the texture holds, or takes an image's channel, a constant or the "
+                          "kind's neutral value. Normal maps are read as OpenGL normal maps (green up) unless DirectX "
+                          "is ticked. A resident copy is rebuilt from its streaming copy's full chain."),
+            parent=self)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        sources = dialog.lanes.sources()
+        dialog.deleteLater()
+        version = self._chosen_cook() if accepted else None
         if version is None:
             return
-        stem = Path(path).stem
-        if tex is not None and data.startswith(PNG_SIGNATURE):
-            self._author(self.handler.import_png, data, version=version, run=lambda work: run_job(
-                self, self.tr("Import PNG"), lambda _progress, _cancelled: work()))
-        elif tex is not None:
-            self._author(self.handler.import_dds, data, version=version, name=Path(path).name)
-        else:
-            self._write_new_tex(lambda **type_choice: authoring.import_dds(
-                data, version=version, name=stem, **type_choice), stem, version)
+        lanes = self.lanes
+        written = {channel for lane, token in zip(lanes, lane_tokens(lanes)) if token in sources
+                   for channel in lane.channels}
+        keep = not set(stored_channels(self.handler.tex.header.format)) <= written
+        self._author(self.handler.import_lanes, lambda chain: compose(
+            lanes, sources, decoded_image(chain) if keep else None, neutral, read_image_file), version=version,
+            run=lambda work: run_job(self, self.tr("Import lanes"), lambda _progress, _cancelled: work()))
 
     def _convert_to_cook(self):
         version = self._chosen_cook()
@@ -674,26 +711,6 @@ class TexViewer(QWidget):
         tab.filename = self.handler.filepath
         tab.update_tab_title()
 
-    def _write_new_tex(self, author, stem: str, version: int):
-        suggested = f"{stem}.tex.{version}"
-        path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("Save .tex"), suggested, "TEX files (*.tex)"
-        )
-        if not path:
-            return
-        authored = self._run_authoring(author)
-        if authored is None:
-            return
-        try:
-            Path(path).write_bytes(authored.data)
-        except OSError as error:
-            self._show_failure(str(error))
-            return
-        self._describe_authoring(authored.notes, authored.version, path)
-        app = getattr(self.handler, "app", None)
-        if app is not None and hasattr(app, "add_tab"):
-            app.add_tab(filename=path)
-
     def _choose_type(self, choice: authoring.TypeNeedsChoice):
         if choice.options:
             name, accepted = QInputDialog.getItem(
@@ -711,23 +728,41 @@ class TexViewer(QWidget):
         )
         self.authoring_label.setText(" ".join([written, *notes]))
 
-    def _export_dds(self):
-        raw = getattr(self.handler, 'raw_data', b"")
-        if raw[:4] == DDS_MAGIC.to_bytes(4, 'little'):
-            return
+    def _stem(self) -> str:
+        return Path(str(self.handler.filepath or "texture")).name.split(".", 1)[0]
 
-        try:
-            dds = self.handler.build_dds_bytes()
-        except ValueError as error:
-            QMessageBox.warning(self, self.tr("Export DDS"), str(error))
-            return
-        if not dds:
-            QMessageBox.warning(self, self.tr("Export DDS"), self.tr("No TEX data loaded."))
-            return
-
-        path, _ = QFileDialog.getSaveFileName(self, self.tr("Save DDS"), "", "DDS files (*.dds)")
+    def _export(self, title: str, suffix: str, files) -> None:
+        filters = "DDS files (*.dds)" if suffix == ".dds" else "PNG (*.png);;TGA (*.tga)"
+        path, _ = QFileDialog.getSaveFileName(self, title, self._stem() + suffix, filters)
         if not path:
             return
+        try:
+            written = files(self.handler.full_chain(), path)
+            for target, data in written.items():
+                Path(target).write_bytes(data)
+        except (OSError, ValueError) as error:
+            QMessageBox.warning(self, title, str(error))
+            return
+        names = ", ".join(Path(target).name for target in written)
+        self.export_label.setText(self.tr("Wrote {files}.").format(files=names))
 
-        with open(path, 'wb') as f:
-            f.write(dds)
+    def _export_dds(self):
+        self._export(self.tr("Export DDS"), ".dds", lambda chain, path: {path: tex_to_dds(chain)})
+
+    def _export_image(self):
+        def files(chain, path):
+            image = decoded_image(chain, 0, self.image_index.value(), self.slice_index.value())
+            stored = stored_channels(chain.header.format)
+            image = image[..., :1] if stored == "r" else image if "a" in stored else image[..., :3]
+            return {path: write_tga(image) if path.lower().endswith(".tga") else write_png(image)}
+        self._export(self.tr("Export Image"), ".png", files)
+
+    def _export_lanes(self):
+        def files(chain, path):
+            target = Path(path)
+            stem, tga = target.name.split(".", 1)[0], target.suffix.lower() == ".tga"
+            images = unpack(decoded_image(chain, 0, self.image_index.value()), self.lanes)
+            return {target.with_name(f"{stem}.{token}{target.suffix}"): write_tga(image) if tga else
+                    write_png(image, 16 if lane.codec in ("pair", "xy") else 8)
+                    for (token, image), lane in zip(images.items(), self.lanes)}
+        self._export(self.tr("Export Lanes"), ".png", files)

@@ -438,7 +438,7 @@ def _get_dir_path_lookup(dir_path: str) -> dict[str, str]:
     if lookup is None:
         lookup = {}
         for entry in os.listdir(dir_path):
-            for key in _iter_lookup_keys(entry):
+            for key in _iter_lookup_keys(entry.casefold()):
                 lookup.setdefault(key, entry)
             if entry.startswith("."):
                 lookup.setdefault("", entry)
@@ -497,7 +497,7 @@ def _locate_in_root(
         prefix = base_name + "."
         target_name = next(
             (entry for entry in _looked(os.listdir, dir_path)
-             if entry == base_name or entry.startswith(prefix)),
+             if entry.casefold() == base_name or entry.casefold().startswith(prefix)),
             None,
         )
     if target_name is None:

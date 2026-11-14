@@ -73,6 +73,7 @@ from ui.project_manager import (  # noqa: E402
 lazy from ui.scene.scn_scene_workspace import ScnSceneController
 lazy from ui.pak_browser_dialog import PakBrowserDialog
 lazy from file_handlers.mesh.blender_ui import import_mesh_from_blender
+lazy from file_handlers.tex.lane_dialog import new_texture
 lazy from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog
 lazy from ui.scene.scene_preview import ScenePreviewWidget
 lazy from file_handlers.mmtr.parsed_files import set_budget
@@ -558,6 +559,7 @@ class REasyEditorApp(QMainWindow):
         add_action(tools_menu, self.tr("PAK Browser"), self.open_pak_browser, icon="box")
         add_action(tools_menu, self.tr("File List Generator"), self.open_file_list_generator, icon="list")
         add_action(tools_menu, self.tr("Import Mesh from Blender…"), self.import_mesh_from_blender, icon="import")
+        add_action(tools_menu, self.tr("New Texture…"), self.new_texture, icon="image")
 
         tools_menu.addSeparator()
 
@@ -730,6 +732,9 @@ class REasyEditorApp(QMainWindow):
 
     def import_mesh_from_blender(self):
         import_mesh_from_blender(self)
+
+    def new_texture(self):
+        new_texture(self)
 
     def open_rsz_csv_extractor(self):
         dialog = RszCsvExtractorDialog(self, self.settings)

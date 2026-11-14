@@ -11,6 +11,7 @@ lazy from utils.resource_file_utils import (
 )
 
 from . import authoring
+lazy from .kinds import TextureKind, kind_catalog
 lazy from .tex_file import TexFile, TEX_MAGIC
 lazy from .dds import CUBEMAP_FACES, DDS_MISC_TEXTURECUBE, build_dds_dx10
 from .texture_handler import TextureViewerHandler
@@ -63,28 +64,6 @@ class TexHandler(TextureViewerHandler):
             return bytes(self.raw_data)
         return self.tex.serialize()
 
-    def import_dds(
-        self,
-        data: bytes,
-        *,
-        version: Optional[int] = None,
-        name: str = "",
-        type_name: Optional[str] = None,
-        type_index: Optional[int] = None,
-    ) -> tuple[str, ...]:
-        if self.tex is None:
-            raise authoring.AuthoringError("no .tex is open")
-        target = int(self.tex.header.version if version is None else version)
-        authored = authoring.import_dds(
-            data,
-            version=target,
-            name=name or self.filepath,
-            type_name=type_name,
-            type_index=type_index,
-        )
-        self._adopt(authored)
-        return authored.notes
-
     def convert_to(
         self,
         version: int,
@@ -102,7 +81,7 @@ class TexHandler(TextureViewerHandler):
         self._companion = companion
         return (*authored.notes, *notes)
 
-    def import_png(
+    def import_image(
         self,
         data: bytes,
         *,
@@ -111,6 +90,28 @@ class TexHandler(TextureViewerHandler):
         type_index: Optional[int] = None,
         run: Callable = lambda work: work(),
     ) -> tuple[str, ...]:
+        return self._replace(lambda chain, tail, target: authoring.import_image(
+            data, chain, version=target, tail=tail, type_name=type_name, type_index=type_index), version, run)
+
+    def import_lanes(
+        self,
+        compose: Callable,
+        *,
+        version: Optional[int] = None,
+        type_name: Optional[str] = None,
+        type_index: Optional[int] = None,
+        run: Callable = lambda work: work(),
+    ) -> tuple[str, ...]:
+        def author(chain, tail, target):
+            try:
+                image = compose(chain)
+            except (OSError, ValueError) as error:
+                raise authoring.AuthoringError(str(error)) from None
+            return authoring.replace_image(image, chain, version=target, tail=tail, type_name=type_name,
+                                           type_index=type_index)
+        return self._replace(author, version, run)
+
+    def _replace(self, author: Callable, version: Optional[int], run: Callable) -> tuple[str, ...]:
         if self.tex is None:
             raise authoring.AuthoringError("no .tex is open")
         resource_path, partner_path, source, declared = self._partner()
@@ -123,17 +124,27 @@ class TexHandler(TextureViewerHandler):
         swapped = partner is not None and not streamed
         chain, tail = (partner, self.tex) if swapped else (self.tex, partner)
         target = int(self.tex.header.version if version is None else version)
-        full, resident = run(lambda: authoring.import_png(
-            data, chain, version=target, tail=tail, type_name=type_name, type_index=type_index
-        ))
+        full, resident = run(lambda: author(chain, tail, target))
         main, companion = (resident, full) if swapped else (full, resident)
         self._adopt(main)
         self._companion = None if companion is None else (partner_path, companion.data)
         pair = (
-            [f"its {copy} is rebuilt from the PNG and written beside this file"] if companion
+            [f"its {copy} is rebuilt from the image and written beside this file"] if companion
             else [f"its {copy} was not found, so only this file is written"] if streamed else []
         )
         return tuple(dict.fromkeys((*main.notes, *(companion.notes if companion else ()), *pair)))
+
+    def texture_kind(self) -> tuple[Optional["TextureKind"], tuple]:
+        context = resource_context_for_handler(self)
+        catalog = kind_catalog(self.tex.header.version, context.game if context else "")
+        if catalog is None:
+            return None, ()
+        path = self.filepath or ""
+        return catalog.kind(path), catalog.lanes(path, self.tex.header.tex_flags.type_name)
+
+    def full_chain(self) -> "TexFile":
+        resource_path, _path, source, declared = self._partner()
+        return self.tex if not source or _is_streamed(resource_path) else _container(source, declared)
 
     def _partner(self) -> tuple[str, Optional[str], bytes, int]:
         context = resource_context_for_handler(self)
@@ -192,30 +203,31 @@ class TexHandler(TextureViewerHandler):
         self._companion = None
 
     def build_dds_bytes(self) -> bytes:
-        if not self.tex:
-            return b""
-        tex = self.tex
-        header = tex.header
-        if header.is_volume and header.image_count > 1:
-            raise ValueError(
-                f"a {header.image_count}-image volume has no DDS equivalent: a 3D resource "
-                "cannot also be an array"
-            )
+        return tex_to_dds(self.tex) if self.tex else b""
 
-        cubemap = header.is_cubemap
-        payload = [
-            tex.read_mip_level(level, image)
-            for image in range(header.image_count)
-            for level in range(header.mip_count)
-        ]
 
-        dds_header = build_dds_dx10(
-            width=header.width,
-            height=header.height,
-            mip_count=header.mip_count,
-            dxgi_format=header.format,
-            array_size=header.image_count // CUBEMAP_FACES if cubemap else header.image_count,
-            depth=header.depth,
-            misc_flags=DDS_MISC_TEXTURECUBE if cubemap else 0,
+def tex_to_dds(tex: TexFile) -> bytes:
+    header = tex.header
+    if header.is_volume and header.image_count > 1:
+        raise ValueError(
+            f"a {header.image_count}-image volume has no DDS equivalent: a 3D resource "
+            "cannot also be an array"
         )
-        return dds_header + b"".join(payload)
+
+    cubemap = header.is_cubemap
+    payload = [
+        tex.read_mip_level(level, image)
+        for image in range(header.image_count)
+        for level in range(header.mip_count)
+    ]
+
+    dds_header = build_dds_dx10(
+        width=header.width,
+        height=header.height,
+        mip_count=header.mip_count,
+        dxgi_format=header.format,
+        array_size=header.image_count // CUBEMAP_FACES if cubemap else header.image_count,
+        depth=header.depth,
+        misc_flags=DDS_MISC_TEXTURECUBE if cubemap else 0,
+    )
+    return dds_header + b"".join(payload)

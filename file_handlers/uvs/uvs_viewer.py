@@ -1129,7 +1129,7 @@ class UvsViewer(QWidget):
         if hasattr(ptr, "setsize"):
             ptr.setsize(img.sizeInBytes())
         raw = bytes(ptr)
-        filtered_raw = TexViewer._filter_channels(raw, channel.upper())
+        filtered_raw = TexViewer._filter_channels(raw, channel)
         out = QPixmap.fromImage(QImage(filtered_raw, img.width(), img.height(), QImage.Format.Format_RGBA8888).copy())
         self._channel_pixmap_cache[key] = out
         return out

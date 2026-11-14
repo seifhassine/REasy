@@ -3,6 +3,7 @@ from __future__ import annotations
 lazy import numpy as np
 lazy import fasttexenc
 
+lazy from .lanes import pair_lanes, pair_vectors
 from .dxgi import (
     DXGI_FORMAT_A8_UNORM,
     DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -88,10 +89,7 @@ def _to_working(image, codec: str):
     if codec == "xyz":
         return np.concatenate([image[..., :3] * 2 - 1, image[..., 3:]], -1)
     if codec == "pair":
-        lanes = (image[..., 1] * 2 - 1, image[..., 3] * 2 - 1)
-        sum_lane, difference_lane = (np.sign(lane) * lane * lane for lane in lanes)
-        x, y = (sum_lane + difference_lane) / 2, (sum_lane - difference_lane) / 2
-        return np.stack([image[..., 0], x, y, 1 - np.abs(x) - np.abs(y), image[..., 2]], -1)
+        return np.concatenate([image[..., :1], pair_vectors(image[..., 1], image[..., 3]), image[..., 2:3]], -1)
     return image
 
 
@@ -103,8 +101,6 @@ def _from_working(values, codec: str):
     if codec == "xyz":
         return np.concatenate([(values[..., :3] + 1) / 2, values[..., 3:]], -1)
     if codec == "pair":
-        scale = np.maximum(np.abs(values[..., 1:4]).sum(-1), np.finfo(np.float32).tiny)
-        x, y = values[..., 1] / scale, values[..., 2] / scale
-        green, alpha = ((np.sign(lane) * np.sqrt(np.abs(lane)) + 1) / 2 for lane in (x + y, x - y))
+        green, alpha = pair_lanes(values[..., 1:4])
         return np.stack([values[..., 0], green, values[..., 4], alpha], -1)
     return values

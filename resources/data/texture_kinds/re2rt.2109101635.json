@@ -1,0 +1,769 @@
+{
+ "format": 1,
+ "game": "RE2RT",
+ "resource_version": 2109101635,
+ "kinds": {
+  "NRMR": {
+   "type": "NormalRoughness",
+   "lanes": "rgb:normal a:roughness",
+   "files": 2665,
+   "formats": {
+    "BC7_UNORM": 2664,
+    "R8G8B8A8_UNORM": 1
+   },
+   "neutral": [
+    128,
+    128,
+    254,
+    128
+   ],
+   "slots": {
+    "NormalRoughnessMap": 8649,
+    "RainRipples_Map": 6006,
+    "Rec_Rain_WaterRiple": 962,
+    "Rain_WaterRiple": 99,
+    "WetFloor_Normal": 41,
+    "BlendNRMR": 29,
+    "RainWet_WaterRipple": 21,
+    "MeetDetail_NRMR": 18
+   },
+   "paired": 2580,
+   "omitted": {
+    "1": 1580,
+    "2": 1000
+   },
+   "floor": 8
+  },
+  "ALBM": {
+   "type": "BaseMetallic",
+   "lanes": "rgb:base_color a:metal",
+   "files": 2608,
+   "formats": {
+    "BC7_UNORM_SRGB": 2577,
+    "BC1_UNORM_SRGB": 30,
+    "R8G8B8A8_UNORM_SRGB": 1
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "BaseMetalMap": 8648,
+    "EmissiveMap": 138,
+    "BaseShiftMap": 63,
+    "BaseMap": 5,
+    "FakeSphere_AreaMap": 1
+   },
+   "paired": 2578,
+   "omitted": {
+    "0": 1,
+    "1": 1575,
+    "2": 1002
+   },
+   "floor": 8
+  },
+  "ATOS": {
+   "type": "Mask4ch",
+   "lanes": "r:cutout g:translucency b:occlusion a:sss",
+   "files": 942,
+   "formats": {
+    "BC1_UNORM": 910,
+    "BC7_UNORM": 32
+   },
+   "neutral": [
+    255,
+    0,
+    255,
+    255
+   ],
+   "slots": {
+    "AlphaTranslucentOcclusionSSSMap": 3170,
+    "EmissiveMap": 2
+   },
+   "paired": 942,
+   "omitted": {
+    "1": 562,
+    "2": 380
+   },
+   "floor": 8
+  },
+  "IAM": {
+   "type": "ImageAlpha",
+   "lanes": "",
+   "files": 287,
+   "formats": {
+    "BC7_UNORM_SRGB": 236,
+    "BC1_UNORM_SRGB": 49,
+    "R8G8B8A8_UNORM_SRGB": 2
+   },
+   "neutral": null,
+   "slots": {
+    "_Texture2D": 5,
+    "_Texture2D_1": 4,
+    "_Texture2D_2": 4,
+    "_Texture2D_3": 4,
+    "_Texture2D_3_4": 4,
+    "_Texture2D_5": 2,
+    "Noise": 2
+   },
+   "paired": 2,
+   "omitted": {
+    "0": 1,
+    "1": 1
+   },
+   "floor": null
+  },
+  "ALPG": {
+   "type": "AlphaGamma",
+   "lanes": "",
+   "files": 282,
+   "formats": {
+    "BC7_UNORM_SRGB": 281,
+    "BC1_UNORM_SRGB": 1
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "ColorMap": 1
+   },
+   "paired": 1,
+   "omitted": {
+    "1": 1
+   },
+   "floor": 16
+  },
+  "MSK1": {
+   "type": "Mask1ch",
+   "lanes": "r:mask",
+   "files": 135,
+   "formats": {
+    "BC4_UNORM": 132,
+    "BC1_UNORM": 3
+   },
+   "neutral": null,
+   "slots": {
+    "RainFall_Map": 5739,
+    "Rec_Rain_WetMask": 809,
+    "Defect_Mask": 115,
+    "Rain_WetMask": 99,
+    "DetailMaskMap": 29,
+    "RainWet_AreaMask": 19,
+    "MeetDetail_MSK": 18,
+    "MeetRough_MSK": 18
+   },
+   "paired": 86,
+   "omitted": {
+    "1": 85,
+    "2": 1
+   },
+   "floor": 8
+  },
+  "IM": {
+   "type": "Image",
+   "lanes": "",
+   "files": 133,
+   "formats": {
+    "R8G8B8A8_UNORM_SRGB": 92,
+    "BC1_UNORM_SRGB": 39,
+    "R16G16B16A16_FLOAT": 1,
+    "BC6H_UF16": 1
+   },
+   "neutral": null,
+   "slots": {},
+   "paired": 0,
+   "omitted": {},
+   "floor": null
+  },
+  "EMI": {
+   "type": "Base",
+   "lanes": "rgb:emissive",
+   "files": 125,
+   "formats": {
+    "BC1_UNORM_SRGB": 125
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "EmissiveMap": 305,
+    "BaseMetalMap": 1
+   },
+   "paired": 103,
+   "omitted": {
+    "1": 103
+   },
+   "floor": 8
+  },
+  "MSK4": {
+   "type": "Mask4ch",
+   "lanes": "r:mask g:mask b:mask a:mask",
+   "files": 99,
+   "formats": {
+    "BC7_UNORM": 87,
+    "BC1_UNORM": 8,
+    "R16G16B16A16_FLOAT": 3,
+    "R8G8B8A8_UNORM": 1
+   },
+   "neutral": null,
+   "slots": {
+    "RainWet_down_Map": 5739,
+    "Rec_Mud_Map": 962,
+    "Rec_FIX": 940,
+    "Rec_Protect": 933,
+    "BloodMask": 905,
+    "Rec_RTT": 705,
+    "DirtMask_Atex": 72,
+    "IntensityMap": 27
+   },
+   "paired": 37,
+   "omitted": {
+    "1": 33,
+    "2": 4
+   },
+   "floor": 8
+  },
+  "ALBA": {
+   "type": "BaseAlpha",
+   "lanes": "rgb:base_color a:alpha",
+   "files": 94,
+   "formats": {
+    "BC7_UNORM_SRGB": 91,
+    "BC1_UNORM_SRGB": 3
+   },
+   "neutral": [
+    0,
+    0,
+    0,
+    255
+   ],
+   "slots": {
+    "Rec_Injury_BaseMap": 948,
+    "MeetDetail_ALBM": 18,
+    "MeetRough_ALBM": 18,
+    "Bubble_BaseMap": 16,
+    "Sewage_BaseMap": 15,
+    "mayonnaise_0_ALBA": 14,
+    "mayonnaise_1_ALBA": 14,
+    "BelndColor_and_MaskMap": 11
+   },
+   "paired": 27,
+   "omitted": {
+    "1": 26,
+    "2": 1
+   },
+   "floor": 8
+  },
+  "NRM": {
+   "type": "Normal",
+   "lanes": "rgb:normal a:mask",
+   "files": 82,
+   "formats": {
+    "BC7_UNORM": 79,
+    "R8G8B8A8_UNORM": 3
+   },
+   "neutral": null,
+   "slots": {
+    "Rec_Injury_NormalMap": 962,
+    "DetailMap": 307,
+    "NormalMap": 56,
+    "Sewage_NormalMap": 14,
+    "mayonnaise_0_NRM": 14,
+    "mayonnaise_1_NRM": 14,
+    "NormalRoughnessMap": 9,
+    "Sewage_NormalMap2": 8
+   },
+   "paired": 45,
+   "omitted": {
+    "1": 44,
+    "2": 1
+   },
+   "floor": 8
+  },
+  "ALB": {
+   "type": "Base",
+   "lanes": "rgb:base_color",
+   "files": 68,
+   "formats": {
+    "BC1_UNORM_SRGB": 61,
+    "BC7_UNORM_SRGB": 5,
+    "R16G16B16A16_FLOAT": 1,
+    "R8G8B8A8_UNORM_SRGB": 1
+   },
+   "neutral": [
+    0,
+    0,
+    0,
+    255
+   ],
+   "slots": {
+    "FakeSphereMap": 6008,
+    "LimLightMap": 44,
+    "SphereMap": 43,
+    "BaseMap": 38,
+    "Rec_Injury_BaseMap": 10,
+    "BaseMetalMap": 6,
+    "EmissiveMaskMap": 5,
+    "RefractSphereMap": 4
+   },
+   "paired": 29,
+   "omitted": {
+    "1": 29
+   },
+   "floor": 8
+  },
+  "OFF": {
+   "type": "HDR",
+   "lanes": "",
+   "files": 56,
+   "formats": {
+    "BC6H_UF16": 56
+   },
+   "neutral": null,
+   "slots": {},
+   "paired": 0,
+   "omitted": {},
+   "floor": 16
+  },
+  "MSK2": {
+   "type": "Mask2ch",
+   "lanes": "r:mask g:mask",
+   "files": 26,
+   "formats": {
+    "BC5_UNORM": 26
+   },
+   "neutral": [
+    0,
+    0,
+    0,
+    255
+   ],
+   "slots": {
+    "Sewage_FlowMap": 15,
+    "RTT_VelocityField": 5,
+    "DetailMaskMap": 4,
+    "RainWet_FollowMap": 2,
+    "Sauce_FlowMap": 1
+   },
+   "paired": 5,
+   "omitted": {
+    "1": 5
+   },
+   "floor": 8
+  },
+  "RGH": {
+   "type": "Roughness",
+   "lanes": "r:roughness",
+   "files": 24,
+   "formats": {
+    "BC4_UNORM": 24
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "RoughnessMap": 28,
+    "FrostMask": 2
+   },
+   "paired": 15,
+   "omitted": {
+    "1": 15
+   },
+   "floor": 8
+  },
+  "MTOS": {
+   "type": "Mask4ch",
+   "lanes": "r:metal g:translucency b:occlusion a:sss",
+   "files": 22,
+   "formats": {
+    "BC1_UNORM": 17,
+    "BC7_UNORM": 5
+   },
+   "neutral": [
+    255,
+    0,
+    255,
+    255
+   ],
+   "slots": {
+    "AlphaTranslucentOcclusionSSSMap": 33,
+    "EmissiveMap": 1,
+    "HeadmaskFurOcclusionFurmaskMap": 1
+   },
+   "paired": 22,
+   "omitted": {
+    "1": 18,
+    "2": 4
+   },
+   "floor": 8
+  },
+  "MSK3": {
+   "type": "Mask3ch",
+   "lanes": "r:mask g:mask b:mask",
+   "files": 21,
+   "formats": {
+    "BC1_UNORM": 21
+   },
+   "neutral": null,
+   "slots": {
+    "RainWet_drop_Map": 5739,
+    "Displacement_HightMap": 64,
+    "WindNoiseMap": 30,
+    "NoiseMask": 26,
+    "RainLeafEfx_NoiseMap": 14,
+    "Rec_Injury_MaskMap": 10,
+    "Rec_Injury_VertexNormalMap": 10,
+    "RainWindowMist_DropNorm_1": 6
+   },
+   "paired": 3,
+   "omitted": {
+    "0": 1,
+    "1": 2
+   },
+   "floor": 8
+  },
+  "ALP1": {
+   "type": "Base",
+   "lanes": "rgb:color",
+   "files": 19,
+   "formats": {
+    "BC1_UNORM_SRGB": 19
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "Displacement_Mask": 19,
+    "DetailMaskMap": 9,
+    "AlphaTranslucentOcclusionSSSMap": 2
+   },
+   "paired": 19,
+   "omitted": {
+    "1": 19
+   },
+   "floor": 8
+  },
+  "ALP": {
+   "type": "Mask1ch",
+   "lanes": "r:cutout",
+   "files": 16,
+   "formats": {
+    "BC4_UNORM": 12,
+    "BC1_UNORM": 4
+   },
+   "neutral": [
+    255,
+    0,
+    255,
+    255
+   ],
+   "slots": {
+    "AlphaTranslucentOcclusionSSSMap": 22,
+    "AlphaMaskMap": 5,
+    "Color_AddOn_MaskMap": 4,
+    "BaseMetalMap": 1,
+    "Displacement_Mask": 1
+   },
+   "paired": 9,
+   "omitted": {
+    "1": 9
+   },
+   "floor": 8
+  },
+  "HGT": {
+   "type": "Mask1ch",
+   "lanes": "r:height",
+   "files": 15,
+   "formats": {
+    "BC4_UNORM": 15
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "Displacement_Mask": 21
+   },
+   "paired": 15,
+   "omitted": {
+    "1": 15
+   },
+   "floor": 8
+  },
+  "MET": {
+   "type": "Metallic",
+   "lanes": "r:metal",
+   "files": 15,
+   "formats": {
+    "BC4_UNORM": 15
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "MetalMap": 15
+   },
+   "paired": 9,
+   "omitted": {
+    "1": 9
+   },
+   "floor": 8
+  },
+  "MSK": {
+   "type": "Base",
+   "lanes": "rgb:color",
+   "files": 8,
+   "formats": {
+    "BC1_UNORM_SRGB": 7,
+    "BC1_UNORM": 1
+   },
+   "neutral": null,
+   "slots": {
+    "clothDamageMap": 413,
+    "HeightMap": 26,
+    "DetailMaskMap": 4
+   },
+   "paired": 7,
+   "omitted": {
+    "1": 7
+   },
+   "floor": 8
+  },
+  "DTL": {
+   "type": "Mask4ch",
+   "lanes": "r:mask g:mask b:mask a:mask",
+   "files": 6,
+   "formats": {
+    "BC7_UNORM": 6
+   },
+   "neutral": [
+    127,
+    126,
+    255,
+    0
+   ],
+   "slots": {
+    "DetailMap": 95
+   },
+   "paired": 6,
+   "omitted": {
+    "1": 6
+   },
+   "floor": 8
+  },
+  "MASK": {
+   "type": "Base",
+   "lanes": "rgb:color",
+   "files": 6,
+   "formats": {
+    "BC1_UNORM_SRGB": 4,
+    "BC1_UNORM": 1,
+    "BC4_UNORM": 1
+   },
+   "neutral": [
+    0,
+    0,
+    0,
+    255
+   ],
+   "slots": {
+    "tearMaskMap": 50,
+    "DetailMaskMap": 5,
+    "RainLeafEfx_Mask": 2
+   },
+   "paired": 4,
+   "omitted": {
+    "1": 4
+   },
+   "floor": 8
+  },
+  "PUSH": {
+   "type": "HDR",
+   "lanes": "",
+   "files": 5,
+   "formats": {
+    "BC6H_SF16": 5
+   },
+   "neutral": [
+    0,
+    0,
+    0,
+    255
+   ],
+   "slots": {
+    "Rec_Dent_Map": 98
+   },
+   "paired": 0,
+   "omitted": {},
+   "floor": null
+  },
+  "DETAIL": {
+   "type": "Base",
+   "lanes": "rgb:color",
+   "files": 4,
+   "formats": {
+    "BC1_UNORM_SRGB": 3,
+    "BC7_UNORM": 1
+   },
+   "neutral": [
+    127,
+    126,
+    255,
+    0
+   ],
+   "slots": {
+    "DetailMap": 27
+   },
+   "paired": 4,
+   "omitted": {
+    "1": 4
+   },
+   "floor": 8
+  },
+  "DENTMAP": {
+   "type": "HDR",
+   "lanes": "",
+   "files": 3,
+   "formats": {
+    "BC6H_SF16": 3
+   },
+   "neutral": [
+    0,
+    0,
+    0,
+    255
+   ],
+   "slots": {
+    "Rec_Dent_Map": 5
+   },
+   "paired": 0,
+   "omitted": {},
+   "floor": null
+  },
+  "HIGHT": {
+   "type": "Base",
+   "lanes": "rgb:color",
+   "files": 3,
+   "formats": {
+    "BC1_UNORM_SRGB": 3
+   },
+   "neutral": null,
+   "slots": {
+    "Displacement_HightMap": 21
+   },
+   "paired": 3,
+   "omitted": {
+    "1": 3
+   },
+   "floor": 8
+  },
+  "LOCALCUBEMAP": {
+   "type": "HDR",
+   "lanes": "",
+   "files": 3,
+   "formats": {
+    "BC6H_UF16": 3
+   },
+   "neutral": null,
+   "slots": {},
+   "paired": 0,
+   "omitted": {},
+   "floor": 16
+  },
+  "OCC": {
+   "type": "Mask1ch",
+   "lanes": "r:occlusion",
+   "files": 2,
+   "formats": {
+    "BC4_UNORM": 1,
+    "R8G8B8A8_UNORM_SRGB": 1
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "DetailAOMap": 1
+   },
+   "paired": 1,
+   "omitted": {
+    "1": 1
+   },
+   "floor": 8
+  },
+  "SPC": {
+   "type": "Roughness",
+   "lanes": "r:specular",
+   "files": 2,
+   "formats": {
+    "BC4_UNORM": 2
+   },
+   "neutral": null,
+   "slots": {
+    "SpecularMap": 10
+   },
+   "paired": 2,
+   "omitted": {
+    "1": 2
+   },
+   "floor": 8
+  },
+  "ALBMSC": {
+   "type": "BaseMetallic",
+   "lanes": "rgb:base_color a:metal",
+   "files": 1,
+   "formats": {
+    "BC7_UNORM_SRGB": 1
+   },
+   "neutral": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "slots": {
+    "BaseMetalMap": 1
+   },
+   "paired": 1,
+   "omitted": {
+    "2": 1
+   },
+   "floor": 8
+  }
+ },
+ "type_lanes": {
+  "Base": "rgb:color",
+  "BaseAlpha": "rgb:color a:alpha",
+  "BaseMetallic": "rgb:color a:metal",
+  "Mask1ch": "r:mask",
+  "Mask2ch": "r:mask g:mask",
+  "Mask3ch": "r:mask g:mask b:mask",
+  "Mask4ch": "r:mask g:mask b:mask a:mask",
+  "Metallic": "r:metal",
+  "Normal": "rgb:normal a:mask",
+  "NormalRoughness": "rgb:normal a:roughness",
+  "Roughness": "r:roughness"
+ },
+ "stored_chunks": false
+}

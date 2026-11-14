@@ -5,8 +5,18 @@ from itertools import accumulate
 from typing import Optional, Sequence
 
 from . import encoding, images
-lazy from .dds import CUBEMAP_FACES
-lazy from .dxgi import dxgi_name, get_bits_per_pixel, is_block_compressed, is_known_format
+lazy from .dds import CUBEMAP_FACES, DDS_MAGIC
+from .dxgi import (
+    DXGI_FORMAT_BC1_UNORM,
+    DXGI_FORMAT_BC1_UNORM_SRGB,
+    DXGI_FORMAT_BC7_UNORM,
+    DXGI_FORMAT_BC7_UNORM_SRGB,
+    dxgi_format_for_name,
+    dxgi_name,
+    is_block_compressed,
+    is_known_format,
+)
+lazy from .kinds import TextureKind
 lazy from .flags import EV_MASK, RANGE_COMPRESSION_EXP_MASK, TYPE_MASK, TexFlags, type_choices
 lazy from .gdeflate import compress_gdeflate
 from .profiles import (
@@ -31,28 +41,7 @@ lazy from .texture_decoder import dds_info, dds_subresources
 
 MAX_AXIS = 0xFFFF
 RAW_CHUNK_LIMIT = 512
-
-_NAME_HINTS = (
-    ("nrmr", "NormalRoughness"),
-    ("nrm", "Normal"),
-    ("normal", "Normal"),
-    ("rough", "Roughness"),
-    ("rgh", "Roughness"),
-    ("metal", "Metallic"),
-    ("mtl", "Metallic"),
-    ("_met", "Metallic"),
-    ("albd", "BaseAlpha"),
-    ("alb", "Base"),
-    ("basecolor", "Base"),
-    ("_col", "Base"),
-    ("msk", "Mask"),
-    ("mask", "Mask"),
-    ("blackwhite", "BlackWhite"),
-    ("_light", "Light"),
-    ("_hdr", "HDR"),
-)
-
-_BLOCK_CHANNELS = {0x46: 3, 0x47: 3, 0x50: 4, 0x51: 4, 0x53: 4, 0x54: 4}
+BC1_SIBLINGS = {DXGI_FORMAT_BC1_UNORM: DXGI_FORMAT_BC7_UNORM, DXGI_FORMAT_BC1_UNORM_SRGB: DXGI_FORMAT_BC7_UNORM_SRGB}
 
 
 class AuthoringError(TexFormatError):
@@ -161,16 +150,6 @@ def source_from_tex(tex: TexFile) -> TextureSource:
     )
 
 
-def guess_type_name(source: TextureSource, name: str = "") -> Optional[str]:
-    if source.cubemap:
-        return "HDR"
-    lowered = name.lower()
-    for fragment, type_name in _NAME_HINTS:
-        if fragment in lowered:
-            return f"Mask{_channel_count(source.dxgi_format)}ch" if type_name == "Mask" else type_name
-    return "Image" if is_block_compressed(source.dxgi_format) else None
-
-
 def _padded_rows(
     payload: bytes, natural_pitch: int, pitch: int, rows: int, slices: int
 ) -> bytes:
@@ -184,12 +163,6 @@ def _padded_rows(
             out += chunk[row * natural_pitch : (row + 1) * natural_pitch]
             out += bytes(pitch - natural_pitch)
     return out.take_bytes()
-
-
-def _channel_count(dxgi_format: int) -> int:
-    if is_block_compressed(dxgi_format):
-        return _BLOCK_CHANNELS.get(dxgi_format, 4)
-    return max(1, min(4, get_bits_per_pixel(dxgi_format) // 8))
 
 
 def _resolve_type(
@@ -280,9 +253,32 @@ def _check(profile: TexCookProfile, source: TextureSource) -> None:
         )
 
 
-def _pitches(profile: TexCookProfile, dxgi_format: int, sizes) -> tuple[int, ...]:
-    align = profile.pitch_alignment
+def _pitches(profile: TexCookProfile, dxgi_format: int, sizes, align: int = 0) -> tuple[int, ...]:
+    align = align or profile.pitch_alignment
     return tuple(-(-natural_mip_layout(dxgi_format, *size)[1] // align) * align for size in sizes)
+
+
+def _mip_count(width: int, height: int, floor: Optional[int], first: int = 0) -> int:
+    side, full = min(width, height) >> first, max(width, height).bit_length() - first
+    return 1 if floor is None else next((level for level in range(1, full) if side >> level < floor), full)
+
+
+def _encoded_chain(image, count: int, dxgi_format: int, type_name: Optional[str], encoded: Sequence[bytes] = (),
+                   first: int = 0) -> list[bytes]:
+    kept = list(encoded[first:count])
+    if first + len(kept) < count and dxgi_format not in encoding.ENCODABLE:
+        raise AuthoringError(f"REasy has no encoder for {dxgi_name(dxgi_format)} to make the mips the file lacks")
+    return kept + [encoding.encode(level, dxgi_format) for level in encoding.mip_levels(
+        image, count, srgb=dxgi_name(dxgi_format).endswith("_SRGB"), type_name=type_name, first=first + len(kept))]
+
+
+def _check_size(dxgi_format: int, width: int, height: int, split: int) -> None:
+    multiple = (4 if is_block_compressed(dxgi_format) else 1) << split
+    if width % multiple or height % multiple:
+        raise AuthoringError(
+            f"{dxgi_name(dxgi_format)} needs a width and height divisible by {multiple}, and the image is "
+            f"{width}x{height}"
+        )
 
 
 def _dropped_members(profile: TexCookProfile, flags: TexFlags) -> list[str]:
@@ -406,32 +402,18 @@ def import_dds(
     data: bytes,
     *,
     version: int,
-    name: str = "",
     type_name: Optional[str] = None,
     type_index: Optional[int] = None,
     resident: bool = False,
     ev: int = 0,
+    stored_chunks: bool = True,
 ) -> Authored:
     profile = tex_profile(version)
     source = source_from_dds(data)
-    source = replace(source, row_pitches=_pitches(profile, source.dxgi_format, (
+    source = replace(source, stored_chunks=stored_chunks, row_pitches=_pitches(profile, source.dxgi_format, (
         source.dimensions(level) for _image in range(source.image_count) for level in range(source.mip_count))))
     notes: list[str] = []
-    if type_name is not None or type_index is not None:
-        index = _resolve_type(profile, name=type_name, index=type_index, explicit=True, notes=notes)
-    else:
-        names = type_choices(profile)
-        guessed = guess_type_name(source, name)
-        if guessed is not None and guessed in names:
-            index = names.index(guessed)
-        elif not names:
-            index = 0
-        else:
-            index = names.index("Default") if "Default" in names else 0
-            if guessed is not None:
-                notes.append(
-                    f"{profile.display_name} has no {guessed!r} type; imported as {names[index]}"
-                )
+    index = _resolve_type(profile, name=type_name, index=type_index, explicit=True, notes=notes)
     return _author(
         profile,
         source,
@@ -495,7 +477,15 @@ def convert(
     return _author(profile, source_from_tex(tex), notes=notes, **members)
 
 
-def import_png(
+def _read(data: bytes) -> tuple[object, Optional[TextureSource]]:
+    try:
+        dds = source_from_dds(data) if data[:4] == DDS_MAGIC.to_bytes(4, "little") else None
+        return images.read_image(data), dds
+    except ValueError as error:
+        raise AuthoringError(str(error)) from None
+
+
+def import_image(
     data: bytes,
     chain: TexFile,
     *,
@@ -504,20 +494,99 @@ def import_png(
     type_name: Optional[str] = None,
     type_index: Optional[int] = None,
 ) -> tuple[Authored, Optional[Authored]]:
+    image, dds = _read(data)
+    if dds is not None and (dds.image_count, dds.depth) != (1, 1):
+        if tail is not None:
+            raise AuthoringError(f"a DDS of {dds.image_count} images cannot rebuild a resident copy")
+        profile, notes = tex_profile(version), []
+        members = _carried(profile, chain, type_name=type_name, type_index=type_index, notes=notes)
+        source = replace(dds, stored_chunks=chain.uses_stored_mips, row_pitches=_pitches(profile, dds.dxgi_format, (
+            dds.dimensions(level) for _image in range(dds.image_count) for level in range(dds.mip_count))))
+        return _author(profile, source, notes=notes, **members), None
+    kept = dds is not None and is_block_compressed(dds.dxgi_format)
+    return replace_image(image, chain, version=version, tail=tail, type_name=type_name, type_index=type_index,
+                         dxgi_format=dds.dxgi_format if kept else None, encoded=dds.subresources if kept else ())
+
+
+def kind_format(kind: TextureKind, image) -> int:
+    common = [dxgi_format_for_name(name) for name, count in kind.formats.items() if count * 20 >= kind.files]
+    opaque = bool((image[..., 3] >= 1).all())
+    bc1 = next((item for item in common if item in BC1_SIBLINGS), None)
+    if bc1 is not None and BC1_SIBLINGS[bc1] in common:
+        return bc1 if opaque else BC1_SIBLINGS[bc1]
+    return BC1_SIBLINGS[common[0]] if common[0] in BC1_SIBLINGS and not opaque else common[0]
+
+
+def create_from_file(
+    data: bytes, kind: TextureKind, *, version: int, stored_chunks: bool, streaming: bool = True
+) -> tuple[Authored, Optional[Authored]]:
+    image, dds = _read(data)
+    if dds is not None and (dds.image_count, dds.depth) != (1, 1):
+        return import_dds(data, version=version, type_name=kind.type_name, stored_chunks=stored_chunks), None
+    kept = dds is not None and is_block_compressed(dds.dxgi_format)
+    return create_texture(image, kind, version=version, stored_chunks=stored_chunks, streaming=streaming,
+                          dxgi_format=dds.dxgi_format if kept else None, encoded=dds.subresources if kept else ())
+
+
+def create_texture(
+    image,
+    kind: TextureKind,
+    *,
+    version: int,
+    stored_chunks: bool,
+    streaming: bool = True,
+    dxgi_format: Optional[int] = None,
+    encoded: Sequence[bytes] = (),
+) -> tuple[Authored, Optional[Authored]]:
+    profile = tex_profile(version)
+    notes: list[str] = []
+    index = _resolve_type(profile, name=kind.type_name, explicit=False, notes=notes)
+    dxgi_format = kind_format(kind, image) if dxgi_format is None else dxgi_format
+    height, width = image.shape[:2]
+    count = _mip_count(width, height, kind.floor)
+    paired = kind.paired * 2 > kind.files
+    omitted = min(max(kind.omitted, key=kind.omitted.get), count - 1) if paired and streaming else 0
+    _check_size(dxgi_format, width, height, omitted)
+    payloads = _encoded_chain(image, count, dxgi_format, kind.type_name, encoded)
+
+    def author(first: int, resident: bool) -> Authored:
+        sizes = [(max(1, width >> level), max(1, height >> level)) for level in range(first, count)]
+        source = TextureSource(*sizes[0], 1, 1, len(sizes), dxgi_format, False, _pitches(profile, dxgi_format, sizes),
+                               tuple(payloads[first:]), stored_chunks)
+        return _author(profile, source, index=index, notes=notes, resident=resident, ev=0, streaming_mips=first,
+                       refiltered_normal=False, range_compression_exp=0, high_priority_load_streaming=False)
+
+    if paired and streaming:
+        return author(omitted, True), author(0, False)
+    if paired:
+        notes.append(f"{kind.name} ships as a resident and a streaming copy, but the path has no natives/<platform> "
+                     "root to place the streaming copy under, so the whole chain is written as one texture")
+    return author(0, False), None
+
+
+def replace_image(
+    image,
+    chain: TexFile,
+    *,
+    version: int,
+    tail: Optional[TexFile] = None,
+    type_name: Optional[str] = None,
+    type_index: Optional[int] = None,
+    dxgi_format: Optional[int] = None,
+    encoded: Sequence[bytes] = (),
+) -> tuple[Authored, Optional[Authored]]:
     profile = tex_profile(version)
     header = chain.header
     if header.image_count != 1 or header.depth != 1:
         raise AuthoringError(
-            f"a PNG holds one 2D image, and this texture holds {header.image_count} of depth {header.depth}"
+            f"images replace one 2D image, and this texture holds {header.image_count} of depth {header.depth}"
         )
-    if header.format not in encoding.ENCODABLE:
-        raise AuthoringError(
-            f"REasy has no encoder for {dxgi_name(header.format)}; import a DDS in that format instead"
-        )
-    try:
-        image = images.read_png(data)
-    except ValueError as error:
-        raise AuthoringError(str(error)) from None
+    format_notes: list[str] = []
+    if dxgi_format is None:
+        dxgi_format = header.format
+        if dxgi_format in BC1_SIBLINGS and (image[..., 3] < 1).any():
+            dxgi_format = BC1_SIBLINGS[dxgi_format]
+            format_notes.append(f"its alpha is not 255 everywhere, so it is written as {dxgi_name(dxgi_format)}")
     height, width = image.shape[:2]
     split = 0 if tail is None else (header.width // tail.header.width).bit_length() - 1
     if tail is not None and (
@@ -528,43 +597,35 @@ def import_png(
             f"the resident copy ({tail.header.width}x{tail.header.height}) is not a power-of-two reduction of the "
             f"streaming copy ({header.width}x{header.height})"
         )
-    multiple = (4 if is_block_compressed(header.format) else 1) << split
-    if width % multiple or height % multiple:
-        raise AuthoringError(
-            f"{dxgi_name(header.format)} needs a width and height divisible by {multiple}, and the PNG is "
-            f"{width}x{height}"
-        )
+    _check_size(dxgi_format, width, height, split)
 
     def length(original: TexFile, first: int) -> int:
         shipped = original.header
-        side, full = min(width, height) >> first, max(width, height).bit_length() - first
-        floor = min(shipped.width, shipped.height) >> shipped.mip_count - 1
-        return 1 if shipped.mip_count == 1 else next((level for level in range(1, full) if side >> level < floor), full)
-
-    def chain_of(count: int, first: int = 0) -> list[bytes]:
-        return [encoding.encode(level, header.format) for level in encoding.mip_levels(
-            image, count, srgb=dxgi_name(header.format).endswith("_SRGB"), type_name=header.tex_flags.type_name,
-            first=first)]
+        floor = None if shipped.mip_count == 1 else min(shipped.width, shipped.height) >> shipped.mip_count - 1
+        return _mip_count(width, height, floor, first)
 
     def author(original: TexFile, first: int, chunks: list[bytes], whole: bool) -> Authored:
-        notes: list[str] = []
+        notes = list(format_notes)
         members = _carried(profile, original, type_name=type_name, type_index=type_index, notes=notes)
         if whole:
             members.update(resident=False, streaming_mips=0, refiltered_normal=False)
             notes.append("its streaming copy was not found, so the whole chain is written here as one texture")
         sizes = [(max(1, width >> level), max(1, height >> level)) for level in range(first, first + len(chunks))]
+        own = tex_profile(original.header.version).pitch_alignment
+        align = 1 if any(mip.pitch % own for mip in original.mips) else 0
         source = TextureSource(
-            *sizes[0], 1, 1, len(chunks), header.format, False, _pitches(profile, header.format, sizes),
+            *sizes[0], 1, 1, len(chunks), dxgi_format, False, _pitches(profile, dxgi_format, sizes, align),
             tuple(chunks), original.uses_stored_mips,
         )
         return _author(profile, source, notes=notes, **members)
 
     count = length(chain, 0)
-    payloads = chain_of(count)
+    payloads = _encoded_chain(image, count, dxgi_format, header.tex_flags.type_name, encoded)
     resident = None
     if tail is not None:
         tail_count = length(tail, split)
         sliced = tail.header.mip_count == header.mip_count - split and not tail.header.tex_flags.refiltered_normal
-        tail_payloads = payloads[split:split + tail_count] if sliced else chain_of(split + tail_count, split)
+        tail_payloads = payloads[split:split + tail_count] if sliced else _encoded_chain(
+            image, split + tail_count, dxgi_format, header.tex_flags.type_name, first=split)
         resident = author(tail, split, tail_payloads, False)
     return author(chain, 0, payloads, tail is None and header.tex_flags.resident), resident

@@ -145,6 +145,15 @@ _NAME_MAP = {
 
 #: Every format word this project can size.
 KNOWN_FORMATS = frozenset(_BC_ALL | _FORMAT_BITS.keys())
+_CHANNELS = {
+    DXGI_FORMAT_BC4_UNORM: "r", DXGI_FORMAT_BC4_SNORM: "r", DXGI_FORMAT_R8_UNORM: "r", DXGI_FORMAT_R16_FLOAT: "r",
+    DXGI_FORMAT_R16_UNORM: "r", DXGI_FORMAT_A8_UNORM: "a", DXGI_FORMAT_BC5_UNORM: "rg", DXGI_FORMAT_BC5_SNORM: "rg",
+    DXGI_FORMAT_R8G8_UNORM: "rg", DXGI_FORMAT_B5G6R5_UNORM: "rgb", DXGI_FORMAT_R11G11B10_FLOAT: "rgb",
+}
+
+
+def stored_channels(dxgi_format: int) -> str:
+    return _CHANNELS.get(dxgi_format, "rgba")
 
 
 def is_known_format(dxgi_format: int) -> bool:
@@ -153,6 +162,10 @@ def is_known_format(dxgi_format: int) -> bool:
 
 def dxgi_name(dxgi_format: int) -> str:
     return _NAME_MAP.get(dxgi_format, f"DXGI_{dxgi_format}")
+
+
+def dxgi_format_for_name(name: str) -> int:
+    return next(value for value, known in _NAME_MAP.items() if known == name)
 
 
 def render_target_output_type(dxgi_format: int) -> str | None:
