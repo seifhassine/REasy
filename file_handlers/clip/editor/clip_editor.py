@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import math
 
 from PySide6.QtCore import QItemSelection, QItemSelectionModel, QPoint, QSignalBlocker, Qt, QTimer, Signal
@@ -51,6 +52,9 @@ from .state import EditorState
 from .transport import Transport
 
 
+_copied: tuple[object, list] = ("keys", [])
+
+
 def _tenths(frames: float) -> int:
     return int(min(max(frames * 10.0, -2.0 ** 31), 2.0 ** 31 - 1)) if math.isfinite(frames) else 0
 
@@ -64,7 +68,6 @@ class ClipEditor(QWidget):
         super().__init__(parent)
         self.document = document
         self.state = EditorState(document, self)
-        self._clipboard: list[Key] = []
         self._build(node_fields)
         self._shortcuts()
         self.state.selection_changed.connect(self._selection_changed)
@@ -201,7 +204,7 @@ class ClipEditor(QWidget):
         editor = [
             (QKeySequence.Delete, self._delete), ("Ctrl+D", self._duplicate), (QKeySequence.Undo, stack.undo),
             (QKeySequence.Redo, stack.redo), ("Ctrl+Shift+Z", stack.redo),
-            (QKeySequence.Copy, self._copy_keys), (QKeySequence.Paste, self._paste_keys),
+            (QKeySequence.Copy, self._copy), (QKeySequence.Paste, self._paste),
             ("Alt+Up", lambda: self._move(-1)), ("Alt+Down", lambda: self._move(1)),
         ]
         views = [
@@ -414,22 +417,34 @@ class ClipEditor(QWidget):
         self.lanes.fit()
         self.curves.fit()
 
-    def _copy_keys(self) -> None:
-        keys = [key for key in self.state.keys() if isinstance(key, Key)]
-        if keys:
+    def _copy(self) -> None:
+        global _copied
+        rows = [item for item in self.state.selection if isinstance(item, (Track, Clip, Node, Property))]
+        if keys := [key for key in self.state.keys() if isinstance(key, Key)]:
             base = min(key.frame for key in keys)
-            self._clipboard = [copy.copy(key) for key in keys]
-            for key in self._clipboard:
-                key.frame -= base
+            _copied = "keys", [dataclasses.replace(key, frame=key.frame - base) for key in keys]
+        elif rows:
+            def nested(item) -> bool:
+                while (found := self.document.parent(item)) is not None:
+                    if any(held is (item := found[0]) for held in rows):
+                        return True
+                return False
 
-    def _paste_keys(self) -> None:
+            _copied = self._format(), [copy.deepcopy(item) for item in rows if not nested(item)]
+
+    def _format(self) -> tuple:
+        return self.document.timeline.version, self.document.timeline.kind
+
+    def _paste(self) -> None:
+        kind, held = _copied
         targets = self._keyed_targets()
-        if self._clipboard and len(targets) == 1:
-            prop = targets[0]
-            pasted = edits.paste_keys(self.document, prop, self._clipboard,
-                                      self.state.frame - self.document.time_offset(prop))
-            if pasted:
-                self.state.select(pasted)
+        if kind == "keys" and held and len(targets) == 1:
+            pasted = edits.paste_keys(self.document, targets[0], held,
+                                      self.state.frame - self.document.time_offset(targets[0]))
+        else:
+            pasted = edits.paste(self.document, held, self.state.current) if kind == self._format() else []
+        if pasted:
+            self.state.select(pasted)
 
     def _tree_menu(self, position: QPoint) -> None:
         index = self.tree.indexAt(position)
@@ -485,10 +500,17 @@ class ClipEditor(QWidget):
                 boxes.addAction(self.tr("Track") if entry.property_hash is None else member_name(
                     self.document.box_rules, entry)).triggered.connect(
                         lambda _checked=False, entry=entry: self.state.select([edits.add_boxes(self.document, entry)]))
-        if self.state.selection:
+        pastes = bool(_copied[1]) and (_copied[0] == self._format() or _copied[0] == "keys" and len(targets) == 1)
+        copies = self.state.selection and not isinstance(current, TrackInterval)
+        if self.state.selection or pastes:
             menu.addSeparator()
-            if not isinstance(current, TrackInterval):
-                icon_action(menu, "copy", self.tr("Duplicate")).triggered.connect(self._duplicate)
+        if copies:
+            icon_action(menu, "copy", self.tr("Copy")).triggered.connect(self._copy)
+        if pastes:
+            icon_action(menu, "paste", self.tr("Paste")).triggered.connect(self._paste)
+        if copies:
+            icon_action(menu, "copy", self.tr("Duplicate")).triggered.connect(self._duplicate)
+        if self.state.selection:
             icon_action(menu, "delete", self.tr("Delete"), danger=True).triggered.connect(self._delete)
         if not menu.isEmpty():
             menu.exec(position)

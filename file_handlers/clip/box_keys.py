@@ -12,27 +12,27 @@ from .rules import InterpolationType
 Owners = tuple[bool, dict[str, dict]]
 
 
-def _keyed(props: list[Property]) -> Iterator[Property]:
+def _keyed(props: list[Property]) -> Iterator[list[Property]]:
     for prop in props:
+        same = [held for held in props if held.name == prop.name]
         if prop.keys:
-            yield prop
+            yield same
         else:
-            yield from _keyed(prop.children)
+            yield from _keyed([child for held in same for child in held.children])
 
 
 def boxes(props: list[Property], flag: str) -> list[tuple[float, int]]:
-    source = next((prop for prop in props if prop.name == flag), None) if flag else next(_keyed(props), None)
-    if source is None:
-        return []
-    found, close = [], None
-    for key in source.keys:
-        closing, close = key.frame == close, None
-        if not closing and (not flag or key.value is True):
-            width = max(key.width, 1)
-            found.append((key.frame, width))
-            close = source.end_frame if key.interpolation == InterpolationType.DISCRETE_TO_END else \
-                key.frame + width - 1 if width > 1 else None
-    return found
+    found = []
+    for source in [prop for prop in props if prop.name == flag] if flag else next(_keyed(props), []):
+        close = None
+        for key in source.keys:
+            closing, close = key.frame == close, None
+            if not closing and (not flag or key.value is True):
+                width = max(key.width, 1)
+                found.append((key.frame, width))
+                close = source.end_frame if key.interpolation == InterpolationType.DISCRETE_TO_END else \
+                    key.frame + width - 1 if width > 1 else None
+    return sorted(found)
 
 
 def _owned(owners: Owners, track: Node) -> Iterator[tuple[int | None, list[tuple[float, int]], bool]]:
@@ -41,9 +41,9 @@ def _owned(owners: Owners, track: Node) -> Iterator[tuple[int | None, list[tuple
     if "track" in owner:
         yield None, boxes(track.properties, owner["track"]), True
     for member, flag in owner.get("members", ()):
-        prop = next((prop for prop in track.properties if prop.name == member), None)
+        props = [prop for prop in track.properties if prop.name == member]
         yield murmur3_hash(member.encode("utf-16-le")), boxes(
-            [] if prop is None else prop.children if flag else [prop], flag), prop is not None or not held
+            [child for prop in props for child in prop.children] if flag else props, flag), bool(props) or not held
 
 
 def baked_boxes(timeline: Timeline, owners: Owners) -> dict[tuple[int, int | None], list[tuple[float, int]]]:

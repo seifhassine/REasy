@@ -25,6 +25,7 @@ from .model import (
     ResourceKind,
     SequenceTrackInfo,
     SpeedPoint,
+    Timeline,
     Track,
     TrackInterval,
     walk_nodes,
@@ -259,23 +260,52 @@ def duplicate(document: ClipDocument, items: list) -> list:
             if isinstance(twin, (Key, SpeedPoint)):
                 twin.frame += 1.0
                 index = sum(1 for existing in container if existing.frame <= twin.frame)
-            elif isinstance(twin, Property):
-                _renew_properties(document, [twin])
-            elif isinstance(twin, Node):
-                for node in walk_nodes([twin]):
-                    _renew(document, node)
+            _renew(document, twin)
             _insert(document, owner, field, index, twin, "Duplicate")
             copies.append(twin)
     return copies
 
 
-def _renew(document: ClipDocument, node: Node) -> None:
-    node.guid = new_guid()
-    if stores(document, "node", "node_id"):
-        node.node_id = new_guid()
-    if stores(document, "node", "editor_id"):
-        node.editor_id = new_editor_id()
-    _renew_properties(document, node.properties)
+def paste(document: ClipDocument, items: list, target: object) -> list:
+    timeline, placed, pasted = document.timeline, Counter(), []
+    if isinstance(target, (Key, SpeedPoint)):
+        target = document.owner(target, Property)
+    elif isinstance(target, Timeline) and timeline.kind is ResourceKind.MOT_CLIP and timeline.roots:
+        target = timeline.roots[0]
+    found = document.parent(target)
+    with _structure(document, "Paste"):
+        for item in items:
+            if type(item) is type(target) and found is not None and found[1] != "root_order":
+                owner, field, index = *found, getattr(*found).index(target) + 1 + placed[id(target)]
+                placed[id(target)] += 1
+            elif isinstance(item, Property) and isinstance(target, Node):
+                owner, field, index = target, "properties", None
+            elif isinstance(item, Node) and (isinstance(target, (Node, Clip)) or isinstance(
+                    target, Track) and not document.rules.clip_roots):
+                owner, field, index = target, "children" if isinstance(target, Node) else "nodes", None
+            elif isinstance(item, Clip) and isinstance(target, Track) and "clip" in document.rules.records:
+                owner, field, index = target, "clips", None
+            elif isinstance(item, Track) and timeline.kind is not ResourceKind.MOT_CLIP:
+                owner, field, index = timeline, "tracks", None
+            else:
+                continue
+            twin = copy.deepcopy(item)
+            _renew(document, twin)
+            _insert(document, owner, field, index, twin, "Paste")
+            pasted.append(twin)
+    return pasted
+
+
+def _renew(document: ClipDocument, item: object) -> None:
+    for node in walk_nodes([item]) if isinstance(item, Node) else ():
+        node.guid = new_guid()
+        if stores(document, "node", "node_id"):
+            node.node_id = new_guid()
+        if stores(document, "node", "editor_id"):
+            node.editor_id = new_editor_id()
+        _renew_properties(document, node.properties)
+    if isinstance(item, Property):
+        _renew_properties(document, [item])
 
 
 def _renew_properties(document: ClipDocument, properties: list[Property]) -> None:
