@@ -203,6 +203,10 @@ def add_boxes(document: ClipDocument, entry: TrackInterval) -> TrackInterval:
     return entry
 
 
+def set_boxes(document: ClipDocument, entry: TrackInterval, ranges: list[tuple[float, int]], text: str) -> None:
+    set_fields(document, entry, text, follows=False, ranges=sorted(ranges, key=lambda pair: pair[0]))
+
+
 def follow_boxes(document: ClipDocument, entry: TrackInterval, follows: bool) -> None:
     baked = baked_boxes(document.timeline, document.box_rules)
     ranges = baked[id(entry.track), entry.property_hash] if follows else entry.ranges

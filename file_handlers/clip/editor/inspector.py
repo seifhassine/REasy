@@ -112,9 +112,9 @@ class Inspector(FieldPanel):
             def apply(value) -> None:
                 if side and not low <= value <= high:
                     raise ValueError(value)
-                edits.set_fields(document, entry, self.tr("Edit Box"), follows=False, ranges=[
+                edits.set_boxes(document, entry, [
                     pair if index != at else (value, pair[1]) if side == 0 else (pair[0], value)
-                    for index, pair in enumerate(entry.ranges)])
+                    for index, pair in enumerate(entry.ranges)], self.tr("Edit Box"))
 
             return apply
 
@@ -127,10 +127,15 @@ class Inspector(FieldPanel):
                     "Recompute the boxes from the keys after each edit, as the authoring tool does: one per key of "
                     "the range flag that is on, or per key of the first keyed member where there is no flag.")))
         tip = self.tr("A box key's first frame and its length in frames, which game code reads beside the keys; "
-                      "editing one stops the boxes following the keys.")
+                      "editing, adding or removing one stops the boxes following the keys.")
+        fields.append(Field(
+            self.tr("Boxes"), "button", lambda: self.tr("Add at playhead"), lambda _value: edits.set_boxes(
+                document, entry, [*entry.ranges, (self.state.frame, 1)], self.tr("Add Box")), tooltip=tip))
         return [*fields, *(Field(self.tr("Box {0}").format(at + 1), "row", lambda: None, tooltip=tip, options={
             "fields": [Field("", "float", lambda at=at: entry.ranges[at][0], setter(at, 0)),
-                       Field("", "int", lambda at=at: entry.ranges[at][1], setter(at, 1))]})
+                       Field("", "int", lambda at=at: entry.ranges[at][1], setter(at, 1)),
+                       Field("", "button", lambda: self.tr("Remove"), lambda _value, at=at: edits.set_boxes(
+                           document, entry, [*entry.ranges[:at], *entry.ranges[at + 1:]], self.tr("Remove Box")))]})
             for at in range(len(entry.ranges)))]
 
     def _sequence_fields(self, info: SequenceTrackInfo) -> list[Field]:
