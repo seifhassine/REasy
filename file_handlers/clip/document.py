@@ -10,17 +10,24 @@ from file_handlers.document_commands import Change, EditDocument
 from .decode import read_timeline
 from .encode import write_timeline
 from .model import Clip, ResourceKind, Timeline, walk_nodes
-from .rules import FormatRules, VersionProfile, profile, rules_for
+from .rules import FormatRules, VersionProfile, box_key_rules, profile, rules_for
 from .bake import bake_changes
+from .box_keys import baked_boxes
 from .sequences import derived_ranges, sequence_leaves
 from .validation import Issue, validate
 
 
 class ClipDocument(EditDocument):
-    def __init__(self, timeline: Timeline, parent: QObject | None = None, undo_stack: QUndoStack | None = None):
+    def __init__(self, timeline: Timeline, parent: QObject | None = None, undo_stack: QUndoStack | None = None,
+                 game: str = ""):
         super().__init__(parent, undo_stack)
         self.timeline = timeline
         self.profile: VersionProfile = profile(timeline.version)
+        self.box_rules = box_key_rules(timeline.version, game)
+        baked = baked_boxes(timeline, self.box_rules)
+        for table in timeline.intervals or ():
+            for entry in table:
+                entry.follows = baked.get((id(entry.track), entry.property_hash)) == entry.ranges
         self._issues: list[Issue] | None = None
         self._parents: dict[int, tuple[object, str]] | None = None
         self.changed.connect(self._forget)
@@ -65,6 +72,8 @@ class ClipDocument(EditDocument):
                         parents.update((id(key), (prop, "extra_keys")) for key in prop.extra_keys.values())
                         parents.update((id(point), (prop, "speed_points")) for point in prop.speed_points)
                         stack.append((prop, "children", prop.children))
+            parents.update((id(entry), (self.timeline, "intervals")) for table in self.timeline.intervals or ()
+                           for entry in table)
             stack = [(self.timeline, "sequences", self.timeline.sequences)]
             while stack:
                 owner, field, infos = stack.pop()
@@ -92,6 +101,14 @@ class ClipDocument(EditDocument):
 
     def _follow(self, _index: int) -> None:
         timeline = self.timeline
+        if timeline.intervals is not None:
+            baked = baked_boxes(timeline, self.box_rules)
+            moved = [(entry, ranges) for table in timeline.intervals for entry in table if entry.follows and (
+                ranges := baked[id(entry.track), entry.property_hash]) != entry.ranges]
+            for entry, ranges in moved:
+                entry.ranges[:] = ranges
+            for entry, _ranges in moved:
+                self.changed.emit(Change(entry, "ranges"))
         if timeline.kind is not ResourceKind.DIALOGUE_TIMELINE:
             return
         leaves = list(sequence_leaves(timeline))

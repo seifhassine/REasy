@@ -49,9 +49,11 @@ class MotionDocument(EditDocument):
     modified_changed = Signal(bool)
     clip_changed = Signal()
 
-    def __init__(self, root: Motion | MotionList | MotionTree | MotionPack, parent: QObject | None = None):
+    def __init__(self, root: Motion | MotionList | MotionTree | MotionPack, parent: QObject | None = None,
+                 game: str = ""):
         super().__init__(parent)
         self.root = root
+        self.game = game
         self._parents: dict[int, object] | None = None
         self._names: dict[int, str] | None = None
         self._clips: dict[int, ClipDocument] = {}
@@ -59,8 +61,8 @@ class MotionDocument(EditDocument):
         self.undo_stack.cleanChanged.connect(self._clean_changed)
 
     @classmethod
-    def read(cls, data: bytes, parent: QObject | None = None) -> MotionDocument:
-        return cls(read_file(data), parent)
+    def read(cls, data: bytes, parent: QObject | None = None, game: str = "") -> MotionDocument:
+        return cls(read_file(data), parent, game)
 
     def write(self) -> bytes:
         return write_file(self.root)
@@ -76,7 +78,7 @@ class MotionDocument(EditDocument):
 
     def clip_document(self, sequence: Sequence) -> ClipDocument:
         if (found := self._clips.get(id(sequence.clip))) is None:
-            found = self._clips[id(sequence.clip)] = ClipDocument(sequence.clip, self)
+            found = self._clips[id(sequence.clip)] = ClipDocument(sequence.clip, self, game=self.game)
             found.undo_stack.cleanChanged.connect(self._clean_changed)
             found.changed.connect(_rows_follower(sequence))
             found.changed.connect(self.clip_changed)

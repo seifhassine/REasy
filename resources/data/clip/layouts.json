@@ -784,13 +784,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   },
@@ -837,13 +837,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   },
@@ -901,13 +901,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   },
@@ -965,13 +965,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   },
@@ -1027,13 +1027,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   },
@@ -1101,13 +1101,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   },
@@ -1175,13 +1175,13 @@
     ]},
     "record": {"size": 16, "fields": [
      [0, "u32", "name_hash"],
-     [4, "i16", "track"],
-     [6, "i16", "count"],
+     [4, "u16", "track"],
+     [6, "u16", "count"],
      [8, "u64", "values"]
     ]},
     "value": {"size": 8, "fields": [
      [0, "u32", "begin"],
-     [4, "u32", "span"]
+     [4, "i32", "span"]
     ]}
    }
   }

@@ -5,6 +5,8 @@ from __future__ import annotations
 import copy
 import uuid
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 lazy from utils.hash_util import murmur3_hash
 
@@ -12,6 +14,7 @@ lazy from file_handlers.layout_codec import RecordCodec
 
 from file_handlers.document_commands import ReplaceContents, SetFields
 
+from .box_keys import baked_boxes, synced_tables, track_shapes, with_entry
 from .document import ClipDocument
 from .evaluation import NUMERIC_TYPES, sample
 from .model import (
@@ -23,6 +26,7 @@ from .model import (
     SequenceTrackInfo,
     SpeedPoint,
     Track,
+    TrackInterval,
     walk_nodes,
     walk_properties,
 )
@@ -117,30 +121,29 @@ def make_node(document: ClipDocument, node_type: int, begin: float, end: float) 
 def add_node(document: ClipDocument, parent: Track | Clip | Node, node_type: int) -> Node:
     begin, end = _span(parent) if not isinstance(parent, Track) else (0.0, document.timeline.total_frame)
     node = make_node(document, node_type, begin, end)
-    with document.macro("Add Node"):
+    with _structure(document, "Add Node"):
         _insert(document, parent, "children" if isinstance(parent, Node) else "nodes", None, node, "Add Node")
-        _sync_node_lists(document)
     return node
 
 
-def _sync_node_lists(document: ClipDocument) -> None:
+@contextmanager
+def _structure(document: ClipDocument, text: str) -> Iterator[None]:
     timeline = document.timeline
-    if timeline.kind is ResourceKind.MOT_CLIP:
-        tracks = [node for root in timeline.roots for node in root.children]
-        kept = [[interval for interval in table if interval.track in tracks] for table in timeline.intervals or ()]
-        if kept != (timeline.intervals or []):
-            document.push(ReplaceContents(document, timeline, "intervals", kept, "Intervals"))
-        return
-    if timeline.root_order is None:
-        return
-    held = [node for track in timeline.tracks for node in track.roots]
-    left, order = Counter(map(id, held)), []
-    for node in [*timeline.root_order, *held]:
-        if left[id(node)]:
-            left[id(node)] -= 1
-            order.append(node)
-    if list(map(id, order)) != list(map(id, timeline.root_order)):
-        document.push(ReplaceContents(document, timeline, "root_order", order, "Root Order"))
+    shapes = None if timeline.intervals is None else track_shapes(timeline, document.box_rules)
+    with document.macro(text):
+        yield
+        if shapes is not None:
+            if (tables := synced_tables(timeline, document.box_rules, shapes)) != timeline.intervals:
+                document.push(ReplaceContents(document, timeline, "intervals", tables, "Intervals"))
+        elif timeline.kind is not ResourceKind.MOT_CLIP and timeline.root_order is not None:
+            held = [node for track in timeline.tracks for node in track.roots]
+            left, order = Counter(map(id, held)), []
+            for node in [*timeline.root_order, *held]:
+                if left[id(node)]:
+                    left[id(node)] -= 1
+                    order.append(node)
+            if list(map(id, order)) != list(map(id, timeline.root_order)):
+                document.push(ReplaceContents(document, timeline, "root_order", order, "Root Order"))
 
 
 def make_property(document: ClipDocument, name: str, kind: int, begin: float, end: float,
@@ -158,8 +161,8 @@ def add_property(document: ClipDocument, owner: Node | Property, name: str, kind
                  array_index: int = -1) -> Property:
     begin, end = _span(owner)
     prop = make_property(document, name, kind, begin, end, array_index)
-    field = "properties" if isinstance(owner, Node) else "children"
-    _insert(document, owner, field, None, prop, "Add Property")
+    with _structure(document, "Add Property"):
+        _insert(document, owner, "properties" if isinstance(owner, Node) else "children", None, prop, "Add Property")
     return prop
 
 
@@ -190,7 +193,20 @@ def rename(document: ClipDocument, item: object, name: str) -> None:
     if isinstance(item, Node) and stores(document, "node", "type_hash") and \
             item.type_hash == murmur3_hash(item.name.encode("utf-8")):
         values["type_hash"] = murmur3_hash(name.encode("utf-8"))
-    set_fields(document, item, "Rename", **values)
+    with _structure(document, "Rename"):
+        set_fields(document, item, "Rename", **values)
+
+
+def add_boxes(document: ClipDocument, entry: TrackInterval) -> TrackInterval:
+    document.push(ReplaceContents(document, document.timeline, "intervals", with_entry(
+        document.timeline, document.box_rules, entry), "Add Box Keys"))
+    return entry
+
+
+def follow_boxes(document: ClipDocument, entry: TrackInterval, follows: bool) -> None:
+    baked = baked_boxes(document.timeline, document.box_rules)
+    ranges = baked[id(entry.track), entry.property_hash] if follows else entry.ranges
+    set_fields(document, entry, "Follow Keys", follows=follows, ranges=ranges)
 
 
 def follow_keys(document: ClipDocument, info: SequenceTrackInfo, follows: bool) -> None:
@@ -207,7 +223,7 @@ def set_bake_fields(document: ClipDocument, target: Property | Key, prop: Proper
 
 
 def remove(document: ClipDocument, items: list) -> None:
-    with document.macro("Delete"):
+    with _structure(document, "Delete"):
         for item in items:
             found = document.parent(item)
             if found is None:
@@ -216,19 +232,20 @@ def remove(document: ClipDocument, items: list) -> None:
             container = getattr(owner, field)
             if isinstance(container, dict):
                 contents = {slot: key for slot, key in container.items() if key is not item}
+            elif field == "intervals":
+                contents = [[entry for entry in table if entry is not item] for table in container]
             else:
                 contents = [entry for entry in container if entry is not item]
             document.push(ReplaceContents(document, owner, field, contents, "Delete"))
-        _sync_node_lists(document)
 
 
 def duplicate(document: ClipDocument, items: list) -> list:
     """Nodes in copied tracks and clips keep their IDs, as in clips the authoring tool reuses."""
     copies = []
-    with document.macro("Duplicate"):
+    with _structure(document, "Duplicate"):
         for item in items:
             found = document.parent(item)
-            if found is None or found[1] == "extra_keys":
+            if found is None or found[1] in ("extra_keys", "intervals"):
                 continue
             owner, field = found
             twin = copy.deepcopy(item)
@@ -244,7 +261,6 @@ def duplicate(document: ClipDocument, items: list) -> list:
                     _renew(document, node)
             _insert(document, owner, field, index, twin, "Duplicate")
             copies.append(twin)
-        _sync_node_lists(document)
     return copies
 
 
@@ -274,7 +290,8 @@ def move(document: ClipDocument, item: object, delta: int) -> bool:
     if not 0 <= target < len(items):
         return False
     items.insert(target, items.pop(index))
-    document.push(ReplaceContents(document, owner, field, items, "Move"))
+    with _structure(document, "Move"):
+        document.push(ReplaceContents(document, owner, field, items, "Move"))
     return True
 
 

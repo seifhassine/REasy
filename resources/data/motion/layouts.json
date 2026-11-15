@@ -82,7 +82,7 @@
      [36, "u32", "category"]
     ]},
     "sequence_track": {"size": 16, "fields": [
-     [0, "u32", "id"],
+     [0, "i32", "id"],
      [4, "u32", "filter0"],
      [8, "u32", "filter1"],
      [12, "u32", "filter2"]
@@ -212,7 +212,7 @@
    "align": {"animation": 16, "sync": 8, "name": 1},
    "records": {
     "sequence_track": {"size": 28, "fields": [
-     [0, "u32", "id"],
+     [0, "i32", "id"],
      [4, "u32", "filter0"],
      [8, "u32", "filter1"],
      [12, "u32", "filter2"],

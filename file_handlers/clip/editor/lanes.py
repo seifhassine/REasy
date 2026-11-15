@@ -13,7 +13,7 @@ lazy from ui.styles import current_colors, qcolor
 from file_handlers.document_commands import SetFields
 
 from .. import edits
-from ..model import Clip, Key, Node, Property, Track
+from ..model import Clip, Key, Node, Property, Track, TrackInterval
 from ..rules import InterpolationType, interpolation, owns_keys
 from .state import EditorState
 
@@ -123,7 +123,7 @@ class LaneView(QWidget):
         selected = {id(item) for item in self.state.selection}
         for item, top, height in self.rows():
             if any(item is chosen for chosen in self.state.selection
-                   if isinstance(chosen, (Track, Clip, Node, Property))):
+                   if isinstance(chosen, (Track, Clip, Node, Property, TrackInterval))):
                 painter.fillRect(QRectF(0, top, self.width(), height), tone("selection_inactive"))
             self._paint_row(painter, item, top, height, selected)
         self._paint_end(painter)
@@ -164,6 +164,13 @@ class LaneView(QWidget):
                 self._paint_block(painter, clip, top, height, id(clip) in selected)
         elif isinstance(item, Clip):
             self._paint_block(painter, item, top, height, id(item) in selected)
+        elif isinstance(item, TrackInterval):
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(tone("text_subtle"))
+            for begin, span in item.ranges:
+                if begin is not None:
+                    painter.drawRoundedRect(QRectF(self.x_of(begin) - 2, middle - 4, max(
+                        self.x_of(begin + span - 1) - self.x_of(begin), 0) + 4, 8), 2, 2)
         elif isinstance(item, Property) or isinstance(item, Node) and edits.stores(
                 self.state.document, "node", "begin_frame"):
             offset = self.state.document.time_offset(item)

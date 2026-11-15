@@ -18,7 +18,7 @@ class MotionHandler(DocumentHandler):
         return data[4:8] in MAGICS
 
     def read(self, data: bytes) -> None:
-        self.document = MotionDocument.read(data, self)
+        self.document = MotionDocument.read(data, self, self.app.settings["game_version"])
         self.document.modified_changed.connect(self._set_modified)
         self.modified = False
 

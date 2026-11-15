@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QWidget
 
 lazy from utils.hash_util import murmur3_hash_utf16le
 
+from file_handlers.document_commands import SetFields
 from ui.field_form import Field, FieldPanel
 
 from .. import edits
@@ -180,6 +181,41 @@ class Inspector(FieldPanel):
                       self._set(sequence, self.tr("Edit Sequence"))("category"), display_names("SequenceCategory")),
                 Field(self.tr("Clip"), "readonly", lambda: self.tr("{0} tracks, {1:g} frames; edited below").format(
                     sum(len(root.children) for root in sequence.clip.roots), sequence.clip.total_frame))]
+
+    def track_fields(self, sequence: Sequence, node) -> list[Field]:
+        document = self.state.document
+        tracks = [track for root in sequence.clip.roots for track in root.children]
+        row = next((row for track, row in zip(tracks, sequence.tracks) if track is node), None)
+        if row is None:
+            return []
+        owner = document.parent(sequence)
+        version = list_profile(document.root.version).mot if isinstance(owner, MotionListEntry) and \
+            sequence in owner.overrides else document.motion_of(sequence).version
+        record, clip = mot_profile(version).rules.records["sequence_track"], document.clip_document(sequence)
+
+        def put(name: str, value: int, **values) -> None:
+            low, high = record.limits[name]
+            if not low <= value <= high:
+                raise ValueError(value)
+            clip.push(SetFields(clip, [(row, values)], self.tr("Edit Track")))
+
+        def words(attr: str, stem: str) -> dict:
+            return {"fields": [Field("", "hex", lambda at=at: getattr(row, attr)[at], lambda value, at=at: put(
+                f"{stem}{at}", value, **{attr: (*getattr(row, attr)[:at], value, *getattr(row, attr)[at + 1:])}))
+                for at in range(3)]}
+
+        fields = [Field(self.tr("User ID"), "int", lambda: row.id, lambda value: put("id", value, id=value),
+                        tooltip=self.tr("A number game code reads for the track (getSequenceTracksUserID); -1 in "
+                                        "most tracks.")),
+                  Field(self.tr("Filter"), "row", lambda: None, options=words("filters", "filter"), tooltip=self.tr(
+                      "Three groups of bits. A track with bits here plays only while the Motion layer's sequence "
+                      "filter, which game code sets, shares a bit with each group that has any."))]
+        if "invalid0" in record.names:
+            fields.append(Field(self.tr("Invalid filter"), "row", lambda: None, options=words("invalid", "invalid"),
+                                tooltip=self.tr("Three groups of bits. A track with bits here does not play while "
+                                                "the Motion layer's sequence filter shares a bit with each group "
+                                                "that has any.")))
+        return fields
 
     def _tree_fields(self, tree: MotionTree) -> list[Field]:
         setter = self._set(tree, self.tr("Edit MotTree"))

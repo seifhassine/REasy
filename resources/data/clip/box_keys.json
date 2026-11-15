@@ -1,0 +1,1746 @@
+{
+ "format": 1,
+ "games": {
+  "DD2": {
+   "classes": {
+    "app.Ch227Track": {
+     "members": [
+      [
+       "_IgnoreRandomizeMove",
+       "_IsIgnore"
+      ]
+     ]
+    },
+    "app.Ch270Track": {
+     "members": [
+      [
+       "_IgnoreRandomizeMove",
+       "_IsIgnore"
+      ]
+     ]
+    },
+    "app.Ch271Track": {
+     "members": [
+      [
+       "_IgnoreRandomizeMove",
+       "_IsIgnore"
+      ]
+     ]
+    },
+    "app.CinematicCameraMotionSeqTrack": {
+     "track": ""
+    },
+    "app.EmphasisCameraModifierRequestTrack": {
+     "track": ""
+    },
+    "app.InterestMarkerReqTracks": {
+     "members": [
+      [
+       "_InterestMarkerReqParam",
+       ""
+      ]
+     ]
+    },
+    "app.MaterialInterpolationTrack": {
+     "members": [
+      [
+       "_Settings",
+       "_HasKey"
+      ]
+     ]
+    },
+    "app.MonsterSpellTrack": {
+     "members": [
+      [
+       "SpellDetailSetting",
+       ""
+      ]
+     ]
+    },
+    "app.NoticeCameraRequestTrack": {
+     "track": ""
+    },
+    "app.PurposeRegionController.PurposeRegionTrack": {
+     "members": [
+      [
+       "Region01",
+       ""
+      ],
+      [
+       "Region02",
+       ""
+      ],
+      [
+       "Region03",
+       ""
+      ]
+     ]
+    },
+    "app.reaction.ArmReachGimmickActionTracks": {
+     "members": [
+      [
+       "leftArm",
+       "Active"
+      ],
+      [
+       "rightArm",
+       "Active"
+      ]
+     ]
+    }
+   }
+  },
+  "DMC5": {
+   "classes": {}
+  },
+  "MHWilds": {
+   "classes": {
+    "ace.motion_track.IkDisableTrack": {
+     "track": "_DisableIk"
+    },
+    "ace.motion_track.IkHand2SkipTrack": {
+     "members": [
+      [
+       "_RootInfo",
+       "_IsDirty"
+      ]
+     ]
+    },
+    "ace.motion_track.IkLegSpineFootSkipTrack": {
+     "track": "_IsDirty"
+    },
+    "ace.motion_track.IkLegSpineLockBaseTrack": {
+     "track": "_LockBaseNormal"
+    },
+    "ace.motion_track.PadVibrationTrackBase": {
+     "members": [
+      [
+       "_VibrationInfo",
+       ""
+      ]
+     ]
+    },
+    "ace.motion_track.PadVibrationTrack`1[[T, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+     "members": [
+      [
+       "_VibrationInfo",
+       ""
+      ],
+      [
+       "_VibrationTargetInfo",
+       ""
+      ]
+     ]
+    },
+    "app.IkSwordAbsorbTrack": {
+     "members": [
+      [
+       "_Setting",
+       "HasValue"
+      ],
+      [
+       "_AbsorbBlendRateKey",
+       "_HasValue"
+      ],
+      [
+       "_FollowBlendRateKey",
+       "_HasValue"
+      ],
+      [
+       "_ChainBlendRateKey",
+       "_HasValue"
+      ]
+     ]
+    },
+    "app.IkSwordLockTrack": {
+     "members": [
+      [
+       "_LockBoxKey",
+       "_HasValue"
+      ]
+     ]
+    },
+    "app.IkSwordSkipTrack": {
+     "members": [
+      [
+       "_SkipBoxKey",
+       "_HasValue"
+      ]
+     ]
+    },
+    "app.IkSwordTrack": {
+     "members": [
+      [
+       "_Setting",
+       "HasValue"
+      ],
+      [
+       "_WallBlendRateKey",
+       "_HasValue"
+      ],
+      [
+       "_GroundBlendRateKey",
+       "_HasValue"
+      ],
+      [
+       "_FollowBlendRateKey",
+       "_HasValue"
+      ],
+      [
+       "_ChainBlendRateKey",
+       "_HasValue"
+      ],
+      [
+       "_DisableLock",
+       "_HasValue"
+      ]
+     ]
+    },
+    "app.motion_track.AppPadVibrationTrack": {
+     "members": [
+      [
+       "_VibrationInfo",
+       ""
+      ],
+      [
+       "_VibrationTargetInfo",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AttackCollision": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.AttackCollision_Em": {
+     "track": "_On"
+    },
+    "app.motion_track.AttackCollision_Ot": {
+     "track": "_On"
+    },
+    "app.motion_track.AttackCollision_OtDragAirShip": {
+     "track": "_On"
+    },
+    "app.motion_track.AttackCollision_PlBody": {
+     "track": "_On"
+    },
+    "app.motion_track.AttackCollision_PlWp": {
+     "track": "_On"
+    },
+    "app.motion_track.AttackCollision_PlWpBody": {
+     "track": "_On"
+    },
+    "app.motion_track.CLSPGroundSuspendHeightCorrectionTrack": {
+     "track": "_IsDirty"
+    },
+    "app.motion_track.CatchCancel": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.ClothesCoordinatorDisableVirtualGroundTrack": {
+     "track": "_IsDirty"
+    },
+    "app.motion_track.DamageCollision": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.DamageCollision_Em": {
+     "track": "_On"
+    },
+    "app.motion_track.DeplitionEnd": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Dialogue_MotionTrack.IgnoreLookAt": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Dialogue_MotionTrack.IgnoreLookAtBody": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Dialogue_MotionTrack.IgnoreLookAtEye": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Dialogue_MotionTrack.IgnoreLookAtHead": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0002_50MotionTrack.EnableGuardianAttackLightLeg": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0002_50MotionTrack.SetLegWeakPoint": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0008_00MotionTrack.AttachPreyBug": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0008_00MotionTrack.DetachPreyBug": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0008_00MotionTrack.DisableEarControl": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0009_00MotionTrack.CreateEffectGraapleSpiderWebHide": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0009_00MotionTrack.CreateEffectGraapleSpiderWebShow": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0009_00MotionTrack.CreateFlashEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0009_00MotionTrack.EndDieAct": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.CatchDung": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.CatchMushroom": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.CatchTruffle": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.CreateMushroomGimmick": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.DisableCatchItemMot": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.EatMushroom": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0021_00MotionTrack.LostCatchItem": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0022_00MotionTrack.AttackOrder": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0022_00MotionTrack.CallServant": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0046_00MotionTrack.ChangeEyeModel_Ground": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0046_00MotionTrack.RequestPLJump": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0046_00MotionTrack.RequestSwimCombatSuccessDamage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0046_00MotionTrack.ResetElectricLevel": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.AdjustTerrainNormal": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.CanCancelAction": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.CeilingSpiderRushRotaitonTargetPlayer": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.DisableSpiderWebEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.EnableSpiderWebEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.MotCanselDisableSpiderWebEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.StandStateChenge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.cSuspendAttackEndGoUp": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0070_00MotionTrack.cSuspendAttackGetOff": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0071_00MotionTrack.DisableInterruptLook": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0077_00MotionTrack.ControlScaleNoAngry": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.DiposeRailgun": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.DisableRedAll": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.DpsSetRedAll": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.DripTar": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.EnableRedHeat": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.FinishLastResortLaser": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.FinishLingeringLaser": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.Hand2UpsideTimeDecay": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.HillAttach": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.HotStageChange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.LastResortAfterFinish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.LastResortBreakHill": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.LastResortTarOnBody": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.MiddleStageChange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.OpenHill": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.OpenRoute": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0078_00MotionTrack.UnlockWing": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.ChangeNoseTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.ChangeTailTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.ChangeWingsTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.ElectricEffectOFFTrck": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.ElectricEndEffectTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.SendCatchThrowingMessageTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.SetNoseOpeningPartsTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0100_51MotionTrack.SetWeakPoint": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0113_51MotionTrack.SetWeakPointPartsTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0150_50MotionTrack.EnableArmWeakPoint": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.CreateQuickSandBig": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.CreateQuickSandBigFromStory": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.CreateQuickSandHuge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.CreateQuickSandSmall": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.StopQuickSandBig": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.StoryNaviDiveMoveRequestSubAction": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0151_00MotionTrack.StoryNaviDiveMoveScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0152_00MotionTrack.ChangeArmEnchant": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0152_00MotionTrack.ChangeDroolModel": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0152_00MotionTrack.ExplosionConstBomb": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0152_00MotionTrack.IgnoreTongueMotion": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.BloomFlowerTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.CloseFlowerTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.HandgingAttackCancelTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.HandgingAttackOffDisableIKTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.HandgingAttackOnDisableIKTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.HandgingAttackParabolaTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.HangingAttackDamageTransition": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.NotRaiseHip": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.SpiderWebDetach": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0154_00MotionTrack.spdierWebCompJointChange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0155_00MotionTrack.RequestAutoMine": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0156_00MotionTrack.DisableRailgunChargeEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0156_00MotionTrack.EnchantFulgurite": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0156_00MotionTrack.ForceMaxRailgunCharge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0156_00MotionTrack.RailgunCharge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0157_00MotionTrack.VeilClad": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0157_00MotionTrack.VeilPurge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.CloseEye": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.OepnIris": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.OpenEye": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.OpenTentacleEye": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.PipeRotation": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.PipeScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.RemoveFireAll": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.WrapFireAll": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0158_00MotionTrack.WrapFireDeco": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0159_00MotionTrack.AccumulateBlazingModeChangeValue": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0159_00MotionTrack.ChangeBlazingMode": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0159_00MotionTrack.ChangeNormalModeByLastAttack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0159_00MotionTrack.DisableArrowFlip": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0159_00MotionTrack.DisableArrowFlipCommetAttack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0159_00MotionTrack.EnableArrowFlipCommetAttack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.BreakAbsorbCocoon": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.CallEnergyBulletShell": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.CallEnergyLightShell": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.ElementAbsorbDamage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.FinishMaxElementCharge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.GalianWhipMode": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.StartMaxElementCharge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0160_00MotionTrack.StopElementMaxEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0161_00MotionTrack.ChangePosture": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0161_00MotionTrack.EnableMembraneWave": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0162_00MotionTrack.BreakAreaMoveShutterFloor": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0162_00MotionTrack.DisableChoiceJointConstraints": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0162_00MotionTrack.DisableChoiceJointExprGraph": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0162_00MotionTrack.MakeAreaMoveShutterFloorCrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.AngryEffectStopTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.CatchEatingTime": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.ChangeMouthPartDrawTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.EnableCharacterController": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.EnableMouthDamageCollision": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.EnableMouthDownTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.EnableStealthDownTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0163_00MotionTrack.SwitchEnableZivaComp": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.CallEnergyBulletShell": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.CallEnergyLightShell": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.CallWingArmSweepShell": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.CallWingSlashShell": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.DisableRampageAngryEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.DisableStockDamage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.EnableCrystalBreak": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.FinishUniqueStateTwoLeg": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.ForceAllEnchantOn": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestEnableLastPhasePlentyEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestLastPhaseHiddenWingParts": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestNormalMeteorLoop": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestOutOfControlSubMot": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestPhaseChangeGimmickEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestPhaseChangeGimmickOn": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestSecondHalfBGM": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestSpAttackBreath_Story": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestSpAttackCrystalDisappear": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestSpAttackRampage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestStageEffec_BurningStart": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestStageEffect_FirstHalfCameraFinish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestStageEffect_FirstHalfFinish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestStageEffect_LatterHalfCameraStart": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.RequestStageEffect_LatterHalfStart": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.SetOffDispBreakParts": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.SetOffDispRampageParts": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.SetOnDispBreakParts": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.SetOnDispRampageParts": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.SetRampageFinish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0164_50MotionTrack.StartUniqueStateTwoLeg": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0165_00MotionTrack.DrawSmallBarrel": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.CallServant": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.CallTargetEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.CallTargetEffectMulti": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.CreateBarrier": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.DispBlockPunch": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.DispFlameThrowerNozzle": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.DispRidePunch": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.FinishTargetEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.RequestBreakSuccessDamage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.RequestSpAtkSummonStart": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.RequestSpAtkSummonStart_Animal": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.ResetSpAtkCharge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetActiveBeamUnit": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetActiveBeamUnitAddLayer": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetDieCondition": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetHatchOpen": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetLowBeam": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetSpAtkCondition": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetStopBeam": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetStopHead": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetStopRampageAll": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.SetUniqueLegDown": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.ShotBodyPress": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em0166_00MotionTrack.StartSpAtkCharge": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1153_00MotionTrack.DrawPreyMeat": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1154_00MotionTrack.StoryGlideFlipRequestSubAction": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1157_00MotionTrack.CatchSushiFish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1157_00MotionTrack.DetachSushiFish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1157_00MotionTrack.PredationSushiFish": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1160_00MotionTrack.DetachCarryCrabTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1160_00MotionTrack.PredationCrabTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1160_00MotionTrack.RequestOilCrabTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1160_00MotionTrack.SwimSettingOilFloatTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em1165_00MotionTrack.RequestCreateBarrier": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em5204_10MotionTrack.OpenScarfTrack": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em5220_00MotionTrack.ResetWing": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.Em5220_00MotionTrack.SetRandomWing": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.AxisAlignment": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.BurstScar": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.ChangeRagdollSate": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.ChangeStateFly": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.CompleteEatTrapMeat": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.CompletePreyReady": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.CreateDropRewardGimmick": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.CreateScar": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.CreateTraceGimmick": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableBendFilter": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableChain": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableFacial": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableFlyHeightAdjust": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableGravity": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableHagitori": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableIK": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableIKOctopusMantle": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableIKTentacle": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableLookAt": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.DisableNagamono": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableBendFilter": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableBlurWing": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableCliffTrans": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableConstEnd": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableConstStart": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableFriendHitCollider": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableIKTentacleOldAngle": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnableMoveBank": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnablePanicFall": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnablePredatorHoldEnd": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnablePredatorHoldStart": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnablePreyMeat": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EnemyProcess": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.EyeClose": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.FishActionFeint": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.GrappleActivateSummonTarget": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.HeightAdjust": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IgnoreEyeBlink": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IkLegSpineAdjustWall": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IkLegSpineChangeAdjustSlope": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IkLegSpineCogAdjustRate": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IkLegSpineForcePushUpBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IkLegSpineForcePushUpHead": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.IkLegSpineForcePushUpTail": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.KeepAwayFromWall": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.KeepOffset": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.LookAtSnapToEnd": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.LookAtTarget": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.LookWallRotate": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotRotOverwrite": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotRotScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotSpeedScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotSpeedScale_MotSync": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotTransScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotTransScaleTargetDynamic": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MotionTrimming": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.MultiPartsSwitch": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.NagamonoEnableBeadsMove": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PauseLookAt": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PlChanceTime": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PlConstEnd": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PlayAddMotion": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PosAddTargetDynamic": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PosAdjust": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PosAdjustBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PosAdjustDist": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PosAdjustTargetDist": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PosAdjustTargetDynamic": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PredationVanishDie": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.PredatorRagdoll": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RandomSpeed": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestFadeMesh": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestFriendCall": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestGrappleDamage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestSubAction": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestTentacleAction": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestTentacleLoopAction": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestVanishDie": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RequestWeatBlend": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RidePartsStatus": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RotAdjustTargetBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RotAdjustTargetRange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RotAdjustTargetRangeBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.RotAdjustTargetRangeDirection": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.SandDig": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsCommonCondition": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsCommonConditionRange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsUniqueCondition": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsUniqueConditionRange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.TargetPosRefresh": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.TentacleDynamicAngleBlend": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.TentacleLookAtTarget": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.VariableFPSTestRange": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EmMotionTrack.VariableFPSTestTrigger": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EnableLookAtDieTiming": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.EnemyCamera": {
+     "members": [
+      [
+       "_ImpactTrigger",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.EnemyVisual": {
+     "members": [
+      [
+       "_RandomSpeed",
+       "_IsInRange"
+      ]
+     ]
+    },
+    "app.motion_track.FreezeShockAbsorberTrack": {
+     "track": "_IsEnable"
+    },
+    "app.motion_track.HumanHeadControlMotionBasisModeTrack": {
+     "track": "_IsDirty"
+    },
+    "app.motion_track.HunterMotionTrack.MotSpeedScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.HunterMotionTrack.MotTransScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.HunterMotionTrack.MotTransScaleStartInput": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.HunterMotionTrack.MotTransScaleTargetDynamic": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.HunterMotionTrack.PosAdjustBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.HunterMotionTrack.PosAdjustDist": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.HunterVisual": {
+     "members": [
+      [
+       "_EnableArmIk",
+       "_Enable"
+      ]
+     ]
+    },
+    "app.motion_track.HunterVisualSub": {
+     "members": [
+      [
+       "_EnableArmIk",
+       "_Enable"
+      ]
+     ]
+    },
+    "app.motion_track.MotionTrackManagedBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.MotionTrackRangeBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.MotionTrackTriggerBase": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.NagamonoTracks.cEnableBeadsMove": {
+     "track": "_On"
+    },
+    "app.motion_track.NagamonoTracks.cFootSkip": {
+     "track": "_On"
+    },
+    "app.motion_track.OtMotionTrack.ActivateTentLanthanum": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.ActiveBadConditionEffect": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.ChangeStateFly": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.DragAirShipEnableLookAt": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.DragAirShipRotateToEm": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.EnableGroundAdjust": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.FreeActFishingRodControl": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.MotSpeedScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.MotTransScale": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetBottleConst": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetBottleMotion": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetDisableIk": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetDisableLookAt": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetEnableCancel": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetNoDamage": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetWantLookAtKamau": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetWpConst": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.SetWpDrawOff": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.StoneStainControl": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.OtMotionTrack.WeaponAttackEffectControl": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.PressCollisionOff": {
+     "track": "_IsInRange"
+    },
+    "app.motion_track.PressCollisionOff_Em": {
+     "track": "_On"
+    },
+    "app.motion_track.ShellCreate": {
+     "track": "_On"
+    }
+   },
+   "held_members": true
+  },
+  "OnimushaWOTS": {
+   "classes": {
+    "ace.motion_track.IkDisableTrack": {
+     "track": "_DisableIk"
+    },
+    "ace.motion_track.IkHand2SkipTrack": {
+     "members": [
+      [
+       "_RootInfo",
+       "_IsDirty"
+      ]
+     ]
+    },
+    "ace.motion_track.IkLegSpineFootSkipTrack": {
+     "track": "_IsDirty"
+    },
+    "ace.motion_track.IkLegSpineLockBaseTrack": {
+     "track": "_LockBaseNormal"
+    },
+    "ace.motion_track.PadVibrationTrackBase": {
+     "members": [
+      [
+       "_VibrationInfo",
+       ""
+      ]
+     ]
+    },
+    "ace.motion_track.PadVibrationTrack`1[[T, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+     "members": [
+      [
+       "_VibrationInfo",
+       ""
+      ],
+      [
+       "_VibrationTargetInfo",
+       ""
+      ]
+     ]
+    },
+    "app.CharacterContactNotice": {
+     "members": [
+      [
+       "ContactSetting",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AppPadVibrationTrack": {
+     "members": [
+      [
+       "_VibrationInfo",
+       ""
+      ],
+      [
+       "_VibrationTargetInfo",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AttackCollision": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AttackCollision_Body": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AttackCollision_Gimmick": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AttackCollision_Parryable": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.AttackCollision_Wp": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.CameraDepthOfField": {
+     "members": [
+      [
+       "CameraDOFSetting",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.CameraEvent": {
+     "members": [
+      [
+       "_CameraShakeSetting",
+       ""
+      ],
+      [
+       "CameraParamSetting",
+       ""
+      ],
+      [
+       "CameraWorkSetting",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.ChangeModelPartsCondition": {
+     "members": [
+      [
+       "_PartsCondition",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.CharacterColliderShapeTransform": {
+     "members": [
+      [
+       "Param",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.CharacterHitStopTrack": {
+     "members": [
+      [
+       "_HitStopOwnerTarget",
+       ""
+      ],
+      [
+       "_HitStopAll",
+       ""
+      ],
+      [
+       "_HitStopOwner",
+       ""
+      ],
+      [
+       "_HitStopTarget",
+       ""
+      ],
+      [
+       "_HitStopOwnerTargetSp",
+       ""
+      ],
+      [
+       "_HitStopAllSp",
+       ""
+      ],
+      [
+       "_HitStopPlEnemy",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.CharacterRequestStageGimmick": {
+     "members": [
+      [
+       "_JointInfo",
+       ""
+      ],
+      [
+       "_RotDeg",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.CharacterWorkRateChangeTrack": {
+     "members": [
+      [
+       "_WorkRateSettingTrigger",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.DamageCollision": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.Em102_50_SoulScaleApply": {
+     "members": [
+      [
+       "_SoulScaleApplyInfo",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.Em104ApplySoulBoostMaterialTrack": {
+     "track": ""
+    },
+    "app.motion_track.Em501ChangeTailConditionTrack": {
+     "track": ""
+    },
+    "app.motion_track.Em501ChangeUniquePostureTrack": {
+     "track": ""
+    },
+    "app.motion_track.Em501EnableTailGuardDamageTrack": {
+     "track": ""
+    },
+    "app.motion_track.Em503ChildSubUnitIdlePointTypeChange": {
+     "track": ""
+    },
+    "app.motion_track.Em510OrderExplosion2FamiliarTrack": {
+     "track": ""
+    },
+    "app.motion_track.Em513FunnelVfxTrack": {
+     "track": ""
+    },
+    "app.motion_track.EnemyActionTransitionTrack": {
+     "members": [
+      [
+       "RikidoBreakTransition",
+       ""
+      ],
+      [
+       "DieTransition",
+       ""
+      ],
+      [
+       "DieFadeOut",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.EnemyBasic": {
+     "members": [
+      [
+       "_TargetJointHash",
+       ""
+      ],
+      [
+       "_TargetRotateOffset",
+       ""
+      ],
+      [
+       "_DissolveShapeJointHash",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.EnemyCameraEvent": {
+     "members": [
+      [
+       "LookAtSetting",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.EnemyCounterStanceSlowTrack": {
+     "members": [
+      [
+       "_WorkRateSetting",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.EnemyDieFadeoutTrack": {
+     "track": ""
+    },
+    "app.motion_track.EnemyRequestStageGimmick": {
+     "members": [
+      [
+       "_JointInfo",
+       ""
+      ],
+      [
+       "_RotDeg",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.EnemyRotateTargetObject": {
+     "track": ""
+    },
+    "app.motion_track.EnemyShout": {
+     "members": [
+      [
+       "ShoutSetting",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.PressCollision": {
+     "members": [
+      [
+       "_OnClipBox",
+       ""
+      ]
+     ]
+    },
+    "app.motion_track.VFXBeginIdleEndRangeTrack": {
+     "track": "IsOn"
+    },
+    "app.motion_track.VfxDrawOffTrack": {
+     "members": [
+      [
+       "_VfxId",
+       ""
+      ]
+     ]
+    }
+   },
+   "held_members": true
+  },
+  "Pragmata": {
+   "classes": {
+    "app.CameraShakeTrack": {
+     "track": ""
+    },
+    "app.Ch05000TalkRequestTracks": {
+     "track": ""
+    },
+    "app.ConversationTracks": {
+     "track": ""
+    },
+    "app.ch14200.Ch14200ParamTracks": {
+     "track": ""
+    },
+    "app.ch14300.Ch14300ParamTracks": {
+     "track": ""
+    },
+    "app.ch14500.Ch14500ParamTracks": {
+     "members": [
+      [
+       "_DepthOfFieldManualEffectLayerTrackParam",
+       ""
+      ]
+     ]
+    },
+    "app.ch14600.Ch14600ParamTracks": {
+     "members": [
+      [
+       "_CoreParam",
+       ""
+      ],
+      [
+       "_DepthOfFieldManualEffectLayerTrackParam",
+       ""
+      ],
+      [
+       "_MaterialTrackParam",
+       ""
+      ]
+     ]
+    },
+    "app.ch17100.Ch17100ParamTracks": {
+     "track": ""
+    },
+    "app.collision.MotionColliderPressAndDamageTrack": {
+     "members": [
+      [
+       "_Damage",
+       ""
+      ],
+      [
+       "_Press",
+       ""
+      ]
+     ]
+    },
+    "app.collision.MotionColliderTrack": {
+     "track": ""
+    }
+   }
+  },
+  "RE2": {
+   "classes": {
+    "app.ropeway.survivor.tracks.SurvivorForceEquipTypeMotionTrack": {
+     "track": ""
+    }
+   }
+  },
+  "RE2RT": {
+   "classes": {
+    "app.ropeway.survivor.tracks.SurvivorForceEquipTypeMotionTrack": {
+     "track": ""
+    }
+   }
+  },
+  "RE3": {
+   "classes": {
+    "offline.survivor.tracks.SurvivorForceEquipTypeMotionTrack": {
+     "track": ""
+    }
+   }
+  },
+  "RE3RT": {
+   "classes": {
+    "offline.survivor.tracks.SurvivorForceEquipTypeMotionTrack": {
+     "track": ""
+    }
+   }
+  },
+  "RE4": {
+   "classes": {}
+  },
+  "RE7RT": {
+   "classes": {}
+  },
+  "RE8": {
+   "classes": {
+    "app.Em4070.Em4070Track": {
+     "members": [
+      [
+       "talkMessage",
+       ""
+      ]
+     ]
+    }
+   }
+  },
+  "RE9": {
+   "classes": {
+    "soundlib.SoundDisableAutoTriggerTracks": {
+     "members": [
+      [
+       "DisableAutoTrigger",
+       ""
+      ]
+     ]
+    },
+    "soundlib.SoundDoorBreakTracks": {
+     "members": [
+      [
+       "BreakParam",
+       ""
+      ]
+     ]
+    }
+   }
+  },
+  "SF6": {
+   "classes": {
+    "app.esports.ChainTagTrack": {
+     "track": ""
+    },
+    "app.esports.ChainTrack": {
+     "track": ""
+    },
+    "app.esports.PartsCtrlRequest": {
+     "track": ""
+    },
+    "app.esports.TimelineTrack": {
+     "track": "key_on"
+    },
+    "app.worldtour.FootLockTracker": {
+     "track": "key_on"
+    },
+    "app.worldtour.om.BranchStopMSTracker": {
+     "track": "key_on"
+    },
+    "app.worldtour.om.LookAtControlMSTracker": {
+     "track": "key_on"
+    }
+   }
+  }
+ }
+}

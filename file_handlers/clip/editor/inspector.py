@@ -10,7 +10,19 @@ lazy from ui.editor_widgets import styled_label
 from ui.field_form import Field, FieldPanel
 
 from .. import edits
-from ..model import Clip, Key, Node, Property, ResourceKind, SequenceTrackInfo, SpeedPoint, Timeline, Track
+from ..box_keys import baked_boxes, member_name
+from ..model import (
+    Clip,
+    Key,
+    Node,
+    Property,
+    ResourceKind,
+    SequenceTrackInfo,
+    SpeedPoint,
+    Timeline,
+    Track,
+    TrackInterval,
+)
 from ..rules import display_names, interpolation, property_type
 from ..values import value_problem
 from .state import EditorState
@@ -21,9 +33,10 @@ ENGINE_FLAGS = ("enum_closed", "restoration", "prev_diff_frame_set", "next_diff_
 
 
 class Inspector(FieldPanel):
-    def __init__(self, state: EditorState, parent: QWidget | None = None):
+    def __init__(self, state: EditorState, node_fields: Callable[[Node], list[Field]], parent: QWidget | None = None):
         super().__init__(parent)
         self.state = state
+        self._host_fields = node_fields
         self.banner = styled_label("", banner="danger")
         self.banner.setWordWrap(True)
         self.banner.hide()
@@ -45,7 +58,7 @@ class Inspector(FieldPanel):
             return self.tr("{0} keys").format(len(keys))
         names = {Timeline: self.tr("Timeline"), Track: self.tr("Track"), Clip: self.tr("Clip"), Node: self.tr("Node"),
                  Property: self.tr("Property"), Key: self.tr("Key"), SpeedPoint: self.tr("Speed Point"),
-                 SequenceTrackInfo: self.tr("Sequence Track")}
+                 SequenceTrackInfo: self.tr("Sequence Track"), TrackInterval: self.tr("Box Keys")}
         return names.get(type(item), "")
 
     def _update_banner(self, item) -> None:
@@ -87,7 +100,38 @@ class Inspector(FieldPanel):
             return self._key_fields(item)
         if isinstance(item, SequenceTrackInfo):
             return self._sequence_fields(item)
+        if isinstance(item, TrackInterval):
+            return self._box_fields(item)
         return self._timeline_fields(item)
+
+    def _box_fields(self, entry: TrackInterval) -> list[Field]:
+        document = self.state.document
+        low, high = document.rules.extra["value"].limits["span"]
+
+        def setter(at: int, side: int) -> Callable[[object], None]:
+            def apply(value) -> None:
+                if side and not low <= value <= high:
+                    raise ValueError(value)
+                edits.set_fields(document, entry, self.tr("Edit Box"), follows=False, ranges=[
+                    pair if index != at else (value, pair[1]) if side == 0 else (pair[0], value)
+                    for index, pair in enumerate(entry.ranges)])
+
+            return apply
+
+        fields = [Field(self.tr("Track"), "readonly", lambda: entry.track.name)]
+        if entry.property_hash is not None:
+            fields.append(Field(self.tr("Member"), "readonly", lambda: member_name(document.box_rules, entry)))
+        if (id(entry.track), entry.property_hash) in baked_boxes(document.timeline, document.box_rules):
+            fields.append(Field(self.tr("Follow Keys"), "bool", lambda: entry.follows, lambda value: edits.follow_boxes(
+                document, entry, value), tooltip=self.tr(
+                    "Recompute the boxes from the keys after each edit, as the authoring tool does: one per key of "
+                    "the range flag that is on, or per key of the first keyed member where there is no flag.")))
+        tip = self.tr("A box key's first frame and its length in frames, which game code reads beside the keys; "
+                      "editing one stops the boxes following the keys.")
+        return [*fields, *(Field(self.tr("Box {0}").format(at + 1), "row", lambda: None, tooltip=tip, options={
+            "fields": [Field("", "float", lambda at=at: entry.ranges[at][0], setter(at, 0)),
+                       Field("", "int", lambda at=at: entry.ranges[at][1], setter(at, 1))]})
+            for at in range(len(entry.ranges)))]
 
     def _sequence_fields(self, info: SequenceTrackInfo) -> list[Field]:
         document = self.state.document
@@ -154,7 +198,7 @@ class Inspector(FieldPanel):
     def _node_fields(self, node: Node) -> list[Field]:
         setter = self._set(node, self.tr("Edit Node"))
         fields = [Field(self.tr("Name"), "text", lambda: node.name,
-                        lambda value: edits.rename(self.state.document, node, value))]
+                        lambda value: edits.rename(self.state.document, node, value)), *self._host_fields(node)]
         if self._stored("node", "guid"):
             fields += [
                 Field(self.tr("Type"), "enum", lambda: node.node_type, setter("node_type"),

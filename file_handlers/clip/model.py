@@ -107,6 +107,7 @@ class TrackInterval:
     track: Node
     ranges: list[tuple[float | None, int]] = field(default_factory=list)
     property_hash: int | None = None
+    follows: bool = False
 
 
 @dataclass(eq=False, slots=True)

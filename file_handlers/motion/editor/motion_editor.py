@@ -160,7 +160,8 @@ class MotionEditor(QWidget):
                 if self._clip_editor is not None:
                     self.lower.removeWidget(self._clip_editor)
                     self._clip_editor.deleteLater()
-                self._clip_editor = ClipEditor(clip, self.lower)
+                self._clip_editor = ClipEditor(clip, self.lower,
+                                               functools.partial(self.inspector.track_fields, current))
                 self.lower.addWidget(self._clip_editor)
             self.lower.setCurrentWidget(self._clip_editor)
         elif (tree := self.state.tree_of(current) or (

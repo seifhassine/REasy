@@ -7,8 +7,9 @@ lazy from ui.icons import line_icon
 from file_handlers.document_commands import Change
 from ui.outline_model import OutlineModel as TreeOutline
 
+from ..box_keys import member_name
 from ..document import ClipDocument
-from ..model import Clip, Node, Property, ResourceKind, SequenceTrackInfo, Track
+from ..model import Clip, Node, Property, ResourceKind, SequenceTrackInfo, Track, TrackInterval
 from ..rules import NodeType, display_names, property_type
 from .lanes import tone
 
@@ -24,6 +25,8 @@ def children_of(item) -> list:
         return [*item.children, *item.properties]
     if isinstance(item, (Property, SequenceTrackInfo)):
         return item.children
+    if isinstance(item, TrackInterval):
+        return []
     return item.roots if item.kind is ResourceKind.MOT_CLIP else [*item.tracks, *item.sequences]
 
 
@@ -34,16 +37,22 @@ class OutlineModel(TreeOutline):
         document.changed.connect(self._on_changed)
 
     def children_of(self, item) -> list:
-        return children_of(item)
+        held = children_of(item)
+        if isinstance(item, Node) and self.document.timeline.intervals:
+            held = [*held, *(entry for table in self.document.timeline.intervals for entry in table
+                             if entry.track is item)]
+        return held
 
     def owner_of(self, item) -> object | None:
+        if isinstance(item, TrackInterval):
+            return item.track
         found = self.document.parent(item)
         return None if found is None else found[0]
 
     def display(self, item, row: int, column: int, role: int):
         if role == Qt.DisplayRole:
             return self._name(row, item) if column == 0 else self._kind(item)
-        if role == Qt.EditRole and column == 0:
+        if role == Qt.EditRole and column == 0 and not isinstance(item, TrackInterval):
             return item.name
         if role == Qt.DecorationRole and column == 0:
             return line_icon(self._icon(item))
@@ -57,6 +66,8 @@ class OutlineModel(TreeOutline):
     def rename(self, item, name: str | None) -> bool:
         from ..edits import rename
 
+        if isinstance(item, TrackInterval):
+            return False
         if name is not None and name != item.name:
             rename(self.document, item, name)
         return True
@@ -64,6 +75,9 @@ class OutlineModel(TreeOutline):
     def _name(self, row: int, item) -> str:
         if isinstance(item, Clip) and not item.name:
             return self.tr("Clip {0}").format(row + 1)
+        if isinstance(item, TrackInterval):
+            return self.tr("Box keys") if item.property_hash is None else self.tr("Box keys: {0}").format(
+                member_name(self.document.box_rules, item))
         return item.name
 
     def _kind(self, item) -> str:
@@ -77,10 +91,14 @@ class OutlineModel(TreeOutline):
             return display_names("NodeType", self.document.timeline.version).get(item.node_type, str(item.node_type))
         if isinstance(item, SequenceTrackInfo):
             return self.tr("{0} ranges").format(len(item.ranges)) if item.ranges else self.tr("Sequence track")
+        if isinstance(item, TrackInterval):
+            return self.tr("{0} boxes").format(len(item.ranges)) if len(item.ranges) != 1 else self.tr("1 box")
         return display_names("PropertyType", self.document.timeline.version).get(item.type, f"0x{item.type:X}")
 
     @staticmethod
     def _icon(item) -> str:
+        if isinstance(item, TrackInterval):
+            return "clock"
         if isinstance(item, SequenceTrackInfo):
             return "clock" if item.ranges else "list"
         if isinstance(item, Track):

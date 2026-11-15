@@ -354,7 +354,7 @@ class _MotClipDecoder(_Decoder):
             end = max(end, self.base + head[f"records{suffix}"] + len(records) * extra["record"].size)
             table = []
             for record in records:
-                if not 0 <= record["track"] < len(root.children) or record["count"] < 0:
+                if record["track"] >= len(root.children):
                     raise ClipFormatError("A MOT clip interval list names a track the clip does not have")
                 track = root.children[record["track"]]
                 if not suffix and record["name_hash"] != node_hashes(track)[1]:

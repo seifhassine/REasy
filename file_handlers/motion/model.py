@@ -56,7 +56,7 @@ class PropertyTrack:
 
 @dataclass(eq=False, slots=True)
 class SequenceTrack:
-    id: int = 0xFFFFFFFF
+    id: int = -1
     filters: tuple[int, int, int] = (0, 0, 0)
     invalid: tuple[int, int, int] = (0, 0, 0)
 

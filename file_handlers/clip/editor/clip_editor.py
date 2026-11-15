@@ -28,8 +28,20 @@ lazy from ui.editor_widgets import editor_strip, icon_action, styled_label, tool
 lazy from ui.icons import line_icon
 
 from .. import edits
+from ..box_keys import member_name, missing_entries
 from ..document import ClipDocument
-from ..model import Clip, Key, Node, Property, ResourceKind, SequenceTrackInfo, SpeedPoint, Timeline, Track
+from ..model import (
+    Clip,
+    Key,
+    Node,
+    Property,
+    ResourceKind,
+    SequenceTrackInfo,
+    SpeedPoint,
+    Timeline,
+    Track,
+    TrackInterval,
+)
 from ..rules import display_names, property_type
 from .curves import ClipCurves
 from .inspector import Inspector
@@ -48,12 +60,12 @@ class ClipEditor(QWidget):
     current_frame_changed = Signal(float)
     modified_changed = Signal(bool)
 
-    def __init__(self, document: ClipDocument, parent: QWidget | None = None):
+    def __init__(self, document: ClipDocument, parent: QWidget | None = None, node_fields=lambda _node: []):
         super().__init__(parent)
         self.document = document
         self.state = EditorState(document, self)
         self._clipboard: list[Key] = []
-        self._build()
+        self._build(node_fields)
         self._shortcuts()
         self.state.selection_changed.connect(self._selection_changed)
         self.state.frame_changed.connect(self.current_frame_changed)
@@ -74,7 +86,7 @@ class ClipEditor(QWidget):
     def select(self, items: list) -> None:
         self.state.select(items)
 
-    def _build(self) -> None:
+    def _build(self, node_fields) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -157,7 +169,7 @@ class ClipEditor(QWidget):
         right_layout.setSpacing(0)
         right_layout.addWidget(self.views, 1)
         right_layout.addWidget(self.time_bar)
-        self.inspector = Inspector(self.state)
+        self.inspector = Inspector(self.state, node_fields)
         self.splitter = QSplitter(Qt.Horizontal)
         self.splitter.addWidget(self.tree)
         self.splitter.addWidget(right)
@@ -217,7 +229,7 @@ class ClipEditor(QWidget):
     def _selection_changed(self) -> None:
         model, selection = self.tree.model(), QItemSelection()
         for item in self.state.selection:
-            if isinstance(item, (Track, Clip, Node, Property, SequenceTrackInfo)):
+            if isinstance(item, (Track, Clip, Node, Property, SequenceTrackInfo, TrackInterval)):
                 index = model.index_of(item)
                 if index.isValid():
                     selection.select(index, index.siblingAtColumn(1))
@@ -226,7 +238,7 @@ class ClipEditor(QWidget):
         current = self.state.current
         if isinstance(current, (Key, SpeedPoint)):
             current = self.document.owner(current, Property)
-        if isinstance(current, (Track, Clip, Node, Property, SequenceTrackInfo)):
+        if isinstance(current, (Track, Clip, Node, Property, SequenceTrackInfo, TrackInterval)):
             index = model.index_of(current)
             if index.isValid():
                 self.tree.scrollTo(index)
@@ -260,7 +272,7 @@ class ClipEditor(QWidget):
                                    self.tr("1 problem"))
         self.issues_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         has_rows = isinstance(current, (Track, Clip, Node, Property, Key, SpeedPoint))
-        self.delete_button.setEnabled(has_rows)
+        self.delete_button.setEnabled(has_rows or isinstance(current, TrackInterval))
         self.duplicate_button.setEnabled(has_rows)
         self.add_key_button.setEnabled(bool(self._keyed_targets()))
         self.add_clip_button.setEnabled(isinstance(self._owner(Track), Track))
@@ -382,7 +394,7 @@ class ClipEditor(QWidget):
         if selection:
             owners = [self.document.owner(item, Property) for item in self.state.keys()]
             edits.remove(self.document, selection)
-            self.state.select(owners)
+            self.state.select([*owners, *(item.track for item in selection if isinstance(item, TrackInterval))])
 
     def _duplicate(self) -> None:
         copies = edits.duplicate(self.document, list(self.state.selection))
@@ -465,9 +477,18 @@ class ClipEditor(QWidget):
                     lambda: self.state.select([edits.add_speed_point(
                         self.document, prop,
                         (self.state.frame if frame is None else frame) - self.document.time_offset(prop))]))
+        current = self.state.current
+        if isinstance(current, Node) and (missing := missing_entries(
+                self.document.timeline, self.document.box_rules, current)):
+            boxes = menu.addMenu(self.tr("Add Box Keys"))
+            for entry in missing:
+                boxes.addAction(self.tr("Track") if entry.property_hash is None else member_name(
+                    self.document.box_rules, entry)).triggered.connect(
+                        lambda _checked=False, entry=entry: self.state.select([edits.add_boxes(self.document, entry)]))
         if self.state.selection:
             menu.addSeparator()
-            icon_action(menu, "copy", self.tr("Duplicate")).triggered.connect(self._duplicate)
+            if not isinstance(current, TrackInterval):
+                icon_action(menu, "copy", self.tr("Duplicate")).triggered.connect(self._duplicate)
             icon_action(menu, "delete", self.tr("Delete"), danger=True).triggered.connect(self._delete)
         if not menu.isEmpty():
             menu.exec(position)

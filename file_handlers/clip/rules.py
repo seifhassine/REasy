@@ -9,6 +9,7 @@ from enum import IntEnum
 
 lazy from file_handlers.layout_codec import RecordCodec, game_enums, load_table, merged
 lazy from utils.enum_manager import enum_game
+lazy from utils.game_keys import game_key
 
 from .errors import ClipFormatError
 from .model import ResourceKind
@@ -221,6 +222,15 @@ def display_names(enum: str, version: int | None = None) -> dict[int, str]:
 def dialogue_tracks(version: int, kind: str) -> frozenset[str]:
     games = _load("dialogue_tracks")["games"]
     return frozenset(path for game in _versions()[version]["games"] for path in games.get(game, {}).get(kind, ()))
+
+
+@functools.cache
+def box_key_rules(version: int, game: str) -> tuple[bool, dict[str, dict]]:
+    data, games = _load("box_keys")["games"], _versions()[version]["games"]
+    games = [named for named in games if game_key(named) == game_key(game)] or games
+    found = [data[key] for named in reversed(games) if (key := enum_game(named)) in data]
+    return any(entry.get("held_members", False) for entry in found), {
+        name: owner for entry in found for name, owner in entry["classes"].items()}
 
 
 @functools.cache
