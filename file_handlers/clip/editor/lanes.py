@@ -38,6 +38,7 @@ class Hit:
     item: object
     part: str
     row_item: object
+    box: int = -1
 
 
 def key_family(code: int) -> str:
@@ -236,6 +237,15 @@ class LaneView(QWidget):
                 for point in item.speed_points:
                     if abs(self.x_of(point.frame + offset) - pos.x()) <= 4 and pos.y() > middle:
                         return Hit(point, "key", item)
+            if isinstance(item, TrackInterval):
+                for at, (begin, span) in enumerate(item.ranges):
+                    if begin is None:
+                        continue
+                    left, right = self.x_of(begin) - 2, max(self.x_of(begin + span - 1), self.x_of(begin)) + 2
+                    if left - EDGE <= pos.x() <= right + EDGE:
+                        wide = right - left >= 4 * EDGE
+                        return Hit(item, "start" if wide and pos.x() <= left + EDGE else "end" if wide and
+                                   pos.x() >= right - EDGE else "body", item, at)
             for block, start, end in self._blocks(item):
                 left, right = self.x_of(start), self.x_of(end)
                 if abs(pos.x() - left) <= EDGE:
@@ -280,6 +290,10 @@ class LaneView(QWidget):
             return
         if hit.item not in state.selection or mode != "replace":
             state.select([hit.item], mode)
+        if hit.box >= 0:
+            self._drag = {"mode": "box", "hit": hit, "ranges": list(hit.item.ranges), "applied": 0,
+                          "origin": self.frame_of(pos.x()), "merge": ("lanes", next(_drag_ids))}
+            return
         if hit.part == "key":
             targets = state.keys() if hit.item in state.selection else []
             drag = "move"
@@ -302,6 +316,17 @@ class LaneView(QWidget):
         if drag["mode"] == "band":
             self._band = QRectF(drag["origin"], pos).normalized()
             self.update()
+            return
+        if drag["mode"] == "box":
+            hit, ranges, delta = drag["hit"], list(drag["ranges"]), round(self.frame_of(pos.x()) - drag["origin"])
+            if delta != drag["applied"]:
+                begin, span = ranges[hit.box]
+                start = min(delta, span - 1)
+                ranges[hit.box] = (begin + delta, span) if hit.part == "body" else \
+                    (begin + start, span - start) if hit.part == "start" else (begin, max(span + delta, 1))
+                edits.set_boxes(self.state.document, hit.item, ranges, self.tr("Move Box") if hit.part == "body"
+                                else self.tr("Resize Box"), drag["merge"])
+                drag["applied"] = delta
             return
         total = self.state.snapped(self.frame_of(pos.x()) - drag["origin"]) if self.state.snap else \
             self.frame_of(pos.x()) - drag["origin"]

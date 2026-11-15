@@ -203,8 +203,9 @@ def add_boxes(document: ClipDocument, entry: TrackInterval) -> TrackInterval:
     return entry
 
 
-def set_boxes(document: ClipDocument, entry: TrackInterval, ranges: list[tuple[float, int]], text: str) -> None:
-    set_fields(document, entry, text, follows=False, ranges=sorted(ranges, key=lambda pair: pair[0]))
+def set_boxes(document: ClipDocument, entry: TrackInterval, ranges: list[tuple[float, int]], text: str,
+              merge_key=None) -> None:
+    set_fields(document, entry, text, merge_key, follows=False, ranges=sorted(ranges, key=lambda pair: pair[0]))
 
 
 def follow_boxes(document: ClipDocument, entry: TrackInterval, follows: bool) -> None:
