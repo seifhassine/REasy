@@ -105,8 +105,9 @@ class CurveView(QWidget):
             span = max(high - low, 1e-6)
             self._x = (low - span * 0.02, high + span * 0.02)
         values = np.concatenate([np.ravel(curve.values) for curve in self._shown] or [np.zeros(0)])
-        values = np.clip(values[np.isfinite(values)], -1e300, 1e300)
-        bottom, top = (float(values.min()), float(values.max())) if len(values) else (-1.0, 1.0)
+        values = values[np.isfinite(values)]
+        bottom, top = (max(float(values.min()), -1e300), min(float(values.max()), 1e300)) if len(values) else \
+            (-1.0, 1.0)
         pad = (top - bottom) * 0.1 or max(abs(top) * 0.1, 1.0)
         self._values = (bottom - pad, top + pad)
         self._redraw()
