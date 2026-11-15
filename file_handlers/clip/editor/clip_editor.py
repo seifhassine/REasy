@@ -501,16 +501,15 @@ class ClipEditor(QWidget):
                     self.document.box_rules, entry)).triggered.connect(
                         lambda _checked=False, entry=entry: self.state.select([edits.add_boxes(self.document, entry)]))
         pastes = bool(_copied[1]) and (_copied[0] == self._format() or _copied[0] == "keys" and len(targets) == 1)
-        copies = self.state.selection and not isinstance(current, TrackInterval)
         if self.state.selection or pastes:
             menu.addSeparator()
-        if copies:
+        if any(isinstance(item, (Track, Clip, Node, Property, Key)) for item in self.state.selection):
             icon_action(menu, "copy", self.tr("Copy")).triggered.connect(self._copy)
         if pastes:
             icon_action(menu, "paste", self.tr("Paste")).triggered.connect(self._paste)
-        if copies:
-            icon_action(menu, "copy", self.tr("Duplicate")).triggered.connect(self._duplicate)
         if self.state.selection:
+            if not isinstance(current, TrackInterval):
+                icon_action(menu, "copy", self.tr("Duplicate")).triggered.connect(self._duplicate)
             icon_action(menu, "delete", self.tr("Delete"), danger=True).triggered.connect(self._delete)
         if not menu.isEmpty():
             menu.exec(position)

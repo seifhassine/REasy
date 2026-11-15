@@ -268,25 +268,35 @@ def duplicate(document: ClipDocument, items: list) -> list:
 
 def paste(document: ClipDocument, items: list, target: object) -> list:
     timeline, placed, pasted = document.timeline, Counter(), []
-    if isinstance(target, (Key, SpeedPoint)):
-        target = document.owner(target, Property)
+    if isinstance(target, TrackInterval):
+        target = target.track
     elif isinstance(target, Timeline) and timeline.kind is ResourceKind.MOT_CLIP and timeline.roots:
         target = timeline.roots[0]
-    found = document.parent(target)
     with _structure(document, "Paste"):
         for item in items:
-            if type(item) is type(target) and found is not None and found[1] != "root_order":
-                owner, field, index = *found, getattr(*found).index(target) + 1 + placed[id(target)]
-                placed[id(target)] += 1
-            elif isinstance(item, Property) and isinstance(target, Node):
-                owner, field, index = target, "properties", None
-            elif isinstance(item, Node) and (isinstance(target, (Node, Clip)) or isinstance(
-                    target, Track) and not document.rules.clip_roots):
-                owner, field, index = target, "children" if isinstance(target, Node) else "nodes", None
-            elif isinstance(item, Clip) and isinstance(target, Track) and "clip" in document.rules.records:
-                owner, field, index = target, "clips", None
-            elif isinstance(item, Track) and timeline.kind is not ResourceKind.MOT_CLIP:
-                owner, field, index = timeline, "tracks", None
+            at = target
+            while at is not None:
+                found = document.parent(at)
+                if type(item) is type(at) and found is not None and found[1] != "root_order":
+                    owner, field, index = *found, getattr(*found).index(at) + 1 + placed[id(at)]
+                    placed[id(at)] += 1
+                    break
+                if isinstance(item, Node) and isinstance(at, Track) and document.rules.clip_roots and at.clips:
+                    at = at.clips[0]
+                if isinstance(item, Property) and isinstance(at, Node):
+                    owner, field, index = at, "properties", None
+                    break
+                if isinstance(item, Node) and (isinstance(at, (Node, Clip)) or isinstance(
+                        at, Track) and not document.rules.clip_roots):
+                    owner, field, index = at, "children" if isinstance(at, Node) else "nodes", None
+                    break
+                if isinstance(item, Clip) and isinstance(at, Track) and "clip" in document.rules.records:
+                    owner, field, index = at, "clips", None
+                    break
+                if isinstance(item, Track) and isinstance(at, Timeline) and timeline.kind is not ResourceKind.MOT_CLIP:
+                    owner, field, index = at, "tracks", None
+                    break
+                at = None if found is None else found[0]
             else:
                 continue
             twin = copy.deepcopy(item)
