@@ -6,6 +6,8 @@ import copy
 
 lazy import numpy as np
 
+lazy from file_handlers.clip.edits import new_motclip
+
 from file_handlers.document_commands import ReplaceContents, SetFields
 
 from .document import ENTRIES, MotionDocument
@@ -24,12 +26,27 @@ from .model import (
     TreeNode,
     TreeParam,
 )
-from .rules import encoding, mot_profile, tree_classes, tree_rules
+from .rules import display_names, encoding, mot_profile, tree_classes, tree_rules
 from .tree_runtime import motion_choices
 
 
 def set_fields(document: MotionDocument, target: object, text: str, **values) -> None:
     document.push(SetFields(document, [(target, values)], text))
+
+
+def free_category(motion: Motion) -> int | None:
+    rules, held = mot_profile(motion.version).rules, {sequence.category for sequence in motion.sequences}
+    if "sequences" not in (rules.order if motion.joint_poses is None and motion.gpu is None else rules.payload_order):
+        return None
+    return next((category for category in display_names("SequenceCategory") if category not in held), None)
+
+
+def add_sequence(document: MotionDocument, motion: Motion) -> Sequence:
+    sequence = Sequence(free_category(motion), new_motclip(mot_profile(motion.version).clip, motion.end_frame))
+    at = sum(held.category < sequence.category for held in motion.sequences)
+    document.push(ReplaceContents(document, motion, "sequences", [*motion.sequences[:at], sequence,
+                                                                 *motion.sequences[at:]], "Add Sequence"))
+    return sequence
 
 
 def add_node(document: MotionDocument, tree: MotionTree, class_name: str) -> TreeNode:

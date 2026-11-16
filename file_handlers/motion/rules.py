@@ -49,6 +49,7 @@ class MotProfile:
     version: int
     keys: str
     games: tuple[str, ...]
+    clip: int
     rules: MotRules
 
 
@@ -82,7 +83,7 @@ def mot_profile(version: int) -> MotProfile:
     if entry is None:
         raise MotionFormatError(f"MOT version {version} is not supported "
                                 f"(supported: {', '.join(map(str, sorted(mot_versions())))})")
-    return MotProfile(version, entry["keys"], tuple(entry["games"]), mot_rules(entry["layout"]))
+    return MotProfile(version, entry["keys"], tuple(entry["games"]), entry["clip"], mot_rules(entry["layout"]))
 
 
 @dataclass(frozen=True, slots=True)

@@ -6,6 +6,7 @@ from functools import partial
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget
 
+lazy from file_handlers.clip import edits as clip_edits
 lazy from utils.hash_util import murmur3_hash_utf16le
 
 from file_handlers.document_commands import SetFields
@@ -179,8 +180,14 @@ class Inspector(FieldPanel):
     def _sequence_fields(self, sequence: Sequence) -> list[Field]:
         return [Field(self.tr("Category"), "enum", lambda: sequence.category,
                       self._set(sequence, self.tr("Edit Sequence"))("category"), display_names("SequenceCategory")),
-                Field(self.tr("Clip"), "readonly", lambda: self.tr("{0} tracks, {1:g} frames; edited below").format(
-                    sum(len(root.children) for root in sequence.clip.roots), sequence.clip.total_frame))]
+                Field(self.tr("Total frame"), "float", lambda: sequence.clip.total_frame,
+                      lambda value: clip_edits.set_fields(self.state.document.clip_document(sequence), sequence.clip,
+                                                          self.tr("Total Frame"), total_frame=value),
+                      tooltip=self.tr("Where the timeline below ends. In DMC5, RE2 and RE3 the Root's End moves with "
+                                      "it while the two are equal. The game plays a sequence over its motion's "
+                                      "frames.")),
+                Field(self.tr("Clip"), "readonly", lambda: self.tr("{0} tracks; edited below").format(
+                    sum(len(root.children) for root in sequence.clip.roots)))]
 
     def track_fields(self, sequence: Sequence, node) -> list[Field]:
         document = self.state.document

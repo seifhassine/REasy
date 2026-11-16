@@ -39,6 +39,7 @@ from .rules import (
     display_names,
     interpolation,
     property_type,
+    rules_for,
 )
 from .sequences import derived_ranges, kept_boxes
 from .values import coerce, default_value, value_problem
@@ -61,6 +62,18 @@ def set_fields(document: ClipDocument, target: object, text: str, merge_key=None
     edits = [(target, values)]
     if "frame" in values and isinstance(target, (Key, SpeedPoint)):
         edits += _in_frame_order(document, [target], {id(target): values["frame"]})
+    _push_fields(document, edits, text, merge_key)
+
+
+def _push_fields(document: ClipDocument, edits: list[tuple[object, dict]], text: str, merge_key=None) -> None:
+    timeline = document.timeline
+    if timeline.kind is ResourceKind.MOT_CLIP and stores(document, "node", "end_frame") and \
+            (root := timeline.roots[0]).end_frame == timeline.total_frame:
+        found = {id(target): values for target, values in edits}
+        if "total_frame" in found.get(id(timeline), ()):
+            edits.append((root, {"end_frame": found[id(timeline)]["total_frame"]}))
+        elif "end_frame" in found.get(id(root), ()):
+            edits.append((timeline, {"total_frame": found[id(root)]["end_frame"]}))
     document.push(SetFields(document, edits, text, merge_key))
 
 
@@ -90,6 +103,16 @@ def _span(item: Clip | Node | Property) -> tuple[float, float]:
     if isinstance(item, Clip):
         return item.source_in, item.source_out
     return item.begin_frame, item.end_frame
+
+
+def new_motclip(version: int, total_frame: float) -> Timeline:
+    rules = rules_for(version, ResourceKind.MOT_CLIP)
+    framed = "end_frame" in rules.records["node"].names
+    guid = new_guid() if framed else bytes(16)
+    root = Node("Root", end_frame=total_frame if framed else 0.0, guid=guid, node_id=guid)
+    return Timeline(version, ResourceKind.MOT_CLIP, total_frame,
+                    new_guid() if "header_guid" in rules.header.names else bytes(16), root_order=[root],
+                    intervals=[[] for suffix in ("", "2") if f"records{suffix}" in rules.extra["header"].names])
 
 
 def add_track(document: ClipDocument, index: int | None = None) -> Track | Node:
@@ -160,7 +183,8 @@ def make_property(document: ClipDocument, name: str, kind: int, begin: float, en
 
 def add_property(document: ClipDocument, owner: Node | Property, name: str, kind: int,
                  array_index: int = -1) -> Property:
-    begin, end = _span(owner)
+    begin, end = _span(owner) if isinstance(owner, Property) or stores(document, "node", "end_frame") else (
+        0.0, max(document.timeline.total_frame, 0.0))
     prop = make_property(document, name, kind, begin, end, array_index)
     with _structure(document, "Add Property"):
         _insert(document, owner, "properties" if isinstance(owner, Node) else "children", None, prop, "Add Property")
@@ -368,7 +392,7 @@ def shift(document: ClipDocument, items: list, delta: float, merge_key=None) -> 
     for owner, values in _in_frame_order(document, moved, frames_after):
         edits.setdefault(id(owner), (owner, {}))[1].update(values)
     if edits:
-        document.push(SetFields(document, list(edits.values()), "Move in Time", merge_key))
+        _push_fields(document, list(edits.values()), "Move in Time", merge_key)
 
 
 def trim(document: ClipDocument, item: Clip | Node | Property, end: bool, delta: float, merge_key=None) -> None:

@@ -90,7 +90,10 @@ class MotionEditor(QWidget):
                            (self.tr("As a new .blend with the previewed meshes…"), "meshes")):
             export.menu().addAction(text).setData(mode)
         export.menu().triggered.connect(self._export_blend)
-        for widget in (undo, redo, toolbar_separator(),
+        self.add_sequence = tool_button("add", self.tr("Add a sequence to the selected motion"), lambda: (
+            self.state.select([edits.add_sequence(document, document.motion_of(self.state.current))])),
+            text=self.tr("Sequence"))
+        for widget in (undo, redo, toolbar_separator(), self.add_sequence,
                        tool_button("copy", self.tr("Duplicate (Ctrl+D)"), self._duplicate),
                        tool_button("delete", self.tr("Delete (Del)"), self._delete), toolbar_separator(), export,
                        tool_button("import", self.tr("Replace the motion's keys with an action from a .blend"),
@@ -176,6 +179,8 @@ class MotionEditor(QWidget):
             self.lower.setCurrentWidget(self.trees)
         else:
             self.lower.setCurrentWidget(self.curves)
+        motion = self.document.motion_of(current)
+        self.add_sequence.setEnabled(motion is not None and edits.free_category(motion) is not None)
         self._sync_tree()
 
     def _graph_picked(self, items: list) -> None:

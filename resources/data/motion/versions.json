@@ -18,17 +18,17 @@
   "JointAttr": "via.motion.JointInfoRef.AttrFlags"
  },
  "mot": {
-  "65": {"layout": "mot65", "keys": "mot65", "games": ["DMC5", "RE2"]},
-  "78": {"layout": "mot78", "keys": "mot78", "games": ["RE3", "RE Resistance"]},
-  "458": {"layout": "mot458", "keys": "mot458", "games": ["RE8"]},
-  "492": {"layout": "mot458", "keys": "mot458", "games": ["RE2 RT", "RE3 RT", "RE7 RT"]},
-  "495": {"layout": "mot458", "keys": "mot458", "games": ["MH Rise"]},
-  "603": {"layout": "mot603", "keys": "mot458", "games": ["SF6"]},
-  "613": {"layout": "mot603", "keys": "mot458", "games": ["RE4"]},
-  "932": {"layout": "mot603", "keys": "mot932", "games": ["MH Wilds"]},
-  "973": {"layout": "mot603", "keys": "mot932", "games": ["Onimusha WotS"]},
-  "983": {"layout": "mot603", "keys": "mot932", "games": ["RE9"]},
-  "993": {"layout": "mot603", "keys": "mot932", "games": ["DD2", "PRAGMATA"]}
+  "65": {"layout": "mot65", "keys": "mot65", "clip": 27, "games": ["DMC5", "RE2"]},
+  "78": {"layout": "mot78", "keys": "mot78", "clip": 34, "games": ["RE3", "RE Resistance"]},
+  "458": {"layout": "mot458", "keys": "mot458", "clip": 40, "games": ["RE8"]},
+  "492": {"layout": "mot458", "keys": "mot458", "clip": 43, "games": ["RE2 RT", "RE3 RT", "RE7 RT"]},
+  "495": {"layout": "mot458", "keys": "mot458", "clip": 43, "games": ["MH Rise"]},
+  "603": {"layout": "mot603", "keys": "mot458", "clip": 53, "games": ["SF6"]},
+  "613": {"layout": "mot603", "keys": "mot458", "clip": 54, "games": ["RE4"]},
+  "932": {"layout": "mot603", "keys": "mot932", "clip": 85, "games": ["MH Wilds"]},
+  "973": {"layout": "mot603", "keys": "mot932", "clip": 89, "games": ["Onimusha WotS"]},
+  "983": {"layout": "mot603", "keys": "mot932", "clip": 90, "games": ["RE9"]},
+  "993": {"layout": "mot603", "keys": "mot932", "clip": 91, "games": ["DD2", "PRAGMATA"]}
  },
  "tree": {"4": "tree4", "5": "tree4", "10": "tree4", "13": "tree13", "14": "tree13", "19": "tree19", "21": "tree19",
           "22": "tree19", "28": "tree19"},
