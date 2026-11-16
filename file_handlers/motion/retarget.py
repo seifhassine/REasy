@@ -56,10 +56,11 @@ def _quarter_turns() -> np.ndarray:
     return np.array([turn for turn in turns if np.linalg.det(turn) > 0])
 
 
-def _convention(local: np.ndarray, aim: np.ndarray, rest: np.ndarray, ancestor: np.ndarray | None) -> np.ndarray:
+def _convention(local: np.ndarray, aim: np.ndarray, rest: np.ndarray, ancestor: np.ndarray | None,
+                inherited: np.ndarray) -> np.ndarray:
     turns = _quarter_turns()
     if not len(local):
-        return ancestor if ancestor is not None else max(turns, key=lambda turn: float(np.sum(turn * rest)))
+        return max(turns, key=lambda turn: float(np.sum(turn * (rest if ancestor is None else inherited))))
     scores = np.einsum("kj,tjl,kl->t", aim, turns, local)
     tied = turns[scores >= scores.max() - TIE]
     if np.linalg.norm(mean := local.sum(0)) > SNAP:
@@ -138,7 +139,8 @@ class Retarget:
         aligned, turns = np.empty((len(rig.names), 3, 3)), np.tile(np.eye(3), (len(rig.names), 1, 1))
         for row in (row for level in rig.levels for row in level.tolist()):
             parent, bone = rig.parents[row], driver[row]
-            carried = (aligned[parent] if parent >= 0 else np.eye(3)) @ local_turns[row]
+            above = aligned[parent] if parent >= 0 else np.eye(3)
+            carried = above @ local_turns[row]
             if bone < 0:
                 aligned[row] = carried
                 continue
@@ -148,8 +150,9 @@ class Retarget:
             local, world = (offsets[:, side] / np.linalg.norm(offsets[:, side], axis=1, keepdims=True)
                             for side in (0, 1))
             if engine[bone]:
+                source = rest[parents[bone], :3, :3] if parents[bone] >= 0 else np.eye(3)
                 turns[row] = _convention(local, world @ frame, frame.T @ carried,
-                                         turns[anchors[row]] if anchors[row] >= 0 else None)
+                                         turns[anchors[row]] if anchors[row] >= 0 else None, source.T @ above)
                 aligned[row] = frame @ turns[row]
             else:
                 aligned[row] = _fit(carried, local, world)
