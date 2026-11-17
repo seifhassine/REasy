@@ -67,7 +67,7 @@ def new_texture(app, parent=None, *, image: str = "") -> None:
         written = QCoreApplication.translate("NewTextureDialog", "Wrote {files}.").format(
             files=", ".join(Path(path).name for path in paths))
         app.status_bar.showMessage(" ".join([written, *notes]), 10000)
-        app.add_tab(filename=paths[0])
+        app.add_tab(paths[0], Path(paths[0]).read_bytes())
     dialog.deleteLater()
 
 
@@ -250,9 +250,10 @@ class NewTextureDialog(QDialog):
         self._lanes()
 
     def _lanes(self) -> None:
-        packed = self.packed.isChecked()
-        self.lanes.set_lanes(() if packed else self.chosen_kind().lanes, keep=False,
-                             neutral=self.chosen_kind().neutral is not None)
+        kind = self.chosen_kind()
+        packed = self.packed.isChecked() or not kind.lanes
+        self.packed.setVisible(bool(kind.lanes))
+        self.lanes.set_lanes(() if packed else kind.lanes, keep=False, neutral=kind.neutral is not None)
         self.lanes.setVisible(not packed)
         self._validate()
 
@@ -263,13 +264,13 @@ class NewTextureDialog(QDialog):
 
     def _browse_output(self) -> None:
         suggested = self.output.text() or f"new_{self.chosen_kind().name}.tex.{cook_version(self.catalog().game)}"
-        path, _ = QFileDialog.getSaveFileName(self, self.tr("Save .tex"), suggested, "TEX files (*.tex.*)")
+        path, _ = QFileDialog.getSaveFileName(self, self.tr("Save .tex"), suggested)
         if path:
             self.output.setText(path)
 
     def accept(self) -> None:
         catalog, kind, output = self.catalog(), self.chosen_kind(), self.output.text().strip()
-        packed = self.image.text().strip() if self.packed.isChecked() else ""
+        packed = self.image.text().strip() if self.packed.isChecked() or not kind.lanes else ""
         sources = None if packed else self.lanes.sources()
         try:
             self.written = run_job(self, self.tr("New Texture"), lambda _progress, _cancelled: write_texture(
@@ -281,7 +282,7 @@ class NewTextureDialog(QDialog):
         super().accept()
 
     def _validate(self) -> None:
-        packed = self.packed.isChecked()
+        packed = self.packed.isChecked() or not self.chosen_kind().lanes
         self.image.setEnabled(packed)
         ready = bool(self.output.text().strip()) and (bool(self.image.text().strip()) if packed else (
             self.lanes.valid() and bool(self.lanes.images())))

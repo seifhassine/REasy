@@ -219,12 +219,15 @@ def apply_to_document(handler, result):
 def save_and_open(parent, app, result, name):
     suffix = f".mesh.{result.file_version}"
     path, _filter = QFileDialog.getSaveFileName(
-        parent, translate("BlenderRoundTrip", "Save the new mesh"), name + suffix,
-        translate("BlenderRoundTrip", "Meshes (*{suffix})").format(suffix=suffix))
+        parent, translate("BlenderRoundTrip", "Save the new mesh"), name + suffix)
     if not path:
         return None
     if not path.endswith(suffix):
         path += suffix
+        question = translate("BlenderRoundTrip", "{name} already exists. Replace it?").format(name=Path(path).name)
+        if Path(path).exists() and QMessageBox.question(
+                parent, translate("BlenderRoundTrip", "Save the new mesh"), question) != QMessageBox.Yes:
+            return None
     companion = streaming_companion_path(path) if result.output.streaming is not None else None
     if result.output.streaming is not None and companion is None:
         QMessageBox.warning(parent, translate("BlenderRoundTrip", "Save the new mesh"), translate("BlenderRoundTrip",

@@ -744,11 +744,15 @@ class MeshConversionDialog(QDialog):
             self._save_blender()
             return
         suggested = str(self.result.suggested_path(self.handler.filepath or "converted.mesh"))
-        filename, _filter = QFileDialog.getSaveFileName(
-            self, self.tr("Export converted mesh"), suggested,
-            f"MESH files (*.mesh.{self.result.file_version})")
+        filename, _filter = QFileDialog.getSaveFileName(self, self.tr("Export converted mesh"), suggested)
         if not filename:
             return
+        suffix = f".mesh.{self.result.file_version}"
+        if not filename.lower().endswith(suffix):
+            filename += suffix
+            if Path(filename).exists() and QMessageBox.question(self, self.tr("Export converted mesh"), self.tr(
+                    "{name} already exists. Replace it?").format(name=Path(filename).name)) != QMessageBox.Yes:
+                return
         try:
             outputs = self.handler.conversion_output_targets(self.result, filename)
             companions = [path for path in outputs if Path(path) != Path(filename) and Path(path).exists()]
