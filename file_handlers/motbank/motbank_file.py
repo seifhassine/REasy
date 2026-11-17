@@ -16,13 +16,10 @@ class MotlistItem:
 	bank_type_mask_bits: int = 0
 	path: str = ""
 
-	def read(self, handler: BinaryHandler, version: int):
+	def read(self, handler: BinaryHandler):
 		self.offset = handler.read_int64()
-		if version >= 3:
-			self.bank_id = handler.read_int32()
-			self.bank_type = handler.read_uint32()
-		else:
-			self.bank_id = handler.read_int64()
+		self.bank_id = handler.read_int32()
+		self.bank_type = handler.read_uint32()
 		self.bank_type_mask_bits = handler.read_int64()
 		if self.offset == 0:
 			self.path = ""
@@ -30,13 +27,10 @@ class MotlistItem:
 			with handler.seek_jump_back(self.offset):
 				self.path = handler.read_wstring()
 
-	def write(self, handler: BinaryHandler, version: int):
+	def write(self, handler: BinaryHandler):
 		handler.write_offset_wstring(self.path)
-		if version >= 3:
-			handler.write_int32(int(self.bank_id))
-			handler.write_uint32(self.bank_type)
-		else:
-			handler.write_int64(self.bank_id)
+		handler.write_int32(int(self.bank_id))
+		handler.write_uint32(self.bank_type)
 		handler.write_int64(self.bank_type_mask_bits)
 
 
@@ -95,7 +89,7 @@ class MotbankFile:
 		self.items = []
 		for _ in range(self.motlist_count):
 			item = MotlistItem()
-			item.read(handler, self.version)
+			item.read(handler)
 			self.items.append(item)
 
 		return True
@@ -126,7 +120,7 @@ class MotbankFile:
 		handler.align_write(16)
 		motlists_offset = handler.tell
 		for item in self.items:
-			item.write(handler, self.version)
+			item.write(handler)
 
 		handler.write_int64_at(motlists_offset_placeholder_pos, motlists_offset)
 

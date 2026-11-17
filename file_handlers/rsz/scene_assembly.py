@@ -161,7 +161,8 @@ class ScnSceneAssembly:
                 if item.kind == "gameobject" and item.parent_id not in document.object_by_local_id:
                     item.draw_self = True
 
-    def _character_shell(self, spec: Mapping | None, document: ScnSceneDocument) -> tuple[str, tuple, tuple] | None:
+    def _character_shell(self, spec: Mapping | None,
+                         document: ScnSceneDocument) -> tuple[str, tuple, tuple, dict] | None:
         if not spec:
             return None
         read = partial(self._user_file, document_id=document.document_id)
@@ -172,7 +173,7 @@ class ScnSceneAssembly:
         if (held := ("character shells", spec["pools"], spec["kind"], spec["updater"])) not in self.user_reads:
             self.user_reads[held] = character_shells(self.game_version, spec["pools"], read, spec["kind"],
                                                      spec["updater"])
-        return kind, *(self.user_reads[held].get(kind) or ((), ()))
+        return kind, *(self.user_reads[held].get(kind) or ((), (), {}))
 
     def _set_resources(self, document: ScnSceneDocument, host: ScnSceneObject, spawner: ScnComponent, rules: Mapping,
                        roots: list, graph: ScnSceneGraph) -> None:

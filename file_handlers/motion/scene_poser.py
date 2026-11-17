@@ -17,7 +17,8 @@ lazy from file_handlers.rsz.scn_scene_graph import (
 lazy from utils.hash_util import murmur3_hash_utf16le
 lazy from utils.resource_file_utils import resource_key
 
-from .banks import bank_joint_map, bank_references, entry_mirrored, entry_motion, entry_reversed, list_paths, read_list
+from .banks import (
+    bank_entries, bank_joint_map, bank_references, entry_mirrored, entry_motion, entry_reversed, read_list)
 from .controllers import MaterialController, material_controllers
 from .layers import (
     MotionJoints, MotionLayer, joined_masks, joint_map_extras, joint_map_mirror, joint_mask_groups, layer_joint_masks,
@@ -260,7 +261,9 @@ class ScenePoser:
         self._scales: dict[int, float] = {}
         self._weights: dict[object, dict[int, float]] = {}
         self._lists: dict = {}
-        self._bank_lists: dict[tuple, list[tuple[int, str]]] = {}
+        self._bank_lists: dict[tuple, list[tuple[int, str, int, int]]] = {}
+        self._targets: dict = {}
+        self._pinned: dict = {}
         self._played: dict[tuple, TreeSampler | None] = {}
         self._join: tuple[MotionSampler | None, MotionSampler | None] = (None, None)
         self._controllers: list[MaterialController] | None = None
@@ -268,6 +271,7 @@ class ScenePoser:
         self._frame: tuple[dict, dict, dict] = ({}, {}, {})
         self._last_pose: tuple | None = None
         self._documents = {key: document for graph in graphs for key, document in graph.documents.items()}
+        self._shells = {host: shell for graph in graphs for host, shell in graph.shells.items()}
         self.phases = joint_constraint_phases()
         build = _RigBuild(graphs, {mesh.key: mesh for mesh in loaded_meshes}, self._documents)
         build.add_skinned(graphs)
@@ -280,12 +284,15 @@ class ScenePoser:
     def bind(self, sampler: MotionSampler | None, holders: tuple = (), bank: int | None = None,
              path: str | None = None, mirrored: bool = False, reverse: bool = False, changes: dict | None = None,
              writes=None, masks: dict | None = None, layer: int | None = None,
-             mask: tuple[int, int] | None = None, variables=None) -> None:
+             mask: tuple[int, int] | None = None, variables=None, bank_type: int | None = None,
+             pinned: dict | None = None) -> None:
         sampler, self._mirrored, self._reverse, self._writes = self._joined(sampler), mirrored, reverse, writes
-        self._variables = variables
+        self._variables, given = variables, holders
         holders = tuple(dict.fromkeys(self._motion_holder(holder) for holder in holders))
         if path is not None and sampler is not None:
             holders += self._synced(sampler, holders, path)
+        self._targets = {} if bank_type is None else dict.fromkeys((*given, *holders), bank_type)
+        self._pinned = {(self._motion_holder(holder), at): kind for (holder, at), kind in (pinned or {}).items()}
         played = {}
         for holder in holders or (None,):
             for index in self._players(sampler, holder):
@@ -350,13 +357,13 @@ class ScenePoser:
         data = self._read(motion.jmap_path) if motion.jmap_path and self.game and self._read is not None else None
         return frozenset() if data is None else property_joints(data, self.game)
 
-    def bank_lists(self, holders: tuple = ()) -> list[tuple[int, str]]:
+    def bank_lists(self, holders: tuple = ()) -> list[tuple[int, str, int, int]]:
         if self._read is None:
             return []
         if holders not in self._bank_lists:
-            self._bank_lists[holders] = [pair for holder in holders or tuple(self._bank_paths())
+            self._bank_lists[holders] = [entry for holder in holders or tuple(self._bank_paths())
                                          for path in self._bank_paths().get(holder, ())
-                                         for pair in list_paths(self._read, path)]
+                                         for entry in bank_entries(self._read, path)]
         return self._bank_lists[holders]
 
     def _joined(self, sampler: MotionSampler | TreeSampler | None) -> MotionSampler | TreeSampler | None:
@@ -464,7 +471,7 @@ class ScenePoser:
     def _stack(self, holder, bank: int | None, sampler, changes: dict | None = None, masks: dict | None = None,
                picked: int | None = None, mask: tuple | None = None) -> tuple[list, tuple, bool, dict, tuple | None]:
         """A joint-pose motion's layer is added: the engine reads its frames only through add-blends."""
-        layers, groups, extras, deforms, table = self._motion(holder)
+        layers, groups, extras, deforms, table, _target = self._motion(holder)
         own = layer_joint_masks(groups, MotionLayer(mask=mask[0], mask_mode=layer_enums(self.game)[1].get(
             mask[1], "ID"))) if mask and mask[0] else None
         layers = tuple(replace(layer, mask=(masks or {}).get(at, layer.mask))
@@ -477,25 +484,27 @@ class ScenePoser:
         layers = (*layers, *(MotionLayer(),) * (max(changes, default=-1) + 1 - len(layers)))
 
         def changed(at):
-            tree = change_tree(changes[at], partial(self.tree, (holder,)))
+            kind = self._pinned.get((holder, at))
+            tree = change_tree(changes[at], partial(self.tree, (holder,), target=kind))
             found, variables = tree_variables(self._read, tree), self._variables
             names = {name: guid for guid, name, _value in found}
-            return TreeSampler(tree, partial(self.motion, (holder,)), {
+            return TreeSampler(tree, partial(self.motion, (holder,), target=kind), {
                 guid: value for guid, _name, value in found}, self._property_joints,
-                partial(self.mirrored, (holder,)), partial(self.reversed, (holder,)), partial(self.masked, (holder,)),
+                *(partial(method, (holder,), target=kind) for method in (self.mirrored, self.reversed, self.masked)),
                 None if variables is None else lambda frame: {names[name]: value for name, value in variables(
                     frame).get((holder, at), {}).items() if name in names})
         return [(layer, sampler if at == chosen else changed(at) if at in changes else self._player(
             holder, at, layer), joined_masks(layer_joint_masks(groups, layer), own if at == chosen else None))
             for at, layer in enumerate(layers)], extras, deforms, groups, table
 
-    def _motion(self, holder) -> tuple[tuple[MotionLayer, ...], dict, tuple, bool, tuple | None]:
+    def _motion(self, holder) -> tuple[tuple[MotionLayer, ...], dict, tuple, bool, tuple | None, int]:
         document = None if holder is None else self._documents.get(holder.document_id)
         item = None if document is None else document.objects.get(holder)
-        held = None if item is None or not self.game else motion_component(document, item, self.game)
+        held = None if item is None or not self.game else motion_component(document, item, self.game,
+                                                                            self._shells.get(holder))
         if held is None:
-            return (), {}, (), False, None
-        layers, joint_map = held
+            return (), {}, (), False, None, 0
+        layers, joint_map, target = held
         if not joint_map and self._read is not None:
             joint_map = next((found for path in self._bank_paths().get(holder, ())
                               if (found := bank_joint_map(self._read, path))), "")
@@ -504,7 +513,7 @@ class ScenePoser:
             deforms, extras = (False, ()) if data is None else joint_map_extras(data)
             self._maps[joint_map] = ({}, extras, deforms, None) if data is None else (
                 joint_mask_groups(data), extras, deforms, joint_map_mirror(data))
-        return layers, *self._maps[joint_map]
+        return layers, *self._maps[joint_map], target
 
     def _player(self, holder, at: int, layer: MotionLayer) -> TreeSampler | None:
         if (holder, at) not in self._played:
@@ -518,44 +527,47 @@ class ScenePoser:
                 partial(self.reversed, (holder,)), partial(self.masked, (holder,)))
         return self._played[holder, at]
 
-    def _row(self, holders: tuple, bank: int, motion_id: int) -> tuple | None:
-        for listed, path in self.bank_lists(holders):
-            if listed != bank:
-                continue
-            if path not in self._lists:
-                self._lists[path] = read_list(self._read, path)
-            motion_list = self._lists[path]
-            entry = None if motion_list is None else next(
-                (row for row in motion_list.entries if row.motion_id == motion_id), None)
-            item = None if entry is None else entry.item if isinstance(entry.item, MotionTree) else entry_motion(
-                self._read, motion_list, entry, self._lists)
-            if item is not None:
-                return motion_list, entry, item
+    def _row(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> tuple | None:
+        holder = holders[0] if holders else None
+        target = self._targets.get(holder) if target is None else target
+        for wanted in dict.fromkeys((self._motion(holder)[5] if target is None else target, 0)):
+            for listed, path, kind, mask in self.bank_lists(holders):
+                if listed != bank or ((kind ^ wanted) & mask if mask else kind != wanted):
+                    continue
+                if path not in self._lists:
+                    self._lists[path] = read_list(self._read, path)
+                motion_list = self._lists[path]
+                entry = None if motion_list is None else next(
+                    (row for row in motion_list.entries if row.motion_id == motion_id), None)
+                item = None if entry is None else entry.item if isinstance(entry.item, MotionTree) else (
+                    entry_motion(self._read, motion_list, entry, self._lists))
+                if item is not None:
+                    return motion_list, entry, item
         return None
 
-    def row(self, holders: tuple, bank: int, motion_id: int) -> Motion | MotionTree | None:
-        return None if (found := self._row(holders, bank, motion_id)) is None else found[2]
+    def row(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> Motion | MotionTree | None:
+        return None if (found := self._row(holders, bank, motion_id, target)) is None else found[2]
 
-    def mirrored(self, holders: tuple, bank: int, motion_id: int) -> bool:
-        found = self._row(holders, bank, motion_id)
+    def mirrored(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> bool:
+        found = self._row(holders, bank, motion_id, target)
         return found is not None and isinstance(found[2], Motion) and entry_mirrored(self._read, *found[:2],
                                                                                       self._lists)
 
-    def reversed(self, holders: tuple, bank: int, motion_id: int) -> bool:
-        found = self._row(holders, bank, motion_id)
+    def reversed(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> bool:
+        found = self._row(holders, bank, motion_id, target)
         return found is not None and isinstance(found[2], Motion) and entry_reversed(self._read, *found[:2],
                                                                                       self._lists)
 
-    def masked(self, holders: tuple, bank: int, motion_id: int) -> tuple[int, str]:
-        found = self._row(holders, bank, motion_id)
+    def masked(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> tuple[int, str]:
+        found = self._row(holders, bank, motion_id, target)
         return (0, "ID") if found is None else (found[1].joint_mask, layer_enums(self.game)[1].get(
             found[0].joint_mask_mode, "ID"))
 
-    def motion(self, holders: tuple, bank: int, motion_id: int) -> Motion | None:
-        return item if isinstance(item := self.row(holders, bank, motion_id), Motion) else None
+    def motion(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> Motion | None:
+        return item if isinstance(item := self.row(holders, bank, motion_id, target), Motion) else None
 
-    def tree(self, holders: tuple, bank: int, motion_id: int) -> MotionTree | None:
-        return item if isinstance(item := self.row(holders, bank, motion_id), MotionTree) else None
+    def tree(self, holders: tuple, bank: int, motion_id: int, target: int | None = None) -> MotionTree | None:
+        return item if isinstance(item := self.row(holders, bank, motion_id, target), MotionTree) else None
 
     def _posed(self, entry: _Rig, sampler, sample, frame: float, lock_root: bool) -> tuple:
         joints, rig = entry.joints, entry.rig

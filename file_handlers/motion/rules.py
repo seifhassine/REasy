@@ -155,6 +155,11 @@ def jmap_properties(version: int) -> tuple[int, RecordCodec] | None:
         entry["properties"], _codec("JMAP property joint", _load("layouts")["jmap"][entry["property"]]))
 
 
+def offset_rules(version: int) -> dict | None:
+    rules = _load("versions")["offsets"]
+    return rules if version in rules["mot"] else None
+
+
 def joint_attributes(game: str) -> dict[str, int]:
     return {name: value for value, name in _game_enums(game)["JointAttr"].items()}
 

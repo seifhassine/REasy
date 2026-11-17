@@ -605,7 +605,7 @@ class ScnSceneGraph:
     followed_joints: dict[str, tuple[str, ...]] = field(default_factory=dict)
     same_joints: dict[str, frozenset[ScnObjectId]] = field(default_factory=dict)
     reparented: dict[str, frozenset[ScnObjectId]] = field(default_factory=dict)
-    shells: dict[ScnObjectId, tuple[str, tuple, tuple]] = field(default_factory=dict)
+    shells: dict[ScnObjectId, tuple[str, tuple, tuple, dict]] = field(default_factory=dict)
     lent: set[tuple[ScnComponentId, str]] = field(default_factory=set)
     diagnostics: list[ScnSceneDiagnostic] = field(default_factory=list)
 

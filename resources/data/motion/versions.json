@@ -30,6 +30,7 @@
   "983": {"layout": "mot603", "keys": "mot932", "clip": 90, "games": ["RE9"]},
   "993": {"layout": "mot603", "keys": "mot932", "clip": 91, "games": ["DD2", "PRAGMATA"]}
  },
+ "offsets": {"mot": [983], "turn": 20, "offset": 0.02, "share": 0.7, "votes": 10},
  "tree": {"4": "tree4", "5": "tree4", "10": "tree4", "13": "tree13", "14": "tree13", "19": "tree19", "21": "tree19",
           "22": "tree19", "28": "tree19"},
  "motlist": {

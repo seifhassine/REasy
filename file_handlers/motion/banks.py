@@ -50,7 +50,7 @@ def bank_references(graphs) -> list[BankReference]:
                         path for value in given.values() for path in ((value,) if isinstance(value, str) else value)
                         if _MOTION_FILE.search(path))):
                     add(name, path, component.owner)
-        for host, (_kind, _components, paths) in graph.shells.items():
+        for host, (_kind, _components, paths, _elements) in graph.shells.items():
             for path in paths:
                 add(graph.documents[host.document_id].objects[host].name, path, host)
     return list(found.values())
@@ -68,14 +68,15 @@ def _paths(values, elements: dict, seen: set[int]):
             yield text
 
 
-def list_paths(read, path: str) -> list[tuple[int, str]]:
+def bank_entries(read, path: str) -> list[tuple[int, str, int, int]]:
     if ".motlist" in path.casefold():
-        return [(0, path)]
+        return [(0, path, 0, 0)]
     if (data := read(path)) is None:
         return []
     bank = MotbankFile()
     bank.read(data)
-    return [(item.bank_id, item.path) for item in bank.items if item.path]
+    return [(item.bank_id, item.path, item.bank_type, item.bank_type_mask_bits & 0xFFFFFFFF) for item in bank.items
+            if item.path]
 
 
 def bank_joint_map(read, path: str) -> str:

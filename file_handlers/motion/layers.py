@@ -35,12 +35,19 @@ class MotionLayer:
     speed: float = 1.0
 
 
-def motion_component(document, item, game: str) -> tuple[tuple[MotionLayer, ...], str] | None:
+def motion_component(document, item, game: str,
+                     shell: tuple | None = None) -> tuple[tuple[MotionLayer, ...], str, int] | None:
     component = next((document.components[c] for c in item.components
                       if c in document.components and document.components[c].type_name == VIA_MOTION), None)
-    if component is None:
+    if component is not None:
+        own, elements, given = component.fields, document.rsz_file.parsed_elements, document.resources.get(
+            component.id, {})
+    elif shell and (own := next((fields for type_name, fields in shell[1] if type_name == VIA_MOTION),
+                                None)) is not None:
+        elements, given = shell[3], {}
+    else:
         return None
-    names, elements = scene_fields(game), document.rsz_file.parsed_elements
+    names = scene_fields(game)
     blend, modes = layer_enums(game)
 
     def field(fields, meaning):
@@ -57,11 +64,11 @@ def motion_component(document, item, game: str) -> tuple[tuple[MotionLayer, ...]
                                bool(number(fields, "layer enabled", True)),
                                bool(number(fields, "layer stop update", False)),
                                float(number(fields, "layer frame", 0.0)), float(number(fields, "layer speed", 1.0)))
-                   for entry in getattr(field(component.fields, "motion layers"), "values", ())
+                   for entry in getattr(field(own, "motion layers"), "values", ())
                    if isinstance(entry, ObjectData) and isinstance(fields := elements.get(entry.value), dict)
                    for mode in (blend.get(int(number(fields, "layer blend mode", 0))),))
-    return layers, str(document.resources.get(component.id, {}).get(names.get("joint map"))
-                       or number(component.fields, "joint map", "") or "").rstrip("\0")
+    return layers, str(given.get(names.get("joint map")) or number(own, "joint map", "") or "").rstrip("\0"), int(
+        number(own, "target bank type", 0))
 
 
 def joint_mask_groups(data: bytes) -> dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]]:

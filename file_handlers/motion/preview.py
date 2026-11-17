@@ -37,11 +37,12 @@ lazy from ui.styles import set_style_role
 lazy from utils.resource_file_utils import nearby_resource_paths, resolve_handler_resource_data, resource_key
 
 from .banks import (
-    bank_references, entry_mirrored, entry_motion, entry_reversed, entry_sequences, handler_reader, list_paths,
+    bank_entries, bank_references, entry_mirrored, entry_motion, entry_reversed, entry_sequences, handler_reader,
     names_motions, read_list)
 from .model import Motion, MotionList, MotionTree
-from .pose import MotionSampler, Rig
+from .pose import MotionSampler, Rig, offset_keys
 from .preview_tracks import MotionPreviewTracks
+from .rules import offset_rules
 from .scene_poser import ScenePoser
 from .sequence_tracks import TrackPlayer
 from .tree_sampler import TreeSampler, tree_variables
@@ -77,6 +78,7 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
         self._played: tuple[tuple, int | None, str | None] = ((), None, None)
         self.list_path: str | None = None
         self._listed: tuple[tuple, int | None, str | None] = ((), None, None)
+        self.bank_type: int | None = None
         self._frame = 0.0
         self._poser: ScenePoser | None = None
         self._tracks: TrackPlayer | None = None
@@ -112,13 +114,15 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
         if picker is None:
             row.addStretch(1)
         layout.addWidget(bar)
-        self.unlisted = styled_label(self.tr(
+        self.unlisted, self.offsets = (styled_label(text, self, banner="warning") for text in (self.tr(
             "No Motion of this prefab lists this file, so its motions replace the pose here and in Blender exports: "
-            "additive ones, such as face expressions, look wrong. Preview on a prefab that uses this list."), self,
-            banner="warning")
-        self.unlisted.setWordWrap(True)
-        self.unlisted.hide()
-        layout.addWidget(self.unlisted)
+            "additive ones, such as face expressions, look wrong. Preview on a prefab that uses this list."), self.tr(
+            "This motion keys offsets the game adds over another motion, not a pose, so played alone it collapses. "
+            "Pin a base motion in a character's Motion tab, then play this one on an AddBlend layer.")))
+        for banner in (self.unlisted, self.offsets):
+            banner.setWordWrap(True)
+            banner.hide()
+            layout.addWidget(banner)
         self.scene = ScnScenePreviewWidget(self, sources_getter=self._sources, settings=settings,
                                            graphs_changed_callback=self._show_features)
         self.scene.constraint_materials = True
@@ -137,7 +141,7 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
         return self.scene
 
     def set_prefab(self, prefab: RszHandler | None) -> None:
-        self.prefab, self._poser, self.pins = prefab, None, []
+        self.prefab, self._poser, self.pins, self.bank_type = prefab, None, [], None
         self.strands_button.setEnabled(
             prefab is not None and strand_catalog_for(mmtr_profile_for_game(prefab.game_version)) is not None)
         self.scene.preview.set_shading("game")
@@ -145,8 +149,9 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
 
     def set_motion(self, motion: Motion | MotionTree | None, holders: tuple = (), bank: int | None = None,
                    path: str | None = None, mirrored: bool = False, reverse: bool = False,
-                   sequences: list | None = None, mask: tuple | None = None) -> None:
+                   sequences: list | None = None, mask: tuple | None = None, bank_type: int | None = None) -> None:
         self._item, self._row = motion, (mirrored, reverse, sequences, mask)
+        self.bank_type = self.bank_type if bank_type is None else bank_type
         if isinstance(motion, MotionTree):
             self._sampler = self._tree_sampler(motion, holders or self._listed[0])
         else:
@@ -156,19 +161,24 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
         layers = () if self._poser is None else self._poser.layers((holders or self._listed[0] or (None,))[0])
         self._layer = self._layer if self._layer is not None and self._layer < len(layers) else None
         self.layer_box.clear()
-        self.layer_box.addItems([self.tr("Bank's layer"), *(self.tr("Layer {0}").format(at) for at in range(len(
-            layers)))])
+        self.layer_box.addItems([self.tr("Bank's layer"), *((self.tr("Layer {0} (AddBlend)") if layer.add else self.tr(
+            "Layer {0}")).format(at) for at, layer in enumerate(layers))])
         self.layer_box.setCurrentIndex(0 if self._layer is None else self._layer + 1)
         runtime = None if holders or self._listed[0] or self._poser is None else self._poser.runtime_holder(
             self._sampler)
         self._tracks = self._track_player(motion, holders or self._listed[0] or (() if runtime is None else (runtime,)))
-        changes = {} if self._tracks is None else self._tracks.changes()
-        for holder, at, pinned, motion_id in self.pins:
-            changes.setdefault(holder, {}).setdefault(at, [(0.0, pinned, motion_id, 0.0, 0, 0)])
+        changes, pinned = {} if self._tracks is None else self._tracks.changes(), {}
+        for holder, at, row, motion_id, kind in self.pins:
+            if at not in changes.setdefault(holder, {}):
+                changes[holder][at], pinned[holder, at] = [(0.0, row, motion_id, 0.0, 0, 0)], kind
         if self._poser is not None:
             self._poser.bind(self._sampler, *(self._played if holders else self._listed), mirrored, reverse, changes,
                              *((None, None) if self._tracks is None else (self._tracks.joints, self._tracks.masks())),
-                             self._layer, mask, None if self._tracks is None else self._tracks.variables)
+                             self._layer, mask, None if self._tracks is None else self._tracks.variables,
+                             bank_type=self.bank_type, pinned=pinned)
+        rules = offset_rules(motion.version) if isinstance(self._sampler, MotionSampler) else None
+        self.offsets.setVisible(rules is not None and not self.adds() and (rig := self.rig()) is not None
+                                and offset_keys(self._sampler, rig, rules))
         self._show(everything=True)
         self.played.emit()
 
@@ -176,12 +186,13 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
         self._layer = None if index <= 0 else index - 1
         self.set_motion(self._item, *self._played, *self._row)
 
-    def pin(self, motion_id: int) -> None:
+    def pin(self, motion_id: int, bank_type: int) -> None:
         holders, bank, _path = self._played
         if not holders or self._poser is None:
             return
         at = self._played_layer(holders[0])
-        self.pins = [pin for pin in self.pins if pin[:2] != (holders[0], at)] + [(holders[0], at, bank, motion_id)]
+        self.pins = [pin for pin in self.pins if pin[:2] != (holders[0], at)] + [
+            (holders[0], at, bank, motion_id, bank_type)]
         self.set_motion(self._item, *self._played, *self._row)
 
     def _played_layer(self, holder) -> int:
@@ -305,9 +316,11 @@ class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
                                  "" if self.prefab is None else self.prefab.game_version, self.edited, read)
         key = None if self.list_path is None or read is None else resource_key(self.list_path)
         references = [] if key is None else bank_references(self.scene.graphs)
-        self._listed = next(((reference.holders, bank, reference.path) for reference in references
-                             for bank, listed in list_paths(read, reference.path) if resource_key(listed) == key),
-                            ((), None, None))
+        self._listed, typed = next((((reference.holders, bank, reference.path), (kind, mask))
+                                    for reference in references
+                                    for bank, listed, kind, mask in bank_entries(read, reference.path)
+                                    if resource_key(listed) == key), (((), None, None), (0, 0)))
+        self.bank_type = typed[0] if any(typed) else self.bank_type
         self.unlisted.setVisible(key is not None and not self._listed[0])
         self.set_motion(self._item, *self._played, *self._row)
 
@@ -425,11 +438,12 @@ class CharacterMotions(QSplitter):
         self._listed = self.preview.prefab
         self.motions.clear()
         for reference in bank_references(self.preview.scene.graphs):
-            for bank_id, path in list_paths(handler_reader(self.handler), reference.path):
+            for bank_id, path, kind, mask in bank_entries(handler_reader(self.handler), reference.path):
                 item = QTreeWidgetItem([f"{reference.owner} · {bank_id} · {Path(path).name}", ""])
                 item.setToolTip(0, path)
                 item.setData(0, Qt.UserRole, path)
                 item.setData(0, Qt.UserRole + 1, (reference.holders, bank_id, reference.path))
+                item.setData(0, Qt.UserRole + 2, kind if kind or mask else None)
                 item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
                 self.motions.addTopLevelItem(item)
         if not self.motions.topLevelItemCount():
@@ -473,12 +487,13 @@ class CharacterMotions(QSplitter):
             self.transport.rate_spin.setValue(motion.fps or 60)
             self.playback.set_end_frame(motion.end_frame)
             self.playback.set_frame(0.0)
-            self.preview.set_motion(motion, *item.parent().data(0, Qt.UserRole + 1), *item.data(0, Qt.UserRole + 1))
+            self.preview.set_motion(motion, *item.parent().data(0, Qt.UserRole + 1), *item.data(0, Qt.UserRole + 1),
+                                    bank_type=item.parent().data(0, Qt.UserRole + 2))
 
     def _pin(self) -> None:
         item = self.motions.currentItem()
         if item is not None and isinstance(item.data(0, Qt.UserRole), Motion):
-            self.preview.pin(item.data(0, Qt.UserRole + 2))
+            self.preview.pin(item.data(0, Qt.UserRole + 2), item.parent().data(0, Qt.UserRole + 2) or 0)
             self.unpin_button.setEnabled(bool(self.preview.pins))
 
     def _unpin(self) -> None:

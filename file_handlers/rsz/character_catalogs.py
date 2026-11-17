@@ -82,8 +82,9 @@ def character_shells(game: str, name: str, rsz_of: RszOf, field: str, base: str)
                          if (value := fields.get(field)) is not None), None)
             if kind and kind not in found and any(base in rsz.type_registry.getTypeParents(type_name)
                                                   for type_name, _fields in components):
-                found[kind] = components, tuple(motion_paths([value for _type, fields in components
-                                                             for value in fields.values()], rsz.parsed_elements, set()))
+                paths = motion_paths([value for _type, fields in components for value in fields.values()],
+                                     rsz.parsed_elements, set())
+                found[kind] = components, tuple(paths), rsz.parsed_elements
     return found
 
 

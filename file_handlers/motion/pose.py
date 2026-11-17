@@ -79,6 +79,22 @@ class MotionSampler:
         return {name_hash: float(curve.sample(frame)[0]) for name_hash, curve in self.properties.items()}
 
 
+def offset_keys(sampler: MotionSampler, rig: Rig, rules: dict) -> bool:
+    rows, slots = rig.bind(sampler.hashes)
+    rest = rig.base[0][rows], rig.base[1][rows]
+    voting = (np.linalg.norm(rest[0], axis=1) >= rules["offset"],
+              np.abs(rest[1][:, 3]) <= np.cos(np.radians(rules["turn"]) / 2))
+    nearer = votes = 0
+    for frame in (0.0, sampler.motion.end_frame / 2, sampler.motion.end_frame):
+        values, keyed = sampler.sample(frame)
+        moved, turned = (voting[at] & keyed[at][slots] for at in range(2))
+        t, q = values[0][slots][moved], values[1][slots][turned]
+        nearer += (np.linalg.norm(t, axis=1) < np.linalg.norm(t - rest[0][moved], axis=1)).sum() + (
+            np.abs(q[:, 3]) > np.abs(np.sum(q * rest[1][turned], axis=1))).sum()
+        votes += moved.sum() + turned.sum()
+    return bool(votes >= rules["votes"] and nearer >= rules["share"] * votes)
+
+
 def _hamilton(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """a x b, quaternions (x, y, z, w) per row: the engine's quaternion product of b by a."""
     ax, ay, az, aw = a.T
