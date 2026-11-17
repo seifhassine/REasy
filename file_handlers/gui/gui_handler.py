@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from file_handlers.base_handler import DocumentHandler
 
-lazy from utils.resource_file_utils import (listed_resource_paths, locate_handler_resource,
+lazy from utils.resource_file_utils import (ResourceResolutionContext, listed_resource_paths,
                                             resolve_handler_resource_data, resource_context_for_handler)
 
 lazy from .codec import gui_version
@@ -34,14 +34,14 @@ class GuiHandler(DocumentHandler):
     def resolve_resource(self, resource_path: str) -> tuple[str, bytes] | None:
         return resolve_handler_resource_data(self, resource_path, allow_selection_dialog=False)
 
-    def locate_resource(self, resource_path: str):
-        return locate_handler_resource(self, resource_path)
+    @property
+    def files(self) -> ResourceResolutionContext:
+        return resource_context_for_handler(self) or ResourceResolutionContext()
 
     def listed(self, extension: str) -> tuple[str, ...]:
         return listed_resource_paths(self, extension)
 
     def create_viewer(self):
-        context = resource_context_for_handler(self)
-        editor = GuiEditor(self.document, self, context.game if context is not None else "")
+        editor = GuiEditor(self.document, self, self.files.game)
         editor.modified_changed.connect(self._set_modified)
         return editor

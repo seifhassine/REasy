@@ -13,7 +13,7 @@ lazy from utils.resource_file_utils import ResourceDataLoader, resource_path_wit
 
 lazy from .codec import parse_gui
 lazy from .errors import GuiFormatError, GuiSceneError
-lazy from .model import ZERO_GUID, GuiBinding, GuiDocument, GuiObject, GuiSymbol
+lazy from .model import ZERO_GUID, GuiBinding, GuiDocument, GuiObject, GuiSymbol, GuiValue
 lazy from .profiles import GuiRuntimeProfile, gui_runtime
 
 
@@ -142,6 +142,24 @@ class GuiWorkspace:
     def invalidate(self) -> None:
         self._symbol_cache.clear()
 
+    def parameter_values(self) -> dict[uuid.UUID, GuiValue]:
+        labels, found, seen = self.profile.enum("ParameterType"), {}, set()
+        skipped = {labels[name] for name in self.profile.parameters["imports_skip"]}
+
+        def gather(resource: GuiResource) -> None:
+            seen.add(resource.key)
+            for item in resource.document.parameters:
+                if resource is self.root or item.parameter_type not in skipped:
+                    found.setdefault(item.guid, item.value)
+            for path in resource.document.imported_gui_paths:
+                key = normalize_gui_resource_path(path)
+                if key in self.resources and key not in seen:
+                    gather(self.resources[key])
+
+        gather(self.root)
+        found.update((item.guid, item.value) for item in self.root.document.parameter_overrides if item.guid in found)
+        return found
+
     def instantiate(self, scope: GuiSymbol | None = None) -> GuiScene:
         resource = self.root
         start = resource.document.root_object
@@ -172,7 +190,7 @@ class GuiWorkspace:
             root = GuiSceneNode("/", resource, start, None, self.profile)
             root.children = [build(resource, GuiObject(ZERO_GUID, scope.guid, scope.name, scope.type_name), root, ())]
         scene = self.profile.adapter.create_scene(self, resource, root)
-        scene.rebind([] if scope is not None else resource.document.bindings)
+        scene.rebind(None if scope is not None else resource.document)
         return scene
 
 
@@ -186,10 +204,11 @@ class GuiScene(ABC):
         self._preview_overrides: dict[str, dict[str, object]] = {}
         self.bindings: list[tuple[GuiBinding, GuiSceneNode]] = []
         self._bindings_by_node: dict[int, list[GuiBinding]] = {}
+        self.document: GuiDocument | None = None
 
-    def rebind(self, bindings: list[GuiBinding]) -> None:
-        self.bindings, self._bindings_by_node = [], {}
-        for binding in bindings:
+    def rebind(self, document: GuiDocument | None) -> None:
+        self.bindings, self._bindings_by_node, self.document = [], {}, document
+        for binding in [] if document is None else document.bindings:
             target = self.binding_target(binding.target_path)
             held = target.object.property(binding.property.name) if target is not None else None
             if target is not None and binding.target_type == target.object.type_name \
@@ -221,9 +240,18 @@ class GuiScene(ABC):
 
     def apply_bindings(self) -> None:
         self._invalidate_runtime()
+        for target, name, value in self.parameters():
+            target.properties[name] = copy.deepcopy(value)
         for binding, target in self.bindings:
             target.properties[binding.property.name] = copy.deepcopy(binding.property.value)
         self.update_preview(self._preview_overrides)
+
+    def parameters(self) -> list[tuple[GuiSceneNode, str, GuiValue]]:
+        references = self.document.parameter_references if self.document is not None else ()
+        values = self.workspace.parameter_values() if references else {}
+        return [(target, item.field, values[item.guid]) for item in references
+                if item.guid in values and (target := self.binding_target(item.target_path)) is not None
+                and target.object.type_name == item.target_type]
 
     def bindings_for(self, node: GuiSceneNode, name: str | None = None) -> tuple[GuiBinding, ...]:
         bindings = self._bindings_by_node.get(id(node), ())

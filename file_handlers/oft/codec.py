@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+import numpy as np
+
 from .profiles import SFNT_MAGICS, OftFormatError, OftProfile, oft_profile
 
 
@@ -40,8 +42,8 @@ class XorOftCodec:
         return value.to_bytes(8, "little")
 
     def crypt(self, payload: bytes) -> bytes:
-        key = self.key(len(payload))
-        return bytes(value ^ key[index & 7] for index, value in enumerate(payload))
+        return (np.frombuffer(payload, np.uint8) ^ np.tile(np.frombuffer(self.key(len(payload)), np.uint8),
+                                                           -(-len(payload) // 8))[:len(payload)]).tobytes()
 
     def decode(self, data: bytes, *, validate_sfnt: bool = True) -> bytes:
         magic = self.profile.magic

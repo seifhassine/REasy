@@ -8,7 +8,7 @@ from PySide6.QtCore import QCoreApplication
 
 lazy from file_handlers.clip import edits as clip_edits
 lazy from file_handlers.clip.evaluation import NUMERIC_TYPES
-lazy from file_handlers.clip.model import Key, Node, Property, ResourceKind, Timeline
+lazy from file_handlers.clip.model import Key, Node, Property
 lazy from file_handlers.clip.rules import PropertyType, property_type
 from file_handlers.document_commands import ReplaceContents, SetFields
 
@@ -16,8 +16,7 @@ from .document import GuiEditDocument
 from .edits import _used_guids, check_name, checked, new_guid, set_value
 from .errors import GuiEditError
 from .model import GuiAnimation, GuiObject, GuiSymbol
-from .rules import gui_layout
-from .states import UNSET, clip_root
+from .states import state_clip
 from .storage import nodes
 
 translate = QCoreApplication.translate
@@ -30,8 +29,7 @@ def add_state(document: GuiEditDocument, symbol: GuiSymbol, name: str | None = N
                     else document.authoring.free_name("next_state", taken))
     check_name(document, name)
     guid = new_guid(_used_guids(document))
-    clip = Timeline(gui_layout(gui.version).clip_version, ResourceKind.MOT_CLIP, UNSET, guid.bytes_le, [],
-                    [clip_root(symbol, guid.bytes_le)])
+    clip = state_clip(symbol, guid.bytes_le, gui.version)
     animation, text = GuiAnimation(guid, name, False, clip), translate("GuiEditDocument", "Add State {0}").format(name)
     with document.macro(text):
         document.push(ReplaceContents(document, symbol, "animations", [*symbol.animations, animation], text))
@@ -157,8 +155,12 @@ def add_member(document: GuiEditDocument, animation: GuiAnimation, obj: GuiObjec
     return child
 
 
+def _held(track: Property, value):
+    return str(value) if track.type == PropertyType.GUID else value
+
+
 def _first_key(clip, track: Property, value, text: str, mode: int | None) -> None:
-    values = {"value": value} if mode is None else {"value": value, "interpolation": mode}
+    values = {"value": _held(track, value)} | ({} if mode is None else {"interpolation": mode})
     clip_edits.set_fields(clip, clip_edits.add_key(clip, track, 0.0), text, **values)
 
 
@@ -218,7 +220,7 @@ def set_key_frame(document: GuiEditDocument, animation: GuiAnimation, key: Key, 
 
 
 def set_key_value(document: GuiEditDocument, animation: GuiAnimation, track: Property, key: Key, value) -> None:
-    value = checked(document, PropertyType(track.type), value, track.name)
+    value = _held(track, checked(document, PropertyType(track.type), value, track.name))
     if value != key.value:
         clip_edits.set_fields(document.clip(animation), key, translate("GuiEditDocument", "Set Key"), value=value)
 

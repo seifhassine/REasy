@@ -27,6 +27,8 @@ class Timer:
     period: float
     subtract: bool = False
     fraction: bool = False
+    divisor: float | None = None
+    inclusive: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,7 +54,9 @@ def catalog_from_dict(data: Mapping) -> FrameClockCatalog:
     if data.get("format") != CATALOG_FORMAT:
         raise FrameClockCatalogError(f"frame clock catalog format {data.get('format')!r} is not {CATALOG_FORMAT}")
     timers = tuple(Timer(int(item["word"]), None if item.get("per_second") is None else float(item["per_second"]),
-                         float(item["period"]), bool(item.get("subtract", False)), bool(item.get("fraction", False)))
+                         float(item["period"]), bool(item.get("subtract", False)), bool(item.get("fraction", False)),
+                         None if item.get("divisor") is None else float(item["divisor"]),
+                         bool(item.get("inclusive", False)))
                    for item in data["timers"])
     catalog = FrameClockCatalog(
         str(data["game"]), int(data["resource_version"]), str(data["buffer"]), str(data["time"]), int(data["day"]),
@@ -96,9 +100,11 @@ class FrameClock:
             if timer.per_second is None:
                 self.values[index] = (self.values[index] + 1) % int(timer.period)
             else:
-                total, period = float(np.float32(elapsed * timer.per_second + self.values[index])), float(
+                step = elapsed if timer.divisor is None else float(np.float32(elapsed / timer.divisor))
+                total, period = float(np.float32(step * timer.per_second + self.values[index])), float(
                     np.float32(timer.period))
-                self.values[index] = (float(np.float32(total - period)) if total > period else total) if (
+                self.values[index] = (float(np.float32(total - period)) if (
+                    total >= period if timer.inclusive else total > period) else total) if (
                     timer.subtract) else crt("fmodf")(total, period)
 
     def parameter_words(self, count: int) -> tuple[int, ...]:

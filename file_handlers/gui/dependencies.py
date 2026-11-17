@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -10,12 +9,14 @@ lazy from file_handlers.font.catalog import GuiFontCatalog
 lazy from file_handlers.gcf.gcf_file import GcfFile
 lazy from file_handlers.gcf.model import GcfData
 lazy from file_handlers.ift.catalog import IconFontCatalog
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 lazy from file_handlers.msg.msg_handler import MsgHandler
-lazy from utils.resource_file_utils import ResourceDataLoader, ResourceLocation, resource_key
+lazy from utils.resource_file_utils import (ResourceDataLoader, ResourceLocation, ResourceResolutionContext,
+                                            held_folder_lookups, resource_key)
 
 lazy from .assets import GuiAssetCatalog
 lazy from .profiles import GuiRuntimeProfile
-lazy from .world import GuiWorld
+lazy from .world import GuiWorld, stamp_of
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,13 +33,51 @@ class LocalizedMessage:
         return self.values.get(int(language), "")
 
 
-@lru_cache(maxsize=512)
+@lru_cache(maxsize=1024)
 def _message_entries(data: bytes) -> tuple[tuple[str, str, tuple[tuple[int, str], ...]], ...]:
     handler = MsgHandler()
     handler.read(data)
     return tuple((str(entry.get("uuid", "")).casefold(), str(entry.get("name", "")), tuple({
         int(language): str(value) for language, value in zip(handler.useLanguages, entry.get("content", ())) if value
     }.items())) for entry in handler.entries)
+
+
+@lru_cache(maxsize=4)
+def _merged(files: tuple[tuple[str, ResourceLocation | None, tuple | None], ...]) -> tuple[dict, dict, tuple]:
+    messages: dict[str, LocalizedMessage] = {}
+    named: dict[str, LocalizedMessage] = {}
+    errors = []
+    for path, location, _stamp in files:
+        resolved = location and location.read()
+        if resolved is None:
+            errors.append(f"unresolved MSG resource {path!r}")
+            continue
+        source, data = resolved
+        try:
+            entries = _message_entries(bytes(data))
+        except Exception as exc:
+            errors.append(f"{source}: {exc}")
+            continue
+        for message_id, name, values in entries:
+            if not message_id:
+                continue
+            existing = messages.get(message_id)
+            if existing is None:
+                messages[message_id] = LocalizedMessage(message_id, name, dict(values), str(source))
+            elif values:
+                merged = dict(existing.values)
+                for language, value in values:
+                    merged.setdefault(language, value)
+                messages[message_id] = LocalizedMessage(
+                    existing.message_id,
+                    existing.name or name,
+                    merged,
+                    existing.source,
+                )
+    for message in messages.values():
+        if message.name:
+            named.setdefault(message.name.casefold(), message)
+    return messages, named, tuple(errors)
 
 
 class GuiDependencyCatalog:
@@ -53,7 +92,7 @@ class GuiDependencyCatalog:
         self,
         resource_data_loader: ResourceDataLoader,
         profile: GuiRuntimeProfile,
-        locate: Callable[[str], ResourceLocation | None],
+        files: ResourceResolutionContext,
     ) -> None:
         loaded: dict[str, tuple[str, str]] = {}
 
@@ -63,9 +102,12 @@ class GuiDependencyCatalog:
             return found
         self.resource_data_loader, self.loaded = load, loaded
         self.profile = profile
-        self.assets = GuiAssetCatalog(load)
+        self.assets = GuiAssetCatalog(load, lambda: None if profile.color_presets is None or self.config is None
+                                      else self.config.aux_asset_paths[profile.color_presets["config_aux"]])
         self.errors: list[str] = []
-        self.world = GuiWorld(locate, profile, self.errors)
+        self._files = files
+        self.world = GuiWorld(files if mmtr_profile_for_game(files.game or profile.game).game == profile.game
+                              else ResourceResolutionContext(), profile, self.errors)
         self.in_game = True
         self._config: GcfData | None = None
         self._config_loaded = False
@@ -121,44 +163,15 @@ class GuiDependencyCatalog:
         return self._icon_catalog
 
     def load_messages(self) -> int:
-        if self._messages_loaded is self.in_game:
-            return len(self._messages)
-        self._messages_loaded, self._messages, self._messages_by_name = self.in_game, {}, {}
-        config = self.config
-        if config is None:
-            return 0
-        for path in (*config.message_asset_paths, *(self.world.message_paths if self.in_game else ())):
-            if not path:
-                continue
-            resolved = self.resource_data_loader(path)
-            if resolved is None:
-                self.errors.append(f"unresolved MSG resource {path!r}")
-                continue
-            source, data = resolved
-            try:
-                entries = _message_entries(bytes(data))
-            except Exception as exc:
-                self.errors.append(f"{source}: {exc}")
-                continue
-            for message_id, name, values in entries:
-                if not message_id:
-                    continue
-                existing = self._messages.get(message_id)
-                if existing is None:
-                    self._messages[message_id] = LocalizedMessage(message_id, name, dict(values), str(source))
-                elif values:
-                    merged = dict(existing.values)
-                    for language, value in values:
-                        merged.setdefault(language, value)
-                    self._messages[message_id] = LocalizedMessage(
-                        existing.message_id,
-                        existing.name or name,
-                        merged,
-                        existing.source,
-                    )
-        for message in self._messages.values():
-            if message.name:
-                self._messages_by_name.setdefault(message.name.casefold(), message)
+        if self._messages_loaded is not self.in_game:
+            self._messages_loaded, config = self.in_game, self.config
+            with held_folder_lookups():
+                files = tuple((path, found := self._files.locate(path), found and stamp_of(found))
+                              for path in dict.fromkeys(() if config is None else (*config.message_asset_paths, *(
+                                  self.world.message_paths if self.in_game else ()))) if path)
+            self._messages, self._messages_by_name, errors = _merged(files)
+            self.errors += errors
+            self.loaded.update((resource_key(path), (path, found.path)) for path, found, _stamp in files if found)
         return len(self._messages)
 
     def messages(self) -> list[LocalizedMessage]:
@@ -175,10 +188,14 @@ class GuiDependencyCatalog:
         message = self._messages.get(str(message_id).casefold())
         return message.text(language) if message is not None else ""
 
+    def message(self, message_id: str | None) -> LocalizedMessage | None:
+        return self._messages.get(str(message_id).casefold()) if message_id else None
+
+    def named_message(self, name: str | None) -> LocalizedMessage | None:
+        return self._messages_by_name.get(str(name).casefold()) if name else None
+
     def cached_named_message(self, name: str | None, language: int = 1) -> str:
-        if not name:
-            return ""
-        message = self._messages_by_name.get(str(name).casefold())
+        message = self.named_message(name)
         return message.text(language) if message is not None else ""
 
     def message_name(self, message_id: str | None) -> str:

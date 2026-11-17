@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from .model import GuiAnimation, GuiBinding, GuiDocument, GuiObject, GuiSymbol
+from .model import GuiAnimation, GuiBinding, GuiDocument, GuiObject, GuiParameterReference, GuiSymbol
 
 
 def join(path: str, name: str) -> str:
@@ -52,13 +52,13 @@ class Structure:
             found.append(child)
         return found
 
-    def target(self, binding: GuiBinding) -> GuiObject | None:
+    def target(self, binding: GuiBinding | GuiParameterReference) -> GuiObject | None:
         chain = self.chain(binding.target_path)
         return chain[-1] if len(chain) == len(list(filter(None, binding.target_path.split("/")))) + 1 else None
 
-    def through(self, obj: GuiObject) -> list[tuple[GuiBinding, str]]:
+    def through(self, obj: GuiObject) -> list[tuple[GuiBinding | GuiParameterReference, str]]:
         paths = self.paths(obj)
-        return [(binding, path) for binding in self.gui.bindings for path in paths
+        return [(binding, path) for binding in (*self.gui.bindings, *self.gui.parameter_references) for path in paths
                 if binding.target_path == path or binding.target_path.startswith(path + "/")]
 
     def contains(self, symbol: GuiSymbol, other: GuiSymbol, seen: frozenset[int] = frozenset()) -> bool:

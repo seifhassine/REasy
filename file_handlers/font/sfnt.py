@@ -11,6 +11,8 @@ from __future__ import annotations
 from bisect import bisect_right
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
+from functools import cached_property
+from operator import attrgetter
 import struct
 
 
@@ -53,8 +55,7 @@ class SfntCmap(Mapping[int, int]):
             return glyph
         if not self.groups:
             return 0
-        starts = tuple(group.start_codepoint for group in self.groups)
-        index = bisect_right(starts, codepoint) - 1
+        index = bisect_right(self.groups, codepoint, key=attrgetter("start_codepoint")) - 1
         if index < 0:
             return 0
         group = self.groups[index]
@@ -253,6 +254,7 @@ class SfntFont:
             "vhea", "vmtx", required=False
         )
         self.cmap_diagnostics: list[str] = []
+        self.variation_cmap = False
         self.cmaps = self._read_cmaps()
         if not self.cmaps:
             raise SfntFormatError("font has no supported Unicode cmap")
@@ -410,6 +412,7 @@ class SfntFont:
             subtable = table.offset + relative
             self._reader.require(subtable, 2, "cmap subtable")
             format_number = self._reader.u16(subtable, "cmap format")
+            self.variation_cmap |= (platform, encoding, format_number) == (0, 5, 14)
             key = (platform, encoding, subtable)
             if key in seen:
                 continue
@@ -587,6 +590,12 @@ class SfntFont:
             else self.horizontal_metrics
         )
         return metrics[glyph_index]
+
+    def glyph_record(self, glyph_index: int) -> bytes:
+        wide, loca, glyf = self.index_to_loc_format, self._table("loca"), self._table("glyf")
+        first, last = self._reader.unpack(">II" if wide else ">HH", loca.offset + glyph_index * (4 if wide else 2),
+                                          "loca")
+        return self.data[glyf.offset + first * (2 - wide):glyf.offset + last * (2 - wide)]
 
     def scaled_advance(
         self, glyph_index: int, pixel_size: float, *, vertical: bool = False
@@ -1078,7 +1087,7 @@ class SfntFont:
             if (substituted := self.substitute_glyph(glyph, feature)) != glyph
         }
 
-    @property
+    @cached_property
     def vertical_substitutions(self) -> Mapping[int, int]:
         feature = "vrt2" if "vrt2" in self.gsub_features else "vert"
         return self.feature_substitutions(feature)

@@ -64,3 +64,4 @@ class GlyphFallbackPolicy:
 # Recovered from DMC5's GUI text path. The policy is explicit so a newer game
 # can register a different chain without changing the SFNT or catalog code.
 DMC5_GUI_GLYPH_POLICY = GlyphFallbackPolicy((0x303C, 0x25A1, 0x002A))
+SF6_GUI_GLYPH_POLICY = GlyphFallbackPolicy((0x25A1, 0x303C, 0x002A))

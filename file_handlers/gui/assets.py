@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import struct
+from collections.abc import Callable
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cache, cached_property
+from typing import Any
+from uuid import UUID
 
+lazy from file_handlers.gcp.gcp_file import ColorPreset, parse_gcp
 lazy from file_handlers.mdf.mdf_file import MdfFile
 lazy from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
+lazy from file_handlers.rsz.game_registry import game_type_registry
+lazy from file_handlers.rsz.plain_values import plain_value
+lazy from file_handlers.rsz.rsz_file import RszFile
 lazy from file_handlers.tex.tex_file import TexFile
 lazy from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
-lazy from utils.resource_file_utils import (
-    ResourceDataLoader,
-    normalize_resource_path,
-    resource_version_from_path,
-)
+lazy from utils.resource_file_utils import ResourceDataLoader, resource_version_from_path
 
 lazy from .errors import GuiAssetError
 
@@ -45,11 +49,23 @@ class ResolvedUvPattern:
 class GuiAssetCatalog:
     """Resolve GUI-owned UVS/TEX references without a separate file index."""
 
-    def __init__(self, resource_data_loader: ResourceDataLoader) -> None:
-        self.resource_data_loader = resource_data_loader
+    def __init__(self, resource_data_loader: ResourceDataLoader, preset_path: Callable[[], str | None]) -> None:
+        self.resource_data_loader, self.preset_path = resource_data_loader, preset_path
+        for name in ("load_uvs", "load_tex", "load_mdf", "load_mesh", "load_text_animation"):
+            setattr(self, name, cache(getattr(self, name)))
+
+    @cached_property
+    def color_presets(self) -> dict[UUID, ColorPreset]:
+        if (path := self.preset_path()) is None:
+            return {}
+        source, data, _version = self._load_resource(path, "gcp")
+        try:
+            return parse_gcp(data)
+        except ValueError as exc:
+            raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
 
     def _load_resource(self, reference: str, extension: str) -> tuple[str, bytes, int]:
-        resolved = self.resource_data_loader(normalize_resource_path(reference))
+        resolved = self.resource_data_loader(reference)
         if resolved is None:
             raise GuiAssetError(f"unable to resolve {extension.upper()} resource {reference!r}")
         source = str(resolved[0])
@@ -58,7 +74,6 @@ class GuiAssetCatalog:
             raise GuiAssetError(f"{source} names no {extension.upper()} version")
         return source, bytes(resolved[1]), version
 
-    @lru_cache(maxsize=None)
     def load_uvs(self, reference: str) -> tuple[str, UvsFile]:
         source, data, version = self._load_resource(reference, "uvs")
         uvs = UvsFile()
@@ -68,7 +83,6 @@ class GuiAssetCatalog:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, uvs
 
-    @lru_cache(maxsize=None)
     def load_tex(self, reference: str) -> tuple[str, TexFile]:
         source, data, version = self._load_resource(reference, "tex")
         texture = TexFile()
@@ -81,7 +95,6 @@ class GuiAssetCatalog:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, texture
 
-    @lru_cache(maxsize=None)
     def load_mdf(self, reference: str) -> tuple[str, MdfFile]:
         source, data, _version = self._load_resource(reference, "mdf2")
         material = MdfFile()
@@ -91,7 +104,6 @@ class GuiAssetCatalog:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, material
 
-    @lru_cache(maxsize=None)
     def load_mesh(self, reference: str) -> tuple[str, MeshFile]:
         source, data, version = self._load_resource(reference, "mesh")
         mesh = MeshFile()
@@ -104,6 +116,19 @@ class GuiAssetCatalog:
         except Exception as exc:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, mesh
+
+    def load_text_animation(self, reference: str, game: str) -> tuple[str, dict[str, Any]]:
+        source, data, _version = self._load_resource(reference, "tean")
+        rsz = RszFile()
+        rsz.filepath, rsz.type_registry, rsz.game_version = source, game_type_registry(game), game
+        try:
+            rsz.read_headless(data[struct.unpack_from("<Q", data, 8)[0]:])
+            root = rsz.object_table[0]
+            return rsz.type_registry.get_type_info(rsz.instance_infos[root].type_id)["name"], {
+                name: plain_value(value, rsz.parsed_elements.__getitem__)
+                for name, value in rsz.parsed_elements[root].items()}
+        except Exception as exc:
+            raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
 
     def resolve_uv(
         self,

@@ -4,7 +4,7 @@ from typing import Callable
 
 from .codec import decode_ift, encode_ift
 from .model import IconGlyph, IftAtlasValidation, IftData, IftEntry
-from .profiles import IFT_MAGIC
+from .profiles import IFT_MAGIC, ift_profile
 
 lazy from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
 
@@ -43,16 +43,20 @@ class IftFile:
             None,
         )
 
-    @staticmethod
-    def _uv_pattern(uvs: "UvsFile", entry: IftEntry) -> "UvsPattern" | None:
-        if not 0 <= entry.uv_sequence_no < len(uvs.sequences):
+    def _uv_pattern(self, entry: IftEntry, uvs: "UvsFile", aux: "UvsFile | None"
+                    ) -> tuple["UvsFile", int, "UvsPattern"] | None:
+        table, sequence_no = 1, entry.uv_sequence_no
+        if ift_profile(self.require_model().version).packed_sequence:
+            table, sequence_no = sequence_no & 0xFFFF, sequence_no >> 16
+        uvs = aux if table == 2 else uvs
+        if uvs is None or not 0 <= sequence_no < len(uvs.sequences):
             return None
-        sequence = uvs.sequences[entry.uv_sequence_no]
+        sequence = uvs.sequences[sequence_no]
         if not 0 <= entry.uv_pattern_no < len(sequence.patterns):
             return None
-        return sequence.patterns[entry.uv_pattern_no]
+        return uvs, sequence_no, sequence.patterns[entry.uv_pattern_no]
 
-    def resolve(self, name: str, uvs: "UvsFile" | None = None) -> IconGlyph | None:
+    def resolve(self, name: str, uvs: "UvsFile" | None = None, aux: "UvsFile | None" = None) -> IconGlyph | None:
         entry = self.find(name)
         if entry is None:
             return None
@@ -64,9 +68,10 @@ class IftFile:
                 entry.width,
                 entry.height,
             )
-        pattern = self._uv_pattern(uvs, entry)
-        if pattern is None:
+        found = self._uv_pattern(entry, uvs, aux)
+        if found is None:
             return None
+        uvs, _, pattern = found
         texture_path = None
         if 0 <= pattern.texture_index < len(uvs.textures):
             texture_path = uvs.textures[pattern.texture_index].path
@@ -83,19 +88,20 @@ class IftFile:
         )
 
     def resolver(
-        self, uvs: "UvsFile" | None = None
+        self, uvs: "UvsFile" | None = None, aux: "UvsFile | None" = None
     ) -> Callable[[str], IconGlyph | None]:
-        return lambda name: self.resolve(name, uvs)
+        return lambda name: self.resolve(name, uvs, aux)
 
-    def validate_uvs(self, uvs: "UvsFile") -> IftAtlasValidation:
+    def validate_uvs(self, uvs: "UvsFile", aux: "UvsFile | None" = None) -> IftAtlasValidation:
         entries = self.require_model().all_entries
         invalid: list[str] = []
         used: set[tuple[int, int]] = set()
         for entry in entries:
-            if self._uv_pattern(uvs, entry) is None:
+            found = self._uv_pattern(entry, uvs, aux)
+            if found is None:
                 invalid.append(entry.name)
-            else:
-                used.add((entry.uv_sequence_no, entry.uv_pattern_no))
+            elif found[0] is uvs:
+                used.add((found[1], entry.uv_pattern_no))
         all_patterns = {
             (sequence_no, pattern_no)
             for sequence_no, sequence in enumerate(uvs.sequences)

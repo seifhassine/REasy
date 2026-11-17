@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 import os
 
 from file_handlers.gcf.model import FontSlotMapping, GcfData
@@ -11,7 +12,10 @@ lazy from utils.resource_file_utils import (
     ResourceResolutionContext,
 )
 
-from .glyphs import DMC5_GUI_GLYPH_POLICY, GlyphFallbackPolicy, GlyphResolution
+lazy from file_handlers.fslt.codec import decode_fslt
+lazy from file_handlers.fslt.model import FsltData
+
+from .glyphs import DMC5_GUI_GLYPH_POLICY, SF6_GUI_GLYPH_POLICY, GlyphFallbackPolicy, GlyphResolution
 from .sfnt import SfntFont, SfntGlyphMetric
 
 
@@ -25,6 +29,7 @@ class FontCatalogProfile:
     oft_version: int
     platform_suffix: str
     glyph_policy: GlyphFallbackPolicy
+    slot_lists: bool = False
 
 
 DMC5_FONT_CATALOG_PROFILE = FontCatalogProfile(
@@ -36,6 +41,8 @@ DMC5_FONT_CATALOG_PROFILE = FontCatalogProfile(
 
 FONT_CATALOG_PROFILES: dict[int, FontCatalogProfile] = {
     15: DMC5_FONT_CATALOG_PROFILE,
+    26: FontCatalogProfile("SF6", oft_version=1, platform_suffix="stm", glyph_policy=SF6_GUI_GLYPH_POLICY,
+                           slot_lists=True),
 }
 
 
@@ -67,6 +74,7 @@ class FontFaceAsset:
     platform_variant: bool
     resource_name: str
     font: SfntFont
+    adjust: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0)
 
     def glyph_metric(self, glyph_id: int, *, vertical: bool = False) -> SfntGlyphMetric:
         return self.font.glyph_metric(glyph_id, vertical=vertical)
@@ -98,6 +106,11 @@ class ResolvedGlyph:
         return self.resolution.glyph_id
 
 
+@lru_cache(maxsize=32)
+def _font(data: bytes, version: int) -> SfntFont:
+    return OftFile.from_bytes(data, version=version).font()
+
+
 class GuiFontCatalog:
     """Compose a GCF font-slot table with versioned OFT/SFNT resources."""
 
@@ -113,7 +126,7 @@ class GuiFontCatalog:
         self.resource_data_loader = resource_data_loader
         self.profile = profile or font_catalog_profile(config.version)
         self.strict = bool(strict)
-        self._font_cache: dict[str, SfntFont] = {}
+        self._font_cache: dict[str, tuple[str, SfntFont] | None] = {}
         self._slot_cache: dict[tuple[int, int], FontSlotFaces] = {}
 
     @classmethod
@@ -161,16 +174,10 @@ class GuiFontCatalog:
         return None
 
     def _load_font(self, asset_path: str) -> tuple[str, SfntFont] | None:
-        resolved = self.resolve_resource(asset_path)
-        if resolved is None:
-            return None
-        resource_name, data = resolved
-        key = resource_name.casefold()
-        font = self._font_cache.get(key)
-        if font is None:
-            font = OftFile.from_bytes(data, version=self.profile.oft_version).font()
-            self._font_cache[key] = font
-        return resource_name, font
+        if asset_path not in self._font_cache:
+            resolved = self.resolve_resource(asset_path)
+            self._font_cache[asset_path] = resolved and (resolved[0], _font(resolved[1], self.profile.oft_version))
+        return self._font_cache[asset_path]
 
     def slot_faces(self, language: int, slot: int) -> FontSlotFaces:
         key = int(language), int(slot)
@@ -179,7 +186,9 @@ class GuiFontCatalog:
             return cached
         mapping = self.config.font_slot(*key)
         faces: list[FontFaceAsset] = []
-        for candidate_index, asset_path in enumerate(mapping.asset_paths):
+        listed = [(font.path, font.adjust) for font in self._slot_list(key[0]).slots[key[1]].fonts] if (
+            self.profile.slot_lists) else [(path, (0.0, 0.0, 1.0, 1.0)) for path in mapping.asset_paths]
+        for candidate_index, (asset_path, adjust) in enumerate(listed):
             if not asset_path:
                 continue
             loaded = self._load_font(asset_path)
@@ -195,11 +204,28 @@ class GuiFontCatalog:
                     platform_variant,
                     resource_name,
                     font,
+                    tuple(adjust),
                 )
             )
         result = FontSlotFaces(mapping, tuple(faces), (mapping.scale_for(0), mapping.scale_for(1)))
         self._slot_cache[key] = result
         return result
+
+    @property
+    def languages(self) -> frozenset[int]:
+        config = self.config
+        return frozenset(language for language in range(config.language_count) if (
+            config.font_slot_list_paths[language] if self.profile.slot_lists else any(
+                any(config.font_slot(language, slot).asset_paths) for slot in range(config.font_slot_count))))
+
+    def _slot_list(self, language: int):
+        path = self.config.font_slot_list_paths[language]
+        if not path:
+            return FsltData()
+        resolved = self.resource_data_loader(path)
+        if resolved is None:
+            raise FontCatalogError(f"language {language} names no loadable font slot list ({path!r})")
+        return decode_fslt(bytes(resolved[1]))
 
     def preload_configured_faces(self) -> tuple[FontFaceAsset, ...]:
         """Load every distinct font resource referenced by the slot table."""

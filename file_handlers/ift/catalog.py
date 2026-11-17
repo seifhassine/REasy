@@ -24,6 +24,7 @@ class IconFontCatalogProfile:
 DMC5_ICON_FONT_CATALOG_PROFILE = IconFontCatalogProfile("DMC5", 1, 7)
 ICON_FONT_CATALOG_PROFILES: dict[int, IconFontCatalogProfile] = {
     15: DMC5_ICON_FONT_CATALOG_PROFILE,
+    26: IconFontCatalogProfile("SF6", 7, 7),
 }
 
 
@@ -55,6 +56,7 @@ class IconFontCatalog:
         self.uvs_resource_name = ""
         self.ift: IftFile | None = None
         self.uvs: UvsFile | None = None
+        self.aux_uvs: UvsFile | None = None
 
     @classmethod
     def from_gcf(
@@ -86,30 +88,27 @@ class IconFontCatalog:
         ift_name, ift_data = resolved_ift
         self.ift_resource_name = str(ift_name)
         self.ift = IftFile.from_bytes(bytes(ift_data))
+        model = self.ift.require_model()
+        self.uvs_resource_name, self.uvs = self._uvs(model.uv_sequence_path)
+        self.aux_uvs = self._uvs(model.aux_path)[1] if model.aux_path else None
 
-        uv_path = resource_path_with_version(
-            self.ift.require_model().uv_sequence_path,
-            "uvs",
-            self.profile.default_uvs_version,
-        )
+    def _uvs(self, path: str) -> tuple[str, UvsFile]:
+        uv_path = resource_path_with_version(path, "uvs", self.profile.default_uvs_version)
         resolved_uvs = self.resource_data_loader(uv_path)
         if resolved_uvs is None:
             raise FileNotFoundError(f"unable to resolve icon UVS resource: {uv_path}")
         uvs_name, uvs_data = resolved_uvs
-        self.uvs_resource_name = str(uvs_name)
-        version = (
-            resource_version_from_path(self.uvs_resource_name, "uvs")
-            or self.profile.default_uvs_version
-        )
-        self.uvs = UvsFile()
-        self.uvs.read(bytes(uvs_data), version=version)
+        uvs = UvsFile()
+        uvs.read(bytes(uvs_data), version=resource_version_from_path(str(uvs_name), "uvs")
+                 or self.profile.default_uvs_version)
+        return str(uvs_name), uvs
 
     def resolve(self, name: str) -> IconGlyph | None:
         self.load()
         assert self.ift is not None and self.uvs is not None
-        return self.ift.resolve(name, self.uvs)
+        return self.ift.resolve(name, self.uvs, self.aux_uvs)
 
     def validate(self) -> IftAtlasValidation:
         self.load()
         assert self.ift is not None and self.uvs is not None
-        return self.ift.validate_uvs(self.uvs)
+        return self.ift.validate_uvs(self.uvs, self.aux_uvs)

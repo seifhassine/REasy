@@ -14,6 +14,7 @@ lazy from file_handlers.clip.rules import PropertyType
 from file_handlers.document_commands import ReplaceContents, SetFields
 lazy from file_handlers.native_math import f32
 
+from .authoring import copied
 from .document import GuiEditDocument
 from .errors import GuiEditError, GuiFormatError, GuiWriteError
 from .model import (
@@ -23,6 +24,8 @@ from .model import (
     GuiNineSlice,
     GuiNineSliceCell,
     GuiObject,
+    GuiParameter,
+    GuiParameterOverride,
     GuiProperty,
     GuiSymbol,
     GuiTextureEntry,
@@ -74,7 +77,7 @@ def _settle_stored(document: GuiEditDocument, obj: GuiObject, text: str) -> None
     ruled = {field.name for field in authoring.fields(obj.type_name) if field.when is not None}
     kept = [prop for prop in obj.properties if prop.name not in ruled or prop.name in stored]
     held = {prop.name for prop in kept}
-    added = [GuiProperty(name, field.type, copy.deepcopy(field.default)) for name, field in stored.items()
+    added = [GuiProperty(name, field.type, copied(field.default)) for name, field in stored.items()
              if name in ruled and name not in held]
     if added or len(kept) != len(obj.properties):
         document.push(ReplaceContents(document, obj, "properties", _ranked(document, obj, kept, added), text))
@@ -101,6 +104,23 @@ def set_value(document: GuiEditDocument, obj: GuiObject, name: str, value) -> No
             document.push(SetFields(document, [(prop, {"value": value})], text))
         if rules:
             _settle_stored(document, obj, text)
+
+
+def set_parameter(document: GuiEditDocument, item: GuiParameter | GuiParameterOverride, label: str, value) -> None:
+    value = checked(document, item.type, value, label)
+    if item.value != value:
+        document.push(SetFields(document, [(item, {"value": value})],
+                                translate("GuiEditDocument", "Set {0}").format(label)))
+
+
+def rename_parameter(document: GuiEditDocument, parameter: GuiParameter, name: str) -> None:
+    check_name(document, name)
+    if any(item.name == name for item in document.gui.parameters if item is not parameter):
+        raise GuiEditError(translate("GuiEditDocument", "The file already declares a parameter named {0}.")
+                           .format(name))
+    if parameter.name != name:
+        document.push(SetFields(document, [(parameter, {"name": name})],
+                                translate("GuiEditDocument", "Rename Parameter {0}").format(name)))
 
 
 def set_override(document: GuiEditDocument, path: str, type_name: str, name: str, kind: PropertyType, value) -> None:
@@ -179,7 +199,7 @@ def _add_nodes(document: GuiEditDocument, symbol: GuiSymbol, objects: list[GuiOb
         for obj in objects:
             before = {other.name for other in symbol.objects[:symbol.objects.index(obj)]}
             at = max((index + 1 for index, node in enumerate(held) if node.name in before), default=0)
-            held.insert(at, object_node(obj))
+            held.insert(at, object_node(obj, document.gui.version))
         clip.push(ReplaceContents(clip, root, "children", held, text))
 
 
@@ -257,9 +277,7 @@ def remove_objects(document: GuiEditDocument, objects: list[GuiObject]) -> None:
     text = translate("GuiEditDocument", "Remove {0}").format(objects[0].name) if len(objects) == 1 else \
         translate("GuiEditDocument", "Remove {0} Objects").format(len(objects))
     with document.macro(text):
-        if lost:
-            document.push(ReplaceContents(document, gui, "bindings",
-                                          [item for item in gui.bindings if id(item) not in lost], text))
+        _drop_paths(document, lost, text)
         for symbol in gui.symbols:
             names = {obj.name for obj in symbol.objects if id(obj) in doomed}
             if names:
@@ -268,6 +286,14 @@ def remove_objects(document: GuiEditDocument, objects: list[GuiObject]) -> None:
                                               [obj for obj in symbol.objects if id(obj) not in doomed], text))
         document.push(ReplaceContents(document, gui, "objects",
                                       [obj for obj in gui.objects if id(obj) not in doomed], text))
+
+
+def _drop_paths(document: GuiEditDocument, doomed: set[int], text: str) -> None:
+    gui = document.gui
+    for name in ("bindings", "parameter_references"):
+        held = getattr(gui, name)
+        if any(id(item) in doomed for item in held):
+            document.push(ReplaceContents(document, gui, name, [item for item in held if id(item) not in doomed], text))
 
 
 def rename_object(document: GuiEditDocument, obj: GuiObject, name: str) -> None:
@@ -340,9 +366,7 @@ def move_objects(document: GuiEditDocument, objects: list[GuiObject], symbol: Gu
                     gone.add(id(binding))
         if edits:
             document.push(SetFields(document, edits, text))
-        if gone:
-            document.push(ReplaceContents(document, gui, "bindings",
-                                          [item for item in gui.bindings if id(item) not in gone], text))
+        _drop_paths(document, gone, text)
 
 
 def set_symbol(document: GuiEditDocument, obj: GuiObject, symbol: GuiSymbol | None, twin: bool = False) -> None:
@@ -360,9 +384,7 @@ def set_symbol(document: GuiEditDocument, obj: GuiObject, symbol: GuiSymbol | No
                                 if binding.target_path != path}
     text = translate("GuiEditDocument", "Set Symbol of {0}").format(obj.name)
     with document.macro(text):
-        if below:
-            document.push(ReplaceContents(document, gui, "bindings",
-                                          [item for item in gui.bindings if id(item) not in below], text))
+        _drop_paths(document, below, text)
         document.push(SetFields(document, [(obj, {"prototype_guid": symbol.guid if symbol is not None else ZERO_GUID})],
                                 text))
 
@@ -376,7 +398,11 @@ def remove_symbol(document: GuiEditDocument, symbol: GuiSymbol) -> None:
                            .format(symbol.name, len(uses)))
     text = translate("GuiEditDocument", "Remove {0}").format(symbol.name)
     doomed = {id(item) for item in (*symbol.objects, *symbol.animations)}
+    cut = [(item, {"transition": None}) for item in gui.animations
+           if id(item) not in doomed and item.transition is not None and id(item.transition) in doomed]
     with document.macro(text):
+        if cut:
+            document.push(SetFields(document, cut, text))
         document.push(ReplaceContents(document, gui, "symbols", [item for item in gui.symbols if item is not symbol],
                                       text))
         document.push(ReplaceContents(document, gui, "objects",
@@ -419,8 +445,9 @@ def renew(symbol: GuiSymbol, used: set[uuid.UUID], every: bool = True) -> None:
 
 
 def duplicate_symbol(document: GuiEditDocument, symbol: GuiSymbol, name: str | None = None) -> GuiSymbol:
-    gui, used = document.gui, _used_guids(document)
-    clone = copy.deepcopy(symbol)
+    gui, used, own = document.gui, _used_guids(document), {id(item) for item in symbol.animations}
+    clone = copy.deepcopy(symbol, {id(item.transition): item.transition for item in symbol.animations
+                                   if item.transition is not None and id(item.transition) not in own})
     clone.guid = new_guid(used)
     clone.name = name or document.authoring.free_name("copy", {item.name for item in gui.symbols},
                                                        stem=re.sub(r"\d+$", "", symbol.name))

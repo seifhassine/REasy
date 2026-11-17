@@ -33,7 +33,7 @@ class GuiEditor(QWidget):
         super().__init__(parent)
         self.document, self.handler = document, handler
         self.state = state = EditorState(document, handler.filepath, handler.resolve_resource,
-                                         handler.locate_resource, handler.listed, game, self)
+                                         handler.files, handler.listed, game, self)
         self.popup = SearchPopup(self, state.attempt)
         self._panel: QFrame | None = None
         self._listed: tuple = ()

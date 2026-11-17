@@ -1,0 +1,21 @@
+{
+ "format": 1,
+ "game": "sf6",
+ "resource_version": 250109895,
+ "buffer": "EnvironmentInfo",
+ "time": "timeMillisecond",
+ "day": 86400000,
+ "scale": 1.0,
+ "frame": "frameCount",
+ "odd": "isOddFrame",
+ "parameters": "userGlobalParams",
+ "timers": [
+  {"word": 36, "per_second": 1.0, "divisor": 60.0, "period": 720.0, "subtract": true, "inclusive": true},
+  {"word": 47, "per_second": 1.0, "divisor": 60.0, "period": 720.0, "subtract": true, "inclusive": true}
+ ],
+ "mirrors": {
+  "breakingPBR_Reserved": 3,
+  "reserveEnvironmentInfo3": 6,
+  "reserveEnvironmentInfo4": 7
+ }
+}

@@ -9,6 +9,7 @@ import uuid
 lazy from file_handlers.clip.encode import write_motclip
 lazy from file_handlers.clip.errors import ClipFormatError
 lazy from file_handlers.clip.rules import PropertyType
+lazy from utils.hash_util import murmur3_hash_utf16le
 
 from .errors import GuiFormatError, GuiWriteError
 from .model import (
@@ -18,10 +19,13 @@ from .model import (
     GuiDocument,
     GuiNineSlice,
     GuiObject,
+    GuiParameter,
+    GuiParameterOverride,
+    GuiParameterReference,
     GuiTextureSet,
 )
 from .rules import STRINGS, GuiLayout, gui_layout
-from .storage import Stored, animated, asset_paths, stored
+from .storage import Stored, animated, asset_paths, baseline_masks, state_flags, stored
 
 _INTEGERS = frozenset("bBhHiIqQ")
 
@@ -54,7 +58,8 @@ def encode_value(layout: GuiLayout, kind: PropertyType, value, name: str) -> tup
         if type(value) is not int:
             raise GuiWriteError(f"{name}: value is outside {kind.name}")
         try:
-            return int.from_bytes(struct.pack("<" + storage, value), "little"), "", b""
+            struct.pack("<" + storage, value)
+            return value & 0xFFFFFFFFFFFFFFFF, "", b""
         except struct.error:
             raise GuiWriteError(f"{name}: value is outside {kind.name}") from None
     if value is None:
@@ -123,8 +128,9 @@ class _Writer:
             self.put("animation_list", animations,
                      {"count": len(symbol.animations), "states": len(symbol.animation_states())})
         masks = {key: value for symbol in symbols for key, value in animated(symbol).items()}
-        split = {id(obj): stored(obj, masks.get(id(obj), {})) for obj in document.objects}
-        object_offsets = {id(obj): self.object(obj, *split[id(obj)]) for obj in document.objects}
+        split = {id(obj): stored(obj, baseline_masks(obj, masks.get(id(obj), {}))) for obj in document.objects}
+        object_offsets = {id(obj): self.object(obj, *split[id(obj)], masks.get(id(obj), {}))
+                          for obj in document.objects}
         animation_offsets = {id(animation): self.animation(animation) for animation in document.animations}
         root_object = object_offsets[id(document.root_object)] if document.root_object is not None else 0
         self.put("root", root, {"first_symbol": symbol_offsets[0] if symbols else 0, "root_object": root_object,
@@ -138,13 +144,15 @@ class _Writer:
             if animation.transition is not None:
                 self.link("animation", animation_offsets[id(animation)], "transition",
                           animation_offsets[id(animation.transition)])
-        metadata = self.reserve(records["list"].size)
+        header = self.layout.header.offsets
+        metadata = self.reserve(records["list"].size) if "metadata" in header else 0
         bindings = self.bindings(document.bindings)
+        parameters = self.parameters(document) if "parameters" in header else 0
         imports = self.paths(document.imported_gui_paths)
         assets = self.paths(asset_paths(document, split.values()))
         self.data[:self.layout.header.size] = self.layout.header.encode(
             {"version": document.version, "root": root, "metadata": metadata, "bindings": bindings,
-             "imports": imports, "assets": assets})
+             "parameters": parameters, "imports": imports, "assets": assets})
         return self.finish()
 
     def reserve(self, size: int) -> int:
@@ -169,33 +177,79 @@ class _Writer:
         for index, target in enumerate(targets):
             self.put("pointer", offset + index * size, {"at": target})
 
-    def object(self, obj: GuiObject, properties: list[Stored], defaults: list[Stored]) -> int:
+    def object(self, obj: GuiObject, properties: list[Stored], defaults: list[Stored], masks: dict[str, int]) -> int:
         offset = self.reserve(self.records["object"].size)
         self.put("object", offset, {"guid": obj.instance_guid.bytes_le, "prototype": obj.prototype_guid.bytes_le,
-                                    "name": obj.name, "type": obj.type_name, "properties": 0, "defaults": 0,
-                                    "special": 0})
+                                    "name": obj.name, "type": obj.type_name, "properties": 0, "order": 0,
+                                    "defaults": 0, "special": 0,
+                                    "flags": state_flags(self.layout.state_flags, obj, masks)})
         name, kind = self.layout.name_property
-        self.link("object", offset, "properties",
-                  self.properties([Stored(name, PropertyType(kind), obj.name), *properties]))
-        self.link("object", offset, "defaults", self.properties(defaults))
+        properties = list(properties)
+        properties.insert(min(obj.name_at, len(properties)), Stored(name, PropertyType(kind), obj.name))
+        ordered = "order" in self.records["object"].offsets
+        self.link("object", offset, "properties", self.properties(properties, ordered))
+        if ordered:
+            self.link("object", offset, "order", self.order(properties))
+        self.link("object", offset, "defaults", self.properties(defaults, ordered))
         if obj.special_data is not None:
             self.reference(offset + self.records["object"].offsets["special"], "special",
                            encode_special(self.layout, obj.type_name, obj.special_data), False)
         return offset
 
-    def properties(self, properties: list[Stored]) -> int:
+    def properties(self, properties: list[Stored], ordered: bool = False) -> int:
         listing, size = self.records["list"], self.records["property"].size
+        if ordered:
+            properties = sorted(properties, key=lambda prop: murmur3_hash_utf16le(prop.name))
         offset = self.reserve(listing.size + len(properties) * size)
         self.put("list", offset, {"count": len(properties)})
         for index, prop in enumerate(properties):
             self.property(offset + listing.size + index * size, prop)
         return offset
 
+    def order(self, properties: list[Stored]) -> int:
+        stored = sorted(range(len(properties)), key=lambda at: murmur3_hash_utf16le(properties[at].name))
+        place = {at: index for index, at in enumerate(stored)}
+        size = self.records["order"].size
+        offset = self.reserve(-(-len(properties) * size // 8) * 8)
+        for index in range(len(properties)):
+            self.put("order", offset + index * size, {"at": place[index]})
+        return offset
+
     def property(self, offset: int, prop: Stored) -> None:
         raw, pool, payload = encode_value(self.layout, prop.type, prop.value, prop.name)
-        self.put("property", offset, {"type": int(prop.type), "mask": prop.mask, "name": prop.name, "value": raw})
+        self.put("property", offset, {"type": int(prop.type), "mask": prop.mask, "name": prop.name, "value": raw,
+                                      "hash": murmur3_hash_utf16le(prop.name)})
         if pool:
             self.reference(offset + self.records["property"].offsets["value"], pool, payload)
+
+    def parameters(self, document: GuiDocument) -> int:
+        table = self.reserve(self.records["parameter_table"].size)
+        lists = {}
+        for field, name, items in (("declarations", "parameter", document.parameters),
+                                   ("references", "parameter_reference", document.parameter_references),
+                                   ("overrides", "parameter_override", document.parameter_overrides)):
+            listing, size = self.records["list"], self.records[name].size
+            offset = lists[field] = self.reserve(listing.size + len(items) * size if items
+                                                 else self.layout.parameter_list_empty)
+            self.put("list", offset, {"count": len(items)})
+            for index, item in enumerate(items):
+                self.parameter(name, offset + listing.size + index * size, item)
+        self.put("parameter_table", table, lists)
+        return table
+
+    def parameter(self, name: str, offset: int,
+                  item: GuiParameter | GuiParameterReference | GuiParameterOverride) -> None:
+        if isinstance(item, GuiParameterReference):
+            self.put(name, offset, {"guid": item.guid.bytes_le, "path": item.target_path, "type": int(item.type),
+                                    "mask": item.mask, "class": item.target_type, "field": item.field})
+            return
+        raw, pool, payload = encode_value(self.layout, item.type, item.value, f"parameter {item.guid}")
+        names = {"name": item.name, "text": item.text} if isinstance(item, GuiParameter) else {}
+        self.put(name, offset, {"guid": item.guid.bytes_le, "type": int(item.type),
+                                "parameter_type": item.parameter_type, "value": raw, "enum_type": item.enum_type,
+                                **names})
+        if pool:
+            self.reference(offset + self.records[name].offsets["value"], pool, payload)
 
     def animation(self, animation: GuiAnimation) -> int:
         try:

@@ -33,29 +33,38 @@ class GuiRuntimeProfile:
     game: str
     resource_version: int
     config_resource_paths: tuple[str, ...]
-    runtime_target: str
     safe_area_ratio: float
     preview_language: str
     degree_factors: tuple[float, float]
-    srgb_to_linear: tuple[float, float, float, float, float]
-    uv_orientations: tuple[tuple[str, str, str, str], ...]
+    size_halves: str
     draw_order: Mapping[str, Any]
+    masks: Mapping[str, str]
     undeclared: Mapping[str, str]
     control_fields: Mapping[str, str]
     clip_mode: int
-    list_input: Mapping[str, Mapping[str, Any]]
-    list_default: str
-    list_handlers: Mapping[str, Mapping[str, str]]
-    list_values: Mapping[str, Mapping[str, Mapping[str, Any]]]
-    grid_input: tuple[str, str, str, str]
-    key_repeat: tuple[float, float]
-    try_pointer: str
-    world: Mapping[str, Any]
-    world_view_output: tuple[float, float]
     types: Mapping[str, Mapping[str, Any]]
-    text: Mapping[str, Any]
-    message_tags: Mapping[str, Any]
-    icons: Mapping[str, Any]
+    world: Mapping[str, Any]
+    runtime_target: str | None = None
+    srgb_to_linear: tuple[float, float, float, float, float] | None = None
+    uv_orientations: tuple[tuple[str, str, str, str], ...] | None = None
+    list_input: Mapping[str, Mapping[str, Any]] | None = None
+    list_default: str | None = None
+    list_handlers: Mapping[str, Mapping[str, str]] | None = None
+    list_values: Mapping[str, Mapping[str, Mapping[str, Any]]] | None = None
+    grid_input: tuple[str, str, str, str] | None = None
+    key_repeat: tuple[float, float] | None = None
+    try_pointer: str | None = None
+    world_view_output: tuple[float, float] | None = None
+    text: Mapping[str, Any] | None = None
+    message_tags: Mapping[str, Any] | None = None
+    text_animation: Mapping[str, Any] | None = None
+    icons: Mapping[str, Any] | None = None
+    parameters: Mapping[str, Any] | None = None
+    list_keys: Mapping[str, Mapping[str, Any]] | None = None
+    grid_keys: tuple[int, int, int, int] | None = None
+    state_reset_flags: tuple[int, int] | None = None
+    vertex_degamma: str | None = None
+    color_presets: Mapping[str, Any] | None = None
 
     def runtime_type(self, type_name: str) -> GuiRuntimeType:
         return _runtime_type(self.game, type_name)
@@ -156,5 +165,6 @@ def _labels(game: str, enum: str) -> dict[int, str]:
 
 
 from .dmc5.adapter import DMC5_GUI_ADAPTER
+from .sf6.adapter import SF6_GUI_ADAPTER
 
-GUI_ADAPTERS: dict[str, GuiRuntimeAdapter] = {"DMC5": DMC5_GUI_ADAPTER}
+GUI_ADAPTERS: dict[str, GuiRuntimeAdapter] = {"DMC5": DMC5_GUI_ADAPTER, "SF6": SF6_GUI_ADAPTER}

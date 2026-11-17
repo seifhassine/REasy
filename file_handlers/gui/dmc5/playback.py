@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 lazy from file_handlers.clip.model import Property
@@ -9,7 +10,8 @@ lazy from file_handlers.clip.play import play
 from file_handlers.clip.rules import PropertyType, game_player
 
 lazy from ..model import GuiAnimation, GuiSymbol
-lazy from ..storage import Stored, baselines, masked, nodes, places
+lazy from ..rules import gui_layout
+lazy from ..storage import Stored, animated, baselines, masked, nodes, places, state_flags
 lazy from file_handlers.native_math import f32 as _f32
 lazy from file_handlers.native_math import fadd as _fadd
 lazy from ..scene import GuiSceneNode
@@ -85,9 +87,11 @@ class Dmc5GuiPlayback:
     def __init__(self, scene: Dmc5GuiScene) -> None:
         self.scene = scene
         profile = scene.workspace.profile
-        self._fields, self._mode = profile.control_fields, profile.clip_mode
+        self._fields, self._mode, self._reset = profile.control_fields, profile.clip_mode, profile.state_reset_flags
+        self._flags = gui_layout(scene.workspace.root.document.version).state_flags
         self._control_fields = frozenset(self._fields.values())
         self._baselines: dict[int, dict[int, list[Stored]]] = {}
+        self._animated: dict[int, dict[int, dict[str, int]]] = {}
         self.controllers: dict[str, _Controller] = {}
         self.overrides: dict[str, dict[str, object]] = {}
         self.selected_paths: tuple[str, ...] = ()
@@ -100,6 +104,7 @@ class Dmc5GuiPlayback:
         self._assignment_sink: list[GuiPropertyAssignment] | None = None
         self._propagation_stack: set[tuple[str, str, str, str]] | None = None
         self._update_paths: tuple[str, ...] = ()
+        self.on_assignments: Callable[[tuple[GuiPropertyAssignment, ...]], None] | None = None
         self._start()
 
     @property
@@ -109,8 +114,12 @@ class Dmc5GuiPlayback:
 
     def _start(self) -> None:
         self.scene.drop_clones()
-        held = self.scene.workspace.profile.list_values.get(self.scene.workspace.root_key, {})
-        self.overrides = {node.path: {**node.object.values(), **held.get(node.path, {})} for node in self.scene.nodes}
+        values = self.scene.workspace.profile.list_values
+        held = {} if values is None else values.get(self.scene.workspace.root_key, {})
+        self.overrides = {node.path: {} for node in self.scene.nodes}
+        for node in self.scene.nodes:
+            for name, value in (*node.object.values().items(), *held.get(node.path, {}).items()):
+                self._set(self.overrides[node.path], node.object.type_name, name, value)
         fields = self._fields
         for node in self.scene.nodes:
             symbol = node.prototype.symbol if node.prototype is not None else None
@@ -138,9 +147,10 @@ class Dmc5GuiPlayback:
 
         initialize(self.scene.root)
         self._update_paths = tuple(update_paths)
+        for target, name, value in self.scene.parameters():
+            self._assign(target, name, value, "parameter", events, assignments, stack)
         for binding, target in self.scene.bindings:
-            self._assign(target.path, binding.property.name, binding.property.value, "binding", events, assignments,
-                         stack)
+            self._assign(target, binding.property.name, binding.property.value, "binding", events, assignments, stack)
         self._finish_mutation(events, assignments)
 
     def select_animation(
@@ -205,9 +215,9 @@ class Dmc5GuiPlayback:
         )
         return valid
 
-    def assign(self, path: str, name: str, value: object) -> None:
+    def assign(self, node: GuiSceneNode, name: str, value: object) -> None:
         self._run_mutation(lambda events, assignments, stack: self._assign(
-            path, name, value, "script", events, assignments, stack))
+            node, name, value, "script", events, assignments, stack))
 
     def spawn(self, node: GuiSceneNode) -> None:
         def start(item: GuiSceneNode, events, assignments, stack) -> None:
@@ -334,14 +344,20 @@ class Dmc5GuiPlayback:
         self._sync_controller(controller)
         symbol = controller.symbol
         if id(symbol) not in self._baselines:
-            self._baselines[id(symbol)] = baselines(symbol)
+            self._baselines[id(symbol)], self._animated[id(symbol)] = baselines(symbol), animated(symbol)
+        tracked = self._animated[id(symbol)]
         for child in self.scene.native_children(controller.node, self.overrides):
             for record in self._baselines[id(symbol)].get(id(child.object), ()):
                 target = self.overrides.setdefault(child.path, {})
                 self._assign(
-                    child.path, record.name, masked(target.get(record.name), record), "baseline",
+                    child, record.name, masked(target.get(record.name), record), "baseline",
                     events, assignments, stack,
                 )
+            held = self.controllers.get(child.path) if self._reset else None
+            if held is not None:
+                flags = state_flags(self._flags, child.object, tracked.get(id(child.origin().object), {}))
+                if flags & self._reset[0] and not flags & self._reset[1]:
+                    self._activate_name(held, held.symbol.animations[0].name, False, events, assignments, stack)
         self._evaluate_intervals(
             controller, ((-1.0, 0.0),), events, assignments, stack
         )
@@ -374,19 +390,15 @@ class Dmc5GuiPlayback:
         if not completed or was_completed:
             return
         node = controller.node
-        for name, cases in self.scene.workspace.profile.runtime_type(node.object.type_name).facts.get(
-                "finished", {}).items():
-            held = self.scene.runtime_properties(node, self.overrides[node.path])
-            follows = cases["true" if held[name] else "false"].get(source_state)
-            if follows is not None:
-                self._activate_name(controller, follows, False, events, assignments, stack)
-        completion = GuiCompletionEvent(
-            controller.node.path,
-            source_state,
-            source_pattern,
-            animation.name,
-        )
-        events.append(completion)
+        if not animation.loop:
+            steps = self.scene.workspace.profile.runtime_type(node.object.type_name).facts.get("finished", ())
+            held = steps and self.scene.runtime_properties(node, self.overrides[node.path])
+            for step in steps:
+                if all(held[name] == value for name, value in step.get("when", {}).items()):
+                    follows = step.get("states", {}).get(source_state, step.get("otherwise"))
+                    if follows is not None:
+                        self._activate_name(controller, follows, False, events, assignments, stack)
+            events.append(GuiCompletionEvent(node.path, source_state, source_pattern, animation.name))
         # Native compares the descriptor after the delegate returns.
         if (
             controller.animation is animation
@@ -396,7 +408,7 @@ class Dmc5GuiPlayback:
             self._activate_name(
                 controller,
                 animation.transition.name,
-                True,
+                False,
                 events,
                 assignments,
                 stack,
@@ -420,7 +432,7 @@ class Dmc5GuiPlayback:
         for start, end in intervals:
             for target, track in self._tracks(controller, animation):
                 for value in self._played(target, track, start, end, rules):
-                    self._assign(target.path, track.name, value, "track", events, assignments, stack)
+                    self._assign(target, track.name, value, "track", events, assignments, stack)
 
     def _tracks(self, controller: _Controller, animation: GuiAnimation):
         children = self.scene.native_children(controller.node, self.overrides)
@@ -447,9 +459,25 @@ class Dmc5GuiPlayback:
                 result[index], written, last = value, True, value
         return [result] if written else []
 
+    def _set(self, held: dict[str, object], kind: str, name: str, value: object) -> bool:
+        profile = self.scene.workspace.profile
+        runtime = profile.runtime_type(kind)
+        rule = runtime.facts.get("setters")
+        group = None if rule is None else next((group for group in rule["slots"] if name in group), None)
+        if group is None:
+            held[name] = value
+            return True
+        if name in rule.get("needs", {}) and profile.enum_label(
+                {**runtime.defaults, **held}, rule["type"], rule["enum"]) != rule["needs"][name]:
+            return False
+        held.update({alias: copy.deepcopy(value) for alias in group})
+        if name in rule["sets"]:
+            held[rule["type"]] = rule["sets"][name]
+        return True
+
     def _assign(
         self,
-        path: str,
+        node: GuiSceneNode,
         name: str,
         value: object,
         source: str,
@@ -457,8 +485,9 @@ class Dmc5GuiPlayback:
         assignments: list[GuiPropertyAssignment],
         stack: set[tuple[str, str, str, str]],
     ) -> None:
-        copied = copy.deepcopy(value)
-        self.overrides.setdefault(path, {})[name] = copied
+        path, copied = node.path, copy.deepcopy(value)
+        if not self._set(self.overrides.setdefault(path, {}), node.object.type_name, name, copied):
+            return
         assignments.append(GuiPropertyAssignment(path, name, copied, source))
         if name not in self._control_fields:
             return
@@ -564,6 +593,8 @@ class Dmc5GuiPlayback:
 
     def _finish_mutation(self, events: list[object], assignments: list[GuiPropertyAssignment]) -> None:
         self.last_events, self.last_assignments = tuple(events), tuple(assignments)
+        if self.on_assignments is not None:
+            self.on_assignments(self.last_assignments)
 
 
 def _ucomiss_equal(left: float, right: float) -> bool:

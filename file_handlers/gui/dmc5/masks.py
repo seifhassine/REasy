@@ -17,10 +17,13 @@ def mask_passes(nodes: Iterable, enabled: Callable, draws: Callable) -> dict[str
         types = node.runtime.enum("MaskType")
         counts = counts or [0] * (max(types.values()) - types["Mask"] + 1)
         while held and held[-1][0] is not node.parent:
-            _left, counts, mode = held.pop()
+            left, saved, mode = held.pop()
+            every = left.runtime.masks["apply_to_parent"] == "every_level"
+            counts = [count + (_label(left, "MaskMode") == "ApplyToParent" and (every or now > 0))
+                      for count, now in zip(saved, counts)]
         if not draws(node):
             own = _label(node, "MaskMode")
-            held.append((node, [count + (own == "ApplyToParent") for count in counts], mode))
+            held.append((node, counts, mode))
             counts = list(counts)
             if own not in ("Keep", "ApplyToParent"):
                 mode = own

@@ -11,9 +11,10 @@ lazy from file_handlers.clip.rules import PropertyType
 
 from .errors import GuiWriteError
 from .model import ZERO_GUID, GuiDocument, GuiObject, GuiSymbol
+from .profiles import gui_runtime
 from .rules import gui_layout
 from .serializer import encode_value
-from .storage import nodes, places
+from .storage import nodes, places, state_flags
 from .structure import Structure
 
 ERROR, WARNING, NOTE = "error", "warning", "note"
@@ -40,6 +41,7 @@ def problems(document) -> list[Problem]:
         _object(document, obj, structure, workspace, found)
     _overrides(document, structure, workspace, found)
     if workspace is not None:
+        _references(gui, structure, workspace, found)
         _imports(gui, workspace, found)
     return sorted(found, key=lambda item: (ERROR, WARNING, NOTE).index(item.severity))
 
@@ -94,10 +96,6 @@ def _symbol(document, symbol: GuiSymbol, structure: Structure, found: list[Probl
         if not animation.name:
             found.append(Problem(ERROR, translate("GuiValidation", "A state of \"{0}\" has no name.")
                                  .format(symbol.name), animation))
-        if animation.transition is not None and animation.transition not in symbol.animations:
-            found.append(Problem(ERROR, translate("GuiValidation", "State \"{0}\" of \"{1}\" continues in a state of "
-                                                                   "another symbol.")
-                                 .format(animation.name, symbol.name), animation))
         for issue in document.clip(animation).issues():
             found.append(Problem(ERROR if issue.error else WARNING,
                                  translate("GuiValidation", "State \"{0}\" of \"{1}\": {2}")
@@ -122,13 +120,15 @@ def _track(document, symbol, animation, target: GuiObject, track, found: list[Pr
                              track))
         return
     held, field = target.property(track.name), document.authoring.field(target.type_name, track.name)
+    reset = gui_runtime(document.gui.version).state_reset_flags
+    flags = state_flags(gui_layout(document.gui.version).state_flags, target, {track.name: -1})
     if field is None:
         found.append(Problem(WARNING, translate("GuiValidation", "{0}: the class has no such property.").format(where),
                              track))
     elif field.type != track.type:
         found.append(Problem(ERROR, translate("GuiValidation", "{0}: the track is {1}, the property {2}.")
                              .format(where, PropertyType(track.type).name, field.type.name), track))
-    elif held is None:
+    elif held is None and not (reset and flags & reset[0] and not flags & reset[1]):
         found.append(Problem(WARNING,
                              translate("GuiValidation", "{0}: the object stores no value, so the property is not reset "
                                                         "when a state starts.").format(where), track))
@@ -219,6 +219,26 @@ def _overrides(document, structure: Structure, workspace, found: list[Problem]) 
                 and field.type != binding.property.type:
             found.append(Problem(ERROR, translate("GuiValidation", "The override of {0} is {1}; the property is {2}.")
                                  .format(where, binding.property.type.name, field.type.name), binding))
+
+
+def _references(gui: GuiDocument, structure: Structure, workspace, found: list[Problem]) -> None:
+    if not gui.parameter_references or workspace.missing_dependencies:
+        return
+    values = workspace.parameter_values()
+    for item in gui.parameter_references:
+        where = f"{item.target_path}.{item.field}"
+        target = structure.target(item) or _target(workspace, item.target_path)
+        if item.guid not in values:
+            found.append(Problem(WARNING, translate("GuiValidation", "The parameter reference of {0} names no "
+                                                                     "parameter: the game skips it.").format(where),
+                                 item))
+        if target is None:
+            found.append(Problem(WARNING, translate("GuiValidation", "The parameter reference of {0} names no "
+                                                                     "object: the game skips it.").format(where), item))
+        elif target.type_name != item.target_type:
+            found.append(Problem(ERROR, translate(
+                "GuiValidation", "The parameter reference of {0} is written for a {1}; the object is a {2}.").format(
+                where, item.target_type.rsplit(".", 1)[-1], target.type_name.rsplit(".", 1)[-1]), item))
 
 
 def _imports(gui: GuiDocument, workspace, found: list[Problem]) -> None:

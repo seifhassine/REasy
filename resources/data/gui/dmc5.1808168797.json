@@ -7,6 +7,7 @@
  "safe_area_ratio": 0.9,
  "preview_language": "English",
  "degree_factors": [0.0055555556900799274, 3.1415927410125732],
+ "size_halves": "binary16",
  "srgb_to_linear": [0.04045, 12.92, 0.055, 1.055, 2.4],
  "uv_orientations": [["LT", "RT", "LB", "RB"], ["LB", "LT", "RB", "RT"], ["RB", "LB", "RT", "LT"], ["RT", "RB", "LT", "LB"], ["RT", "LT", "RB", "LB"], ["RB", "RT", "LB", "LT"], ["LB", "RB", "LT", "RT"], ["LT", "LB", "RT", "RB"]],
  "draw_order": {
@@ -17,6 +18,7 @@
   "priority_shift": 17,
   "order_base": 32767
  },
+ "masks": {"apply_to_parent": "every_level"},
  "undeclared": {"MaskType": "Target", "MaskMode": "Keep", "ControlPoint": "LeftTop", "Segment": "Keep"},
  "control_fields": {"play": "Play", "frame": "PlayFrame", "state": "PlayState", "segment": "Segment", "pattern": "StatePattern", "next_state": "NextStateEnable"},
  "clip_mode": 0,
@@ -265,6 +267,7 @@
  "try_pointer": "LeftClick",
  "world": {
   "entry_scenes": ["scene/masterscene.scn"],
+  "walk_depth": 2,
   "gui": {"class": "via.gui.GUI", "asset": "v1", "segment": "Segment"},
   "messages": {"class": "via.gui.AdditionalMessage", "field": "MessageList"},
   "light": {"class": "via.gui.GUIPointLight",
@@ -283,8 +286,8 @@
                "speed": "PlaySpeed", "bind": "BindType", "binds": "via.timeline.BindType", "fixed": "Fixed",
                "base_fps": 60.0, "scene_time_scale": 1.0, "first_back": 0.1,
                "transform": "Transform", "position": "LocalPosition", "rotation": "LocalRotation"},
-  "holders": {"class": "app.MenuHolder", "label": "_HolderName", "entries": "_MenuPrefabs", "name": "Name",
-              "prefab": ["Prefab", "Path"]},
+  "holders": {"classes": ["app.MenuHolder"], "label": "_HolderName", "entries": "_MenuPrefabs", "name": "Name",
+              "prefab": ["Prefab", "Path"], "placed": true},
   "supplier": {"class": "app.HudSupplier", "common": "ComHudPackageList", "players": "PlHudPackageList",
                "path": "Path",
                "instanced": {"ComHudPackageList": 1, "PlHudPackageList": 4, "NoStoryPackageList": null}},
@@ -297,6 +300,7 @@
    "parent": "via.gui.DrawableElement",
    "program_names": "blur",
    "program_family": "blur",
+   "type_enum": "BlurFilter.BlurType",
    "size": "Size",
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "Position", "Rotation", "Size", "ControlPoint",
@@ -326,7 +330,10 @@
    "parent": "via.gui.MaskableElement",
    "program_family": "poly",
    "size": "Size",
+   "hit_radii": [1, 0],
    "ring_colors": {"Fill": ["Color", "Color"], "InOut": ["OuterColor", "InnerColor"]},
+   "setters": {"type": "ColorType", "enum": "CircleColorType", "slots": [["Color", "OuterColor"], ["InnerColor"]],
+               "sets": {"Color": "Fill", "OuterColor": "InOut", "InnerColor": "InOut"}},
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
     "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "Subdiv", "InnerRatio",
@@ -611,7 +618,7 @@
    "scale": "Scale",
    "mesh": {
     "mesh": "Mesh", "material": "Material", "position": "Position", "rotation": "Rotation", "scale": "Scale",
-    "light_groups": "LightGroupID"
+    "light_groups": "LightGroupID", "shading": [9]
    },
    "material_variables": {"slots": 8, "material": "MaterialName", "name": "VariableName", "type": "VariableType",
     "enum": "MaterialParamType",
@@ -669,6 +676,11 @@
     "Horizontal": ["ColorLeft", "ColorRight", "ColorLeft", "ColorRight"],
     "EachVertex": ["ColorLeftTop", "ColorRightTop", "ColorLeftBottom", "ColorRightBottom"]
    },
+   "setters": {"type": "ColorType", "enum": "ColorType", "slots": [["Color", "ColorTop", "ColorLeft", "ColorLeftTop"],
+               ["ColorBottom", "ColorLeftBottom"], ["ColorRight", "ColorRightTop"], ["ColorRightBottom"]],
+               "sets": {"Color": "Fill", "ColorTop": "Vertical", "ColorBottom": "Vertical", "ColorLeft": "Horizontal",
+                        "ColorRight": "Horizontal", "ColorLeftTop": "EachVertex", "ColorLeftBottom": "EachVertex",
+                        "ColorRightTop": "EachVertex", "ColorRightBottom": "EachVertex"}},
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
     "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "ControlPoint", "BlendType",
@@ -697,6 +709,7 @@
   "via.gui.Scale9Grid": {
    "parent": "via.gui.MaskableElement",
    "program_family": "poly",
+   "repeat_axis_flag": 0,
    "size": "Size",
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
@@ -755,6 +768,7 @@
   },
   "via.gui.ScrollList": {
    "parent": "via.gui.Control",
+   "finished": [{"otherwise": "DEFAULT"}],
    "properties": [
     "InputType", "MouseSelectType", "Loop", "ItemCount", "ItemMax", "ItemOffset", "CursorType", "CursorIndex",
     "ScrollEase", "ScrollTime", "Items", "SelectedIndex", "SelectedItem", "ScrollIndex", "SelectionChanged",
@@ -782,15 +796,14 @@
    "parent": "via.gui.Control",
    "properties": ["Selected", "CanSelect", "Enabled", "ListIndex", "DefaultStateName"],
    "defaults": {"Selected": false, "CanSelect": true, "Enabled": true, "ListIndex": 0},
-   "finished": {
-    "Enabled": {
-     "true": {"FOCUS": "SELECT", "UNFOCUS": "DEFAULT"},
-     "false": {"DISABLE_FOCUS": "DISABLE_SELECT", "DISABLE_UNFOCUS": "DISABLE"}
-    }
-   }
+   "finished": [
+    {"when": {"Enabled": true}, "states": {"FOCUS": "SELECT", "UNFOCUS": "DEFAULT"}},
+    {"when": {"Enabled": false}, "states": {"DISABLE_FOCUS": "DISABLE_SELECT", "DISABLE_UNFOCUS": "DISABLE"}}
+   ]
   },
   "via.gui.SimpleList": {
    "parent": "via.gui.Control",
+   "finished": [{"otherwise": "DEFAULT"}],
    "properties": [
     "InputType", "MouseSelectType", "SelectedIndex", "SelectedItem", "Loop", "Items", "SelectionChanged",
     "InputCheckEvent", "UseFocus"
@@ -805,6 +818,7 @@
   },
   "via.gui.SpriteSet": {
    "parent": "via.gui.MaskableElement",
+   "draw_gap": "its sprites are added by the game's script: a file holds none",
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "Position", "Rotation", "BlendType", "LinearAlphaBlend",
     "SamplerType", "UVSequence", "GlobalPosition"
@@ -824,6 +838,8 @@
    "size": "RegionSize",
    "hit_layout_size": true,
    "glyph_colors": {"Fill": ["Color", "Color"], "Vertical": ["ColorTop", "ColorBottom"]},
+   "setters": {"type": "ColorType", "enum": "FontColorType", "slots": [["Color", "ColorTop"], ["ColorBottom"]],
+               "sets": {"Color": "Fill", "ColorTop": "Vertical", "ColorBottom": "Vertical"}},
    "effect_alpha_multiplied": ["MultiplyTextColorAlpha"],
    "properties": [
     "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
@@ -977,6 +993,7 @@
   },
   "via.gui.Window": {
    "parent": "via.gui.Control",
+   "finished": [{"states": {"FADE_IN": "DEFAULT", "FADE_OUT": "DISABLE"}}],
    "properties": ["Open"],
    "defaults": {"Open": true}
   }
@@ -988,7 +1005,37 @@
   "ruby_height_language": "Japanese",
   "overflow_tolerance": 0.001,
   "region_fit": {"axes": {"None": [false, false], "Horizontal": [true, false], "Vertical": [false, true],
-   "Both": [true, true]}, "margin": 0.01, "upper": 0.9999998807907104, "steps": 20},
+   "Both": [true, true]}, "margin": 0.01, "upper": 0.9999998807907104, "steps": 20, "icon": null},
+  "region_halves": true,
+  "font_base": false,
+  "quad_margin": 0,
+  "erase_head_space": null,
+  "force_wrap": null,
+  "back_step": false,
+  "effect_blur_scaled": false,
+  "effect_run_size": false,
+  "unported_tags": {},
+  "script_tags": null,
+  "font_tag": {"digits": 1, "slots": 10},
+  "icon_merge": null,
+  "italic": null,
+  "bold": null,
+  "style_tags": [],
+  "ref_tag": null,
+  "flush_tags": ["FONT", "PAGE", "SIZE", "ICON", "RUBY", "COLOR"],
+  "page_tags": ["PAGE", "TIME", "SIZE", "FONT", "COLOR"],
+  "color_preset": null,
+  "color_refused": null,
+  "monospace": null,
+  "disable_tags": null,
+  "auto_arabic": null,
+  "bidi": null,
+  "direction_marks": {},
+  "shift_tag": null,
+  "extra_rtl": null,
+  "shaping": null,
+  "script_tag_depth": null,
+  "unported": {},
   "rtl_language": "Arabic",
   "rtl_ranges": [
    [1470, 1470], [1472, 1472], [1475, 1475], [1478, 1478], [1488, 1514], [1520, 1524], [1536, 1541], [1544, 1544],
@@ -1030,6 +1077,7 @@
   ]
  },
  "message_tags": {
+  "kind": "dmc5",
   "parameter": "id=\"([0-9]+)\"",
   "tags": {
    "KEY": {"message": "KeyAssign_{index:03d}0"},

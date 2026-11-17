@@ -3,7 +3,10 @@ import uuid
 import logging
 import json
 import os
+from functools import cache
 from typing import Any, Dict, List, Optional
+
+import numpy as np
 
 from file_handlers.base_handler import BaseFileHandler
 lazy from utils.app_paths import resource_path
@@ -442,12 +445,9 @@ class MsgHandler(BaseFileHandler):
 
     @classmethod
     def _decrypt_pool(cls, encrypted: bytes | bytearray) -> bytes:
-        decrypted = bytearray(len(encrypted))
-        previous_cipher_byte = 0
-        for index, cipher_byte in enumerate(encrypted):
-            decrypted[index] = cipher_byte ^ previous_cipher_byte ^ cls._KEY[index & 0xF]
-            previous_cipher_byte = cipher_byte
-        return decrypted.take_bytes()
+        cipher = np.frombuffer(encrypted, np.uint8)
+        return (cipher ^ np.concatenate((np.zeros(1, np.uint8), cipher[:-1]))
+                ^ np.tile(np.frombuffer(cls._KEY, np.uint8), -(-len(cipher) // len(cls._KEY)))[:len(cipher)]).tobytes()
 
     def _decrypt_string_pool(self):
         if not self.is_encrypted or self.header["data_offset"] is None:
@@ -470,14 +470,13 @@ class MsgHandler(BaseFileHandler):
     def _read_wstr(self, abs_off: int) -> str:
         if abs_off == 0:
             return ""
-        if self._pool and self.header["data_offset"] is not None and abs_off >= self.header["data_offset"]:
-            data = self._pool[abs_off - self.header["data_offset"]:]
-        else:
-            data = self.raw_data[abs_off:]
-        for i in range(0, len(data) - 1, 2):
-            if data[i] == 0 and data[i + 1] == 0:
-                return data[:i].decode("utf-16le", "ignore")
-        return data.decode("utf-16le", "ignore")
+        offset = self.header["data_offset"]
+        data, start = ((self._pool, abs_off - offset) if self._pool and offset is not None and abs_off >= offset
+                       else (self.raw_data, abs_off))
+        end = data.find(b"\x00\x00", start)
+        while end != -1 and (end - start) % 2:
+            end = data.find(b"\x00\x00", end + 1)
+        return data[start:None if end == -1 else end].decode("utf-16le", "ignore")
 
     def _parse_content(self):
         r = self.raw_data
@@ -497,6 +496,7 @@ class MsgHandler(BaseFileHandler):
         is_v12 = not self.is_encrypted
         base = 64 if is_v12 else 72
         self.messageTbl = list(struct.unpack_from(f"<{hdr['messageCount']}Q", r, base))
+        read = cache(self._read_wstr)
         for eoff in self.messageTbl:
             cur = {}
             cur_off = eoff
@@ -512,8 +512,8 @@ class MsgHandler(BaseFileHandler):
             name_ptr, attr_ptr = struct.unpack_from("<QQ", r, cur_off)
             cur_off += 16
             lang_ptrs = struct.unpack_from(f"<{hdr['languageDataCount']}Q", r, cur_off)
-            cur["name"] = self._read_wstr(name_ptr)
-            cur["content"] = [self._read_wstr(p) for p in lang_ptrs]
+            cur["name"] = read(name_ptr)
+            cur["content"] = [read(p) for p in lang_ptrs]
             cur["attributes"] = self._parse_attributes(attr_ptr)
             self.entries.append(cur)
 

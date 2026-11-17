@@ -1,6 +1,7 @@
 {
  "format": 1,
  "versions": {
-  "270020": {"layout": "v270020", "games": ["DMC5", "RE2"], "runtime": "DMC5"}
+  "270020": {"layout": "v270020", "games": ["DMC5", "RE2"], "runtime": "DMC5"},
+  "530035": {"layout": "v530035", "games": ["SF6"], "runtime": "SF6"}
  }
 }

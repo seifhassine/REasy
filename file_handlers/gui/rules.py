@@ -25,7 +25,12 @@ class GuiLayout:
     payloads: dict[str, str]
     values: dict[int, str]
     name_property: tuple[str, int]
+    stream_end: str
+    parameter_list_empty: int
     clip_version: int
+    empty_state_length: float
+    empty_track_span: tuple[float, float]
+    state_flags: tuple[str, int, int] | None
 
 
 @functools.cache
@@ -56,4 +61,7 @@ def gui_layout(version: int) -> GuiLayout:
                       for name, spec in data["records"].items()},
                      data["special"], tuple(data["pools"]), data["payloads"],
                      {codes[name]: storage for name, storage in data["values"].items()},
-                     (data["name_property"][0], codes[data["name_property"][1]]), data["clip_version"])
+                     (data["name_property"][0], codes[data["name_property"][1]]), data["stream_end"],
+                     data.get("parameter_list_empty", 0), data["clip_version"], float(data["empty_state_length"]),
+                     tuple(float(side) for side in data["empty_track_span"]),
+                     tuple(data["state_flags"]) if "state_flags" in data else None)

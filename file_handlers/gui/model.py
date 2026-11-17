@@ -69,6 +69,8 @@ class GuiObject:
     type_name: str
     properties: list[GuiProperty] = field(default_factory=list)
     special_data: GuiSpecialData = None
+    name_at: int = 0
+    baselines: dict[str, int] = field(default_factory=dict)
 
     def property(self, name: str) -> GuiProperty | None:
         return next((item for item in self.properties if item.name == name), None)
@@ -109,6 +111,36 @@ class GuiBinding:
 
 
 @dataclass(slots=True, eq=False)
+class GuiParameter:
+    guid: uuid.UUID
+    name: str
+    type: PropertyType
+    parameter_type: int
+    value: GuiValue
+    enum_type: str = ""
+    text: str = ""
+
+
+@dataclass(slots=True, eq=False)
+class GuiParameterReference:
+    guid: uuid.UUID
+    target_path: str
+    type: PropertyType
+    mask: int
+    target_type: str
+    field: str
+
+
+@dataclass(slots=True, eq=False)
+class GuiParameterOverride:
+    guid: uuid.UUID
+    type: PropertyType
+    parameter_type: int
+    value: GuiValue
+    enum_type: str = ""
+
+
+@dataclass(slots=True, eq=False)
 class GuiDocument:
     version: int
     root_object: GuiObject | None
@@ -118,6 +150,10 @@ class GuiDocument:
     source: str = "<bytes>"
     objects: list[GuiObject] = field(default_factory=list, repr=False)
     animations: list[GuiAnimation] = field(default_factory=list, repr=False)
+    parameters: list[GuiParameter] = field(default_factory=list)
+    parameter_references: list[GuiParameterReference] = field(default_factory=list)
+    parameter_overrides: list[GuiParameterOverride] = field(default_factory=list)
+    assets: list[str] = field(default_factory=list)
 
     def symbol(self, guid: uuid.UUID) -> GuiSymbol | None:
         return next((item for item in self.symbols if item.guid == guid), None)
@@ -144,7 +180,6 @@ class GuiDocument:
             raise ValueError("GUI symbol GUIDs must be unique")
         if len({item.guid for item in animations}) != len(animations):
             raise ValueError("GUI animation GUIDs must be unique")
-        for symbol in self.symbols:
-            if any(item.transition is not None and item.transition not in symbol.animations
-                   for item in symbol.animations):
-                raise ValueError(f"an animation of symbol {symbol.name!r} continues in another symbol")
+        held = {id(item) for item in animations}
+        if any(item.transition is not None and id(item.transition) not in held for item in animations):
+            raise ValueError("a GUI animation continues in an animation the file does not hold")

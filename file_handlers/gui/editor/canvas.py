@@ -273,6 +273,10 @@ class Canvas(QWidget):
                 state.set_value(node, name, [held[0] + x, held[1] + y, *held[2:]])
 
     def wheelEvent(self, event) -> None:
+        if self.live and not event.modifiers() and self.state.stage.wheel(event.angleDelta().y()):
+            self.update()
+            event.accept()
+            return
         if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             super().wheelEvent(event)
             return

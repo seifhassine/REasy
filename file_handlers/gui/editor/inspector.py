@@ -93,6 +93,61 @@ class Properties(QWidget):
                         "state.").format(", ".join(item.name for item in found)))
 
 
+class Parameters(QWidget):
+    def __init__(self, inspector: Inspector, parent: QWidget):
+        super().__init__(parent)
+        self.inspector = inspector
+        state = inspector.state
+        gui, layout = state.document.gui, gui_layout(state.document.gui.version)
+        names = {item.guid: item.name for resource in state.workspace.resources.values()
+                 for item in resource.document.parameters}
+        grid = QGridLayout(self)
+        grid.setContentsMargins(14, 2, 6, 6)
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(3)
+        grid.setColumnStretch(1, 1)
+        self.edits: list[ValueEdit] = []
+        for item in gui.parameters:
+            label = LineEdit(partial(getattr, item, "name"), partial(self._rename, item), self)
+            label.setToolTip(self.tr("A parameter this file declares ({0}): its name and the value it starts with")
+                             .format(item.type.name.capitalize()))
+            self._row(grid, label, value_edit(layout, item.type, (), partial(getattr, item, "value"),
+                                              partial(self._set, item, item.name), self))
+        for item in gui.parameter_overrides:
+            name = names.get(item.guid, str(item.guid))
+            label = QLabel(name, self)
+            label.setToolTip(self.tr("The value this file gives parameter {0}, which another file declares")
+                             .format(name))
+            self._row(grid, label, value_edit(layout, item.type, (), partial(getattr, item, "value"),
+                                              partial(self._set, item, name), self))
+        for item in gui.parameter_references:
+            label = QLabel(names.get(item.guid, str(item.guid)), self)
+            label.setToolTip(self.tr("The parameter sets {0} of the {1} at {2}").format(
+                item.field, short(item.target_type), item.target_path))
+            self._row(grid, label, styled_label(f"{item.target_path}  {item.field}", self, tone="muted"))
+
+    def _row(self, grid: QGridLayout, label: QWidget, edit: QWidget) -> None:
+        at = grid.rowCount()
+        grid.addWidget(label, at, 0)
+        grid.addWidget(edit, at, 1)
+        for widget in (label, edit):
+            if isinstance(widget, ValueEdit):
+                widget.setEnabled(self.inspector.editable)
+                self.edits.append(widget)
+
+    def _set(self, item, label: str, value) -> None:
+        state = self.inspector.state
+        state.attempt(edits.set_parameter, state.document, item, label, value)
+
+    def _rename(self, item, name: str) -> None:
+        state = self.inspector.state
+        state.attempt(edits.rename_parameter, state.document, item, name)
+
+    def refresh(self) -> None:
+        for edit in self.edits:
+            edit.refresh()
+
+
 class Section(QWidget):
     def __init__(self, inspector: Inspector, title: str, body: QWidget, parent: QWidget):
         super().__init__(parent)
@@ -227,6 +282,11 @@ class States(QWidget):
             after.setToolTip(self.tr("The state that plays once this one ends"))
             after.addItem(self.tr("(stays)"))
             after.addItems([item.name for item in symbol.animations])
+            if animation.transition is not None and not any(item is animation.transition for item in symbol.animations):
+                owner = next(other.name for other in state.document.gui.symbols
+                             if any(item is animation.transition for item in other.animations))
+                after.addItem(self.tr("{0} of {1}: the game plays this symbol's state of that name").format(
+                    animation.transition.name, owner))
             after.activated.connect(partial(self._next, animation))
             buttons = [tool_button(icon, tip, slot, parent=self) for icon, tip, slot in (
                 ("arrow_up", self.tr("Move up: the first state plays when the GUI opens"),
@@ -252,7 +312,8 @@ class States(QWidget):
 
     def _next(self, animation, index: int) -> None:
         held = self.node.prototype.symbol.animations
-        self._edit(state_edits.set_transition, animation, held[index - 1] if index else None)
+        if index <= len(held):
+            self._edit(state_edits.set_transition, animation, held[index - 1] if index else None)
 
     def _show(self, animation) -> None:
         self.inspector.state.show(self.node, animation)
@@ -275,7 +336,8 @@ class States(QWidget):
             with QSignalBlocker(show), QSignalBlocker(loop), QSignalBlocker(after):
                 show.setChecked(state.context is self.node and state.shown is animation)
                 loop.setChecked(animation.loop)
-                after.setCurrentIndex(next((at + 1 for at, item in enumerate(held) if item is animation.transition), 0))
+                after.setCurrentIndex(next((at + 1 for at, item in enumerate(held) if item is animation.transition),
+                                           0 if animation.transition is None else len(held) + 1))
 
 
 class Inspector(QScrollArea):
@@ -414,6 +476,10 @@ class Inspector(QScrollArea):
                 self.parts.append(Section(self, self.tr("Content"), payload_editor(self, node, body), body))
             if node.prototype is not None:
                 self.parts.append(Section(self, self.tr("States"), States(self, node, body), body))
+            gui = state.document.gui
+            if node.parent is None and state.scope is None and (
+                    gui.parameters or gui.parameter_overrides or gui.parameter_references):
+                self.parts.append(Section(self, self.tr("Parameters"), Parameters(self, body), body))
         for at, part in enumerate(self.parts, 1):
             self._column.insertWidget(at, part)
         self._restore.start()

@@ -23,7 +23,13 @@ import numpy as np
 
 from file_handlers.ift.model import IconGlyph
 
+lazy from file_handlers.engine_math import crt
+
 lazy from ..profiles import runtime_for_game
+
+
+class TextLayoutGap(ValueError):
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,12 +50,46 @@ class Dmc5TextRules:
     fit_margin: np.float32
     fit_upper: np.float32
     fit_steps: int
+    fit_icon: str | None
+    region_halves: bool
+    font_base: bool
+    quad_margin: int
+    erase_head_space: str | None
+    force_wrap: str | None
+    back_step: bool
+    effect_blur_scaled: bool
+    effect_run_size: bool
+    unported_tags: dict[str, str]
+    script_tags: str | None
+    font_tag: dict[str, int]
+    icon_merge: str | None
+    italic: str | None
+    italic_shear: np.float32
+    bold: str | None
+    style_tags: tuple[str, ...]
+    ref_tag: str | None
+    flush_tags: frozenset[str]
+    page_tags: frozenset[str]
+    color_preset: str | None
+    color_refused: tuple[int, int] | None
+    monospace: str | None
+    full_width: dict[bool, tuple[tuple[int, int], ...]]
+    cjk_languages: frozenset[int]
+    disable_tags: str | None
+    auto_arabic: str | None
+    bidi: tuple[tuple[int, ...], tuple[int, ...], dict[int, int]] | None
+    direction_marks: dict[str, int]
+    shift_tag: str | None
+    extra_rtl: str | None
+    shaping: tuple[int, int] | None
+    script_tag_depth: int | None
 
 
 @cache
 def dmc5_text_rules(game: str) -> Dmc5TextRules:
     profile = runtime_for_game(game)
-    rules, fit = profile.text, profile.text["region_fit"]
+    rules = profile.text
+    fit, italic, mono, bidi = rules["region_fit"], rules["italic"], rules["monospace"], rules["bidi"]
     return Dmc5TextRules(
         profile.language(rules["rtl_language"]),
         rules["rtl_ranges"],
@@ -61,7 +101,21 @@ def dmc5_text_rules(game: str) -> Dmc5TextRules:
         profile.language(rules["ruby_height_language"]),
         np.float32(rules["overflow_tolerance"]),
         {profile.enum("RegionFitType")[label]: tuple(axes) for label, axes in fit["axes"].items()},
-        np.float32(fit["margin"]), np.float32(fit["upper"]), fit["steps"],
+        np.float32(fit["margin"]), np.float32(fit["upper"]), fit["steps"], fit["icon"],
+        *(rules[name] for name in ("region_halves", "font_base", "quad_margin", "erase_head_space", "force_wrap",
+                                   "back_step", "effect_blur_scaled", "effect_run_size", "unported_tags",
+                                   "script_tags", "font_tag", "icon_merge")),
+        italic and italic["property"], np.float32(-crt("sinf")(italic["angle"]) if italic else 0.0), rules["bold"],
+        tuple(rules["style_tags"]), rules["ref_tag"], frozenset(rules["flush_tags"]), frozenset(rules["page_tags"]),
+        rules["color_preset"], rules["color_refused"] and tuple(rules["color_refused"]), mono and mono["property"],
+        {cjk: tuple(map(tuple, mono[key] if mono else ())) for cjk, key in (
+            (False, "full_width"), (True, "cjk_full_width"))},
+        frozenset(map(profile.language, mono["cjk_languages"] if mono else ())), rules["disable_tags"],
+        rules["auto_arabic"], bidi and (tuple(start for start, _end, _kind in bidi["classes"]),
+                                        tuple(bidi["masks"][kind] for _start, _end, kind in bidi["classes"]),
+                                        dict(map(tuple, bidi["mirrors"]))),
+        rules["direction_marks"], rules["shift_tag"], rules["extra_rtl"],
+        rules["shaping"] and (rules["shaping"]["script"], rules["shaping"]["anchor"]), rules["script_tag_depth"],
     )
 
 
@@ -90,6 +144,9 @@ class TextOpcode(IntEnum):
     RUBY = 0x0F
     RUBY_BASE = 0x10
     RUBY_TEXT = 0x11
+    SHIFT = 0x1A
+    ITALIC = 0x1E
+    BOLD = 0x1F
 
 
 class RubyState(IntEnum):
@@ -136,6 +193,9 @@ class TextInstruction:
     wrap_disable: bool | None = None
     icon_name: str | None = None
     icon_glyph: IconGlyph | None = None
+    icon_merged: bool = False
+    style: bool = False
+    shift: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -165,6 +225,7 @@ class Dmc5TextDirection:
     auto_rtl_alignment_flip: bool
     requested_vertical_layout: bool
     effective_vertical_layout: bool
+    arabic: bool
 
 
 @dataclass(frozen=True)
@@ -175,11 +236,11 @@ class Dmc5TextProgram:
     page_timings: tuple[PageTiming, ...]
     final_ruby_state: RubyState
     direction: Dmc5TextDirection
-    flushes: tuple[int, ...]
+    flushes: tuple[tuple[int, bool, bool], ...]
+    rtl: bool
 
 
-_FLUSHING_TAGS = frozenset({"FONT", "PAGE", "SIZE", "ICON", "RUBY", "COLOR"})
-_OTHER_PAGE_TAGS = frozenset({"PAGE", "TIME", "SIZE", "FONT", "COLOR"})
+_REF_SPACE = "".join(map(chr, (*range(0x09, 0x0E), *range(0x1C, 0x21))))
 _FLOAT_PREFIX = re.compile(
     r"^[\t\n\v\f\r ]*([+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))"
     r"(?:[eE][+-]?\d+)?|[+-]?(?:inf(?:inity)?|nan))",
@@ -308,7 +369,7 @@ def _scan_tag(text: str, start: int) -> tuple[MarkupToken, int]:
     )
 
 
-def scan_dmc5_markup(text: str) -> MarkupScan:
+def scan_dmc5_markup(text: str, tags: bool = True) -> MarkupScan:
     """Lex one DMC5 UTF-16 message into scalar, newline, and tag tokens."""
 
     tokens: list[MarkupToken] = []
@@ -331,7 +392,7 @@ def scan_dmc5_markup(text: str) -> MarkupScan:
                 )
                 cursor += 3
                 continue
-        if character == "<":
+        if character == "<" and tags:
             token, cursor = _scan_tag(text, cursor)
             tokens.append(token)
             if token.error:
@@ -448,6 +509,7 @@ def dmc5_text_direction(
     auto_rtl: bool,
     vertical_layout: bool,
     rules: Dmc5TextRules,
+    auto_arabic: bool = False,
     language_21_predicate: Callable[[int], bool] | None = None,
 ) -> Dmc5TextDirection:
     """Compute native context bytes +0x2F5, +0x2F6, and +0x2F7."""
@@ -455,8 +517,9 @@ def dmc5_text_direction(
     predicate = language_21_predicate or partial(_rtl_trigger, rules)
     present = any(predicate(codepoint) for codepoint in _utf16_codepoints(text))
     is_language_21 = language_index == rules.rtl_language
-    effective_rtl = is_language_21 and present
-    auto_flip = is_language_21 and auto_rtl
+    arabic = is_language_21 or auto_arabic
+    effective_rtl = arabic and present
+    auto_flip = (is_language_21 or effective_rtl) and auto_rtl
     effective_vertical = vertical_layout and not effective_rtl
     return Dmc5TextDirection(
         language_index,
@@ -465,11 +528,14 @@ def dmc5_text_direction(
         auto_flip,
         vertical_layout,
         effective_vertical,
+        arabic,
     )
 
 
 TagResolver = Callable[[str, str], str | None]
 IconResolver = Callable[[str], str | Sequence[int] | IconGlyph | None]
+MessageResolver = Callable[[str], str | None]
+ColorResolver = Callable[[str], int | None]
 
 
 class _Compiler:
@@ -479,6 +545,7 @@ class _Compiler:
         *,
         language_index: int,
         auto_rtl: bool,
+        auto_arabic: bool,
         vertical_layout: bool,
         rules: Dmc5TextRules,
         language_21_predicate: Callable[[int], bool] | None,
@@ -488,11 +555,14 @@ class _Compiler:
         ruby_size_ratio: float,
         tag_resolver: TagResolver | None,
         icon_resolver: IconResolver | None,
+        message_resolver: MessageResolver | None,
+        color_resolver: ColorResolver | None,
         time_scale: float,
         include_initial_state: bool,
         page: int,
+        tags: bool,
     ) -> None:
-        self.text = text
+        self.text, self.rules, self.tags = text, rules, tags
         self.page, self.page_counter, self.pending, self.flushes = page, 0, 0, []
         self.direction = dmc5_text_direction(
             text,
@@ -500,12 +570,18 @@ class _Compiler:
             auto_rtl=auto_rtl,
             vertical_layout=vertical_layout,
             rules=rules,
+            auto_arabic=auto_arabic,
             language_21_predicate=language_21_predicate,
         )
+        self.predicate = language_21_predicate or partial(_rtl_trigger, rules)
+        self.rtl_text = self.rtl = self.rtl_any = self.direction.effective_rtl
+        self.pending_rtl, self.shifts, self.tag_depth = False, [0.0], 0
         self.size_scale = size_scale
         self.default_ruby_size_ratio = ruby_size_ratio
         self.tag_resolver = tag_resolver
         self.icon_resolver = icon_resolver
+        self.message_resolver, self.refs = message_resolver, []
+        self.color_resolver = color_resolver
         self.time_scale = time_scale
         self.instructions: list[TextInstruction] = []
         self.diagnostics: list[str] = []
@@ -517,6 +593,7 @@ class _Compiler:
         self.ruby_state = RubyState.NONE
         self.ruby_ratio = ruby_size_ratio
         self.current_line_index: int | None = None
+        self.styles: dict[str, list[bool]] = {}
         if include_initial_state:
             self._append(TextOpcode.PAGE)
             self._line_break()
@@ -572,7 +649,7 @@ class _Compiler:
         self.ruby_state = RubyState.RUBY
 
     def _ruby(self, token: MarkupToken) -> None:
-        if self.direction.effective_rtl:
+        if self.rtl:
             return
         if not token.closing:
             if self.ruby_state != RubyState.NONE:
@@ -605,7 +682,7 @@ class _Compiler:
         self.ruby_state = RubyState.NONE
 
     def _rb(self, token: MarkupToken) -> None:
-        if self.direction.effective_rtl:
+        if self.rtl:
             return
         if token.closing:
             self._close_rb(token)
@@ -622,7 +699,7 @@ class _Compiler:
         self.ruby_state = RubyState.BASE
 
     def _rt(self, token: MarkupToken) -> None:
-        if self.direction.effective_rtl:
+        if self.rtl:
             return
         if token.closing:
             self._close_rt(token)
@@ -684,16 +761,14 @@ class _Compiler:
                     font_slot=self.font_stack[-1],
                 )
             return
-        if _utf16_units(token.parameter) != 1:
-            self.diagnostics.append(
-                f"offset {token.source_start}: FONT parameter must be one UTF-16 unit"
-            )
+        digits, slots = self.rules.font_tag["digits"], self.rules.font_tag["slots"]
+        if not 1 <= _utf16_units(token.parameter) <= digits:
+            self.diagnostics.append(f"offset {token.source_start}: FONT parameter must be 1 to {digits} UTF-16 units")
             return
-        value = int(token.parameter) if token.parameter.isdecimal() else 0
-        if value >= 10:
-            self.diagnostics.append(
-                f"offset {token.source_start}: FONT slot is outside 0..9"
-            )
+        sign, number = re.match(r"[\t\n\v\f\r ]*([+-]?)([0-9]*)", token.parameter).groups()
+        value = int(number or 0)
+        if sign == "-" and value or value >= slots:
+            self.diagnostics.append(f"offset {token.source_start}: FONT slot is outside 0..{slots - 1}")
             return
         self._append(
             TextOpcode.FONT,
@@ -727,11 +802,12 @@ class _Compiler:
                 f"offset {token.source_start}: COLOR requires six hexadecimal units"
             )
             return
-        top = _packed_rgb_native(token.parameter[:6])
-        remainder = token.parameter[6:]
+        top, remainder = self._color_value(token.parameter, None)
         space = remainder.find(" ")
-        second = remainder[space + 1 :] if space >= 0 else ""
-        bottom = _packed_rgb_native(second[:6]) if len(second) >= 6 else top
+        bottom = top if top is None else self._color_value(remainder[space + 1:] if space >= 0 else "", top)[0]
+        if bottom is None:
+            self.diagnostics.append(f"offset {token.source_start}: COLOR names an unknown preset or a refused colour")
+            return
         self._append(
             TextOpcode.COLOR,
             source_start=token.source_start,
@@ -740,6 +816,16 @@ class _Compiler:
             color_bottom=bottom,
         )
         self.color_stack.append((top, bottom))
+
+    def _color_value(self, text: str, short: int | None) -> tuple[int | None, str]:
+        preset, refused = self.rules.color_preset, self.rules.color_refused
+        if preset and text.startswith(preset):
+            end = text.find('"', len(preset))
+            found = self.color_resolver(text[len(preset):end]) if end >= 0 and self.color_resolver else None
+            return found, text[end + 1:]
+        if refused and text and refused[0] <= ord(text[0]) <= refused[1]:
+            return None, text
+        return (_packed_rgb_native(text[:6]) if len(text) >= 6 else short), text[6:]
 
     def _page(self, token: MarkupToken) -> None:
         self._append(
@@ -766,6 +852,16 @@ class _Compiler:
                 f"offset {token.source_start}: PAGE has no active FONT/SIZE state"
             )
 
+    def _shift(self, token: MarkupToken) -> None:
+        if token.closing:
+            self.shifts[-1:] = []
+            if not self.shifts:
+                return
+        else:
+            self.shifts.append(float(np.float32(_parse_float_prefix(token.parameter))))
+        self._append(TextOpcode.SHIFT, source_start=token.source_start, source_end=token.source_end,
+                     shift=self.shifts[-1])
+
     def _time(self, token: MarkupToken) -> None:
         parameter = token.parameter
         split_at = parameter.find(",")
@@ -790,6 +886,17 @@ class _Compiler:
         )
 
     def _icon(self, token: MarkupToken) -> None:
+        merge = self.rules.icon_merge
+        if merge is not None and token.parameter.startswith(merge):
+            names = [name for name in token.parameter[len(merge):].replace('"', "").split(",") if name]
+            if len(names) != 2:
+                self.diagnostics.append(f"offset {token.source_start}: ICON {merge} takes two names")
+                return
+            glyphs = [self.icon_resolver(name) if self.icon_resolver else None for name in names]
+            for name, glyph, merged in zip(names[::-1], glyphs[::-1] if None not in glyphs else (), (True, False)):
+                self._append(TextOpcode.GLYPH, source_start=token.source_start, source_end=token.source_end,
+                             icon_name=name, icon_glyph=glyph, icon_merged=merged)
+            return
         for raw_name in token.parameter.split(","):
             name = raw_name.strip("\t\n\v\f\r \x1c\x1d\x1e\x1f\x20")
             if not name:
@@ -840,24 +947,35 @@ class _Compiler:
                 recursion_suppressed,
             )
         )
-        if recursion_suppressed:
+        depth = self.rules.script_tag_depth
+        if recursion_suppressed if depth is None else self.tag_depth >= depth:
             return
+        if self.tag_resolver is None and self.rules.script_tags:
+            raise TextLayoutGap(self.rules.script_tags.format(name=name))
         if self.tag_resolver is None:
             self.diagnostics.append(
                 f"offset {token.source_start}: no resolver for tag {name or '<empty>'}"
             )
             return
         replacement = self.tag_resolver(name, token.parameter)
-        if replacement is not None:
+        if replacement is not None and depth is None:
             self._compile_fragment(replacement, recursion_suppressed=True)
+        elif replacement is not None:
+            self.tag_depth += 1
+            self._nested(replacement, recursion_suppressed=False)
+            self.tag_depth = 0
 
     def _flush(self) -> None:
-        self.flushes.append(len(self.instructions))
-        self.pending = 0
+        shaped = self.direction.arabic and self.pending_rtl
+        self.flushes.append((len(self.instructions), self.rtl, shaped))
+        self.rtl_any |= shaped
+        self.pending, self.pending_rtl = 0, False
 
     def _tag(self, token: MarkupToken, *, recursion_suppressed: bool) -> None:
         name = token.name or ""
-        if self.ruby_state == RubyState.NONE and name in _FLUSHING_TAGS and self.page_counter == self.page:
+        if name in self.rules.unported_tags:
+            raise TextLayoutGap(self.rules.unported_tags[name])
+        if self.ruby_state == RubyState.NONE and name in self.rules.flush_tags and self.page_counter == self.page:
             self._flush()
         if name == "PAGE":
             self._page(token)
@@ -873,6 +991,15 @@ class _Compiler:
             self._size(token)
         elif name == "ICON":
             self._icon(token)
+        elif name in self.rules.style_tags:
+            stack = self.styles.setdefault(name, [False])
+            if token.closing:
+                stack[-1:] = []
+            else:
+                stack.append(True)
+            if stack:
+                self._append(TextOpcode[name], source_start=token.source_start, source_end=token.source_end,
+                             style=stack[-1])
         elif name == "WRAP":
             self._append(
                 TextOpcode.WRAP,
@@ -891,19 +1018,47 @@ class _Compiler:
             self._ruby(token)
         elif name == "BLANK":
             return
+        elif name == self.rules.ref_tag:
+            self._ref(token, recursion_suppressed=recursion_suppressed)
         elif name == "RIGHT":
             self._insert_alignment(TextOpcode.RIGHT, token)
         elif name == "BOTTOM":
             self._insert_alignment(TextOpcode.BOTTOM, token)
         elif name == "CENTER":
             self._insert_alignment(TextOpcode.CENTER, token)
+        elif name in self.rules.direction_marks:
+            mark = self.rules.direction_marks[name]
+            self._append(TextOpcode.GLYPH, source_start=token.source_start, source_end=token.source_end, codepoint=mark)
+            self.pending += 1
+            self.pending_rtl |= self.predicate(mark)
+        elif name == self.rules.shift_tag:
+            self._shift(token)
         else:
             self._unknown(token, recursion_suppressed=recursion_suppressed)
+
+    def _ref(self, token: MarkupToken, *, recursion_suppressed: bool) -> None:
+        name = token.parameter.strip(_REF_SPACE)
+        text = self.message_resolver(name) if self.message_resolver else None
+        if text is None:
+            raise TextLayoutGap("a REF tag's message is not in the loaded message files")
+        if name in self.refs:
+            return
+        self.refs.append(name)
+        self._nested(text, recursion_suppressed=recursion_suppressed)
+        self.refs.pop()
+
+    def _nested(self, text: str, *, recursion_suppressed: bool) -> None:
+        outer = self.rtl_text
+        self.rtl_text = self.direction.arabic and any(map(self.predicate, _utf16_codepoints(text)))
+        self.rtl_any |= self.rtl_text
+        self.rtl = self.rtl_text or self.rtl_any
+        self._compile_fragment(text, recursion_suppressed=recursion_suppressed)
+        self.rtl = self.rtl_text = outer
 
     def _compile_fragment(
         self, fragment: str, *, recursion_suppressed: bool
     ) -> None:
-        scan = scan_dmc5_markup(fragment)
+        scan = scan_dmc5_markup(fragment, self.tags)
         self.diagnostics.extend(scan.diagnostics)
         after_page = False
         for token in scan.tokens:
@@ -912,7 +1067,7 @@ class _Compiler:
                 continue
             after_page = False
             if self.page_counter != self.page and (
-                token.kind != MarkupTokenKind.TAG or token.name not in _OTHER_PAGE_TAGS
+                token.kind != MarkupTokenKind.TAG or token.name not in self.rules.page_tags
             ):
                 continue
             if token.kind == MarkupTokenKind.MALFORMED_TAG:
@@ -921,9 +1076,9 @@ class _Compiler:
                 self._tag(token, recursion_suppressed=recursion_suppressed)
                 if token.name == "PAGE":
                     self.page_counter += 1
-                    if self.page_counter > self.page:
-                        break
                     after_page = True
+                if self.page_counter > self.page:
+                    break
                 continue
             if token.kind == MarkupTokenKind.NEWLINE:
                 if self.ruby_state == RubyState.NONE:
@@ -935,6 +1090,7 @@ class _Compiler:
             if token.codepoint < 0x20 and token.codepoint not in (9, 10) or self.ruby_state == RubyState.RUBY:
                 continue
             self.pending += self.ruby_state == RubyState.NONE
+            self.pending_rtl |= self.ruby_state == RubyState.NONE and self.predicate(token.codepoint)
             self._append(
                 TextOpcode.GLYPH,
                 source_start=token.source_start,
@@ -958,6 +1114,7 @@ class _Compiler:
             self.ruby_state,
             self.direction,
             tuple(self.flushes),
+            self.rtl_any,
         )
 
 
@@ -968,6 +1125,7 @@ def compile_dmc5_markup(
     language_index: int,
     auto_rtl: bool,
     vertical_layout: bool,
+    auto_arabic: bool = False,
     language_21_predicate: Callable[[int], bool] | None = None,
     font_slot: int,
     size: tuple[float, float],
@@ -975,9 +1133,12 @@ def compile_dmc5_markup(
     ruby_size_ratio: float,
     tag_resolver: TagResolver | None = None,
     icon_resolver: IconResolver | None = None,
+    message_resolver: MessageResolver | None = None,
+    color_resolver: ColorResolver | None = None,
     time_scale: float = 1.0,
     include_initial_state: bool = True,
     page: int,
+    tags: bool = True,
 ) -> Dmc5TextProgram:
     """Compile message text into the native DMC5 instruction-node model."""
 
@@ -985,6 +1146,7 @@ def compile_dmc5_markup(
         text,
         language_index=language_index,
         auto_rtl=auto_rtl,
+        auto_arabic=auto_arabic,
         vertical_layout=vertical_layout,
         rules=rules,
         language_21_predicate=language_21_predicate,
@@ -994,9 +1156,12 @@ def compile_dmc5_markup(
         ruby_size_ratio=ruby_size_ratio,
         tag_resolver=tag_resolver,
         icon_resolver=icon_resolver,
+        message_resolver=message_resolver,
+        color_resolver=color_resolver,
         time_scale=time_scale,
         include_initial_state=include_initial_state,
         page=page,
+        tags=tags,
     ).compile()
 
 

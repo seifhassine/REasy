@@ -31,7 +31,7 @@ def places(kind: int) -> dict[str, int]:
 
 def track_mask(track) -> int:
     if not track.children:
-        return -1
+        return 0 if places(track.type) else -1
     mask = 0
     for member in track.children:
         mask |= 1 << places(track.type)[member.name]
@@ -51,7 +51,7 @@ def animated(symbol: GuiSymbol) -> dict[int, dict[str, int]]:
             for track in node.properties:
                 held, mask = masks.get(track.name, 0), track_mask(track)
                 masks[track.name] = -1 if -1 in (held, mask) else held | mask
-    return result
+    return {key: {name: mask or -1 for name, mask in masks.items()} for key, masks in result.items()}
 
 
 def stored(obj: GuiObject, masks: Mapping[str, int]) -> tuple[list[Stored], list[Stored]]:
@@ -67,6 +67,21 @@ def stored(obj: GuiObject, masks: Mapping[str, int]) -> tuple[list[Stored], list
             properties.append(Stored(prop.name, prop.type, prop.value, everything & ~mask))
             defaults.append(Stored(prop.name, prop.type, prop.value, mask))
     return properties, defaults
+
+
+def baseline_masks(obj: GuiObject, derived: Mapping[str, int]) -> dict[str, int]:
+    masks = dict(derived)
+    for name, mask in obj.baselines.items():
+        held = masks.get(name, 0)
+        masks[name] = -1 if -1 in (held, mask) else held | mask
+    return masks
+
+
+def state_flags(state: tuple[str, int, int] | None, obj: GuiObject, masks: Mapping[str, int]) -> int:
+    if state is None:
+        return 0
+    name, tracked, stored = state
+    return (tracked if name in masks else 0) | (stored if obj.property(name) is not None else 0)
 
 
 def baselines(symbol: GuiSymbol) -> dict[int, list[Stored]]:
@@ -134,4 +149,7 @@ def asset_paths(document: GuiDocument, lists: Iterable[tuple[list[Stored], list[
              for key in track.keys if key.value]
     used += [binding.property.value for binding in document.bindings
              if binding.property.type == PropertyType.ASSET and binding.property.value]
-    return list(dict.fromkeys(used))
+    present = set(used)
+    kept = [path for path in document.assets if path in present]
+    held = set(kept)
+    return kept + [path for path in dict.fromkeys(used) if path not in held]

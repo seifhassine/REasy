@@ -32,7 +32,7 @@ lazy from file_handlers.rsz.scn_scene_graph import (ScnSceneGraphBuilder, ScnTra
 lazy from utils.app_paths import cache_directory, resource_path
 lazy from utils.enum_manager import enum_file_path, game_enum_definitions
 lazy from utils.hash_util import murmur3_hash_ascii
-lazy from utils.resource_file_utils import submit_read
+lazy from utils.resource_file_utils import held_folder_lookups, submit_read
 
 lazy from .codec import parse_gui
 lazy from .errors import GuiFormatError, GuiSceneError
@@ -43,6 +43,7 @@ _PATH_END = re.compile(rb"\.\x00(?:[gG]\x00[uU]\x00[iI]|[sS]\x00[cC]\x00[nN]|[pP
 _PATH_BYTES = frozenset(b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-/\x5c.@")
 _ZERO = (0.0, 0.0, 0.0)
 _SCHEMA = 2
+_AT: dict[str, list] = {}
 _SEEN: dict[tuple, tuple] = {}
 _READ: dict[tuple, tuple] = {}
 _VIEWS: dict[tuple, tuple] = {}
@@ -96,7 +97,7 @@ def resource_key(path: str) -> str:
     return path.replace("\\", "/").lstrip("@/").casefold()
 
 
-def _stamp(location) -> tuple:
+def stamp_of(location) -> tuple:
     if location.pak is not None:
         return location.path, weakref.ref(location.pak)
     held = os.stat(location.path)
@@ -124,7 +125,7 @@ def _parsed(game: str, source: str, data: bytes, fields: Mapping[str, tuple[str,
     graph, rows = ScnSceneGraphBuilder(rsz.type_registry, game_version=game).build(rsz, root_path=str(source)), []
     for document in graph.documents.values():
         for item in document.objects.values():
-            for component in (graph.components[at] for at in item.components):
+            for component in (document.components[at] for at in item.components):
                 if component.type_name not in fields:
                     continue
                 chain = [item]
@@ -140,6 +141,14 @@ def _parsed(game: str, source: str, data: bytes, fields: Mapping[str, tuple[str,
                     [node.instance_id for node in reversed(chain)], [node.draw_self for node in reversed(chain)],
                     plain_value(item.fields[scale], rsz.parsed_elements.__getitem__)])
     return rows
+
+
+def _root(game: str, source: str, data: bytes) -> dict[str, Any]:
+    rsz = RszFile()
+    rsz.filepath, rsz.type_registry, rsz.game_version = str(source), game_type_registry(game), game
+    rsz.read(bytes(data))
+    return {name: plain_value(value, rsz.parsed_elements.__getitem__)
+            for name, value in rsz.parsed_elements[rsz.object_table[0]].items()}
 
 
 def _object_ids(game: str, source: str, data: bytes) -> dict[str, int]:
@@ -237,19 +246,21 @@ class Played:
 
 
 class GuiWorld:
-    def __init__(self, locate: Callable[[str], Any], profile, errors: list[str]) -> None:
-        self._locate, self._profile, self._rules, self.errors = locate, profile, profile.world, errors
-        gui, light, lens, holder, supplier, timeline = (self._rules[name] for name in (
-            "gui", "light", "camera", "holders", "supplier", "timeline"))
+    def __init__(self, context, profile, errors: list[str]) -> None:
+        self._context, self._profile, self._rules, self.errors = context, profile, profile.world, errors
+        rules, holder = self._rules, self._rules["holders"]
         self._fields = {
-            timeline["class"]: tuple(timeline[name] for name in ("resource", "start", "end", "speed", "bind")),
-            gui["class"]: (gui["asset"], gui["segment"]), light["class"]: tuple(light["fields"]),
-            lens["class"]: (lens["enabled"], lens["fov"], lens["near"], lens["far"]),
-            holder["class"]: (holder["label"], holder["entries"]), supplier["class"]: tuple(supplier["instanced"]),
-            self._rules["commands"]["set"]: (self._rules["commands"]["list"],),
-            **{self._rules[name]["class"]: (self._rules[name]["field"],) for name in (
-                "messages", "camera_list", "camera_rest", "commands")}}
-        self._at: dict[str, tuple | None] = {}
+            **{rules[name]["class"]: tuple(rules[name][key] for key in keys) for name, keys in (
+                ("timeline", ("resource", "start", "end", "speed", "bind")), ("gui", ("asset", "segment")),
+                ("camera", ("enabled", "fov", "near", "far")), *((name, ("field",)) for name in (
+                    "messages", "camera_list", "camera_rest", "commands"))) if name in rules},
+            **{rules[name]["class"]: tuple(rules[name][key]) for name, key in (
+                ("light", "fields"), ("supplier", "instanced")) if name in rules},
+            **dict.fromkeys(holder["classes"], (holder["label"], holder["entries"])),
+            **({rules["tables"]["class"]: tuple(rules["tables"]["fields"].values())} if "tables" in rules else {}),
+            **{kind: tuple(fields.values()) for kind, fields in rules.get("input", {}).items()},
+            **({rules["commands"]["set"]: (rules["commands"]["list"],)} if "commands" in rules else {})}
+        self._paks: dict[int, dict] = {}
         self._got: dict[str, tuple] = {}
         self._views: dict[str, tuple] = {}
         self._clips: dict[str, Any] = {}
@@ -266,11 +277,44 @@ class GuiWorld:
     def _needles(self) -> dict[str, bytes]:
         return {name: struct.pack("<I", murmur3_hash_ascii(name)) for name in self._fields}
 
+    @cached_property
+    def _at(self) -> dict[str, tuple | None]:
+        context, game = self._context, self._profile.game
+        names = frozenset(f"{folder}/{name}".replace(os.sep, "/").casefold() for folder, _folders, held in (
+            os.walk(context.project_dir) if context.project_dir else ()) for name in held)
+        revision = context.pak_cached_reader and context.pak_cached_reader.path_lookup_revision
+        if game not in _AT or _AT[game][:2] != [context, revision]:
+            _AT[game] = [context, revision, names, {}]
+        (changed, _AT[game][2]), self._shared = (_AT[game][2] ^ names, names), _AT[game][3]
+        for path, file in [*self._shared.items()]:
+            if file is None or any(path in name for name in changed):
+                del self._shared[path]
+            elif file[0].pak is None:
+                try:
+                    self._shared[path] = file[0], (game, *stamp_of(file[0]))
+                except OSError:
+                    del self._shared[path]
+        return dict(self._shared)
+
     def _file(self, path: str) -> tuple | None:
         if path not in self._at:
-            located = self._locate(path)
-            self._at[path] = None if located is None else (located, (self._profile.game, *_stamp(located)))
+            located = self._context.locate(path)
+            self._at[path] = self._shared[path] = None if located is None else (
+                located, (self._profile.game, *stamp_of(located)))
         return self._at[path]
+
+    def _kept(self, location) -> dict | None:
+        if (reader := location.pak) is None:
+            return None
+        if id(reader) not in self._paks:
+            paks, kept = [reader.include_stubs, *([path, (held := os.stat(path)).st_size, held.st_mtime_ns]
+                                                  for path in reader.ordered_pak_paths)], self._fact("seen", dict)
+            if kept.get("paks") != paks:
+                kept.clear()
+                kept.update(paks=paks, files={})
+                _UNSAVED.add(self._profile.game)
+            self._paks[id(reader)] = kept["files"]
+        return self._paks[id(reader)]
 
     def _fact(self, key: str, make: Callable[[], Any]):
         game = self._profile.game
@@ -300,13 +344,21 @@ class GuiWorld:
                 self.errors.append(f"{path}: {exc}")
 
     def _look(self, paths) -> None:
-        new = {file[1]: file[0] for path in paths if (file := self._file(path)) and file[1] not in _SEEN}
+        with held_folder_lookups():
+            new = {file[1]: file[0] for path in paths if (file := self._file(path)) and file[1] not in _SEEN}
+        for stamp, location in [*new.items()]:
+            if (row := (self._kept(location) or {}).get(location.path)) is not None:
+                _SEEN[stamp] = (*map(frozenset, row[:3]), row[3], frozenset(row[4]))
+                del new[stamp]
         for chunk in batched(new.items(), 64):
-            for (stamp, _location), reading in zip(chunk, [submit_read(location.read) for _stamp, location in chunk]):
+            for (stamp, location), reading in zip(chunk, [submit_read(location.read) for _stamp, location in chunk]):
                 data = (reading.result() or ("", b""))[1]
                 guis, scenes, prefabs = _mentioned(data)
-                _SEEN[stamp] = (frozenset(name for name, needle in self._needles.items() if needle in data), guis,
-                                scenes, blake2b(data, digest_size=16).hexdigest(), prefabs)
+                seen = _SEEN[stamp] = (frozenset(name for name, needle in self._needles.items() if needle in data),
+                                       guis, scenes, blake2b(data, digest_size=16).hexdigest(), prefabs)
+                if (kept := self._kept(location)) is not None:
+                    kept[location.path] = [part if isinstance(part, str) else sorted(part) for part in seen]
+                    _UNSAVED.add(self._profile.game)
 
     def _seen(self, path: str) -> tuple[frozenset[str], frozenset[str], frozenset[str], str, frozenset[str]] | None:
         if (file := self._file(path)) is None:
@@ -345,8 +397,9 @@ class GuiWorld:
 
     @cached_property
     def scenes(self) -> tuple[str, ...]:
-        follow = {self._rules[name]["class"] for name in ("holders", "supplier", "camera_list")}
-        return self._walk(lambda depth, held: held[2] if depth < 2 or follow & held[0] else frozenset())
+        follow, depth = {*self._rules["holders"]["classes"], *(self._rules[name]["class"] for name in (
+            "supplier", "camera_list") if name in self._rules)}, self._rules["walk_depth"]
+        return self._walk(lambda at, held: held[2] if depth is None or at < depth or follow & held[0] else frozenset())
 
     @cached_property
     def _reached(self) -> tuple[str, ...]:
@@ -354,20 +407,20 @@ class GuiWorld:
 
     @cached_property
     def _makers(self) -> tuple[dict[str, list], dict[str, tuple], list]:
-        holder, supplier = self._rules["holders"], self._rules["supplier"]
+        holder, supplier = self._rules["holders"], self._rules.get("supplier")
         makers, hud, mission, queue, done = {}, {}, [], list(self.scenes), set()
         while queue:
             path = queue.pop(0)
             if path in done:
                 continue
             done.add(path)
-            for _path, held in self._holding(holder["class"], [path]):
+            for _path, held in (found for kind in holder["classes"] for found in self._holding(kind, [path])):
                 for entry in held.fields[holder["entries"]]:
                     prefab = resource_key(entry[holder["prefab"][0]][holder["prefab"][1]])
                     makers.setdefault(prefab, []).append(
                         (path, held, f"{held.fields[holder['label']]}/{entry[holder['name']]}"))
                     queue.append(prefab)
-            for _path, held in self._holding(supplier["class"], [path]):
+            for _path, held in self._holding(supplier["class"], [path]) if supplier else ():
                 lists = {name: [resource_key(entry[supplier["path"]]) for entry in held.fields[name]]
                          for name in (supplier["common"], supplier["players"])}
                 for name, count in supplier["instanced"].items():
@@ -387,6 +440,8 @@ class GuiWorld:
         for path, held, label in self._makers[0].get(prefab, ()):
             if held is None:
                 yield _ZERO, [(path, "", label, None)]
+            elif not self._rules["holders"]["placed"]:
+                continue
             elif path.endswith(".scn"):
                 yield tuple(float(v) for v in held.world[:3, 3]), [(path, held.name, label, None)]
             elif path not in seen:
@@ -414,12 +469,53 @@ class GuiWorld:
     def message_paths(self) -> tuple[str, ...]:
         rule = self._rules["messages"]
         lists = tuple(self._holding(rule["class"], self._files))
-        self.asked["messages"] = tuple(dict.fromkeys(scene for scene, _held in lists))
+        self.asked["messages"] = tuple(dict.fromkeys(scene for scene, held in lists if held.fields[rule["field"]]))
         self._keep()
         return tuple(path for _scene, held in lists for path in held.fields[rule["field"]])
 
     @cached_property
+    def tables(self) -> dict[str, dict[int, Mapping[str, Any]]]:
+        rule, found, files = self._rules["tables"], {}, {}
+        for path, held in self._holding(rule["class"], self.scenes):
+            for name, field in rule["fields"].items():
+                for listed in held.fields[field]:
+                    if (file := self._file(resource_key(listed))) is None:
+                        self.errors.append(f"{path}: {listed} was not found")
+                        continue
+                    try:
+                        records = _root(self._profile.game, *file[0].read())[rule["records"]]
+                    except Exception as exc:
+                        self.errors.append(f"{file[0].path}: {exc}")
+                        continue
+                    files |= dict.fromkeys((path, file[0].path))
+                    found.setdefault(name, {}).update((record[rule["id"]], record) for record in records)
+        self._keep()
+        self.asked["tables"] = tuple(files)
+        return found
+
+    @cached_property
+    def input(self) -> dict[str, dict[str, Any]]:
+        found, files = {}, {}
+        for kind, fields in self._rules["input"].items():
+            for path, held in self._holding(kind, self.scenes):
+                for name, field in fields.items():
+                    if (file := self._file(resource_key(held.fields[field]))) is None:
+                        self.errors.append(f"{path}: {held.fields[field]} was not found")
+                        continue
+                    try:
+                        found[name] = _root(self._profile.game, *file[0].read())
+                    except Exception as exc:
+                        self.errors.append(f"{file[0].path}: {exc}")
+                        continue
+                    files |= dict.fromkeys((path, file[0].path))
+        self._keep()
+        self.asked["input"] = tuple(files)
+        return found
+
+    @cached_property
     def commands(self) -> dict[str, tuple[int, ...]]:
+        if "commands" not in self._rules:
+            return {}
         rule = self._rules["commands"]
         kinds = {item["value"] for item in game_enum_definitions(self._profile.game, namespace=rule["kinds"])[
             rule["kinds"]] if item["name"] in rule["buttons"]}
@@ -440,6 +536,8 @@ class GuiWorld:
 
     @cached_property
     def _rigs(self) -> dict[str, tuple[Held, tuple]]:
+        if "camera_list" not in self._rules:
+            return {}
         listed, rest, rule = (self._rules[name] for name in ("camera_list", "camera_rest", "camera"))
         names = {item["value"]: item["name"] for item in game_enum_definitions(
             self._profile.game, namespace=listed["names"])[listed["names"]]}
@@ -505,6 +603,8 @@ class GuiWorld:
         return (*rigs.popitem(), held) if len(rigs) == 1 else None
 
     def _played(self, scene: str) -> Played | None:
+        if "timeline" not in self._rules:
+            return None
         if scene not in self._moves:
             rule, self._moves[scene] = self._rules["timeline"], None
             for _path, held in self._holding(rule["class"], [scene] if scene.endswith(".scn") else ()):
@@ -528,7 +628,7 @@ class GuiWorld:
     def _lensed(self, gui: str, world: np.ndarray, scene: str) -> tuple[Lens | Played, ...]:
         if (own := self._own(scene) or self._played(scene)) is not None:
             return (own,)
-        if gui in self._rules["drawn"]:
+        if gui in self._rules.get("drawn", ()):
             return (self.cameras[self._rules["drawn"][gui]],)
         return tuple(lens for lens in self.cameras.values()
                      if (np.append(world[3, :3], 1.0) @ np.array(lens.view).reshape(4, 4))[2] < 0)
@@ -552,6 +652,8 @@ class GuiWorld:
 
     def _lights(self, path: str, position, moves: Played | None = None,
                 frame: float = 0.0) -> tuple[Mapping[str, Any], ...]:
+        if "light" not in self._rules:
+            return ()
         rule = self._rules["light"]
         return tuple({"Position": [float(v) for v in (held.world if position is None else _placed(
             held, position)[0])[:3, 3]], "Draw": held.draw, **{name: held.fields[name] for name in rule["fields"]},
@@ -632,7 +734,7 @@ class GuiWorld:
     def _viewed(self, gui: str, files: Mapping[str, tuple]) -> list:
         source, data = files[gui][0].read()
         scene = GuiWorkspace.from_document(gui, parse_gui(bytes(data), str(source)), lambda path: (
-            found := self._locate(path)) and found.read(), profile=self._profile).instantiate()
+            found := self._context.locate(path)) and found.read(), profile=self._profile).instantiate()
         view = scene.runtime_properties(scene.root)
         return ["screen" if self._profile.enum_label(view, "ViewType") == "Screen" else
                 "camera" if view["UseGUICamera"] else "world",

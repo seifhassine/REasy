@@ -21,14 +21,19 @@ from .model import (
     GuiNineSlice,
     GuiNineSliceCell,
     GuiObject,
+    GuiParameter,
+    GuiParameterOverride,
+    GuiParameterReference,
     GuiProperty,
     GuiSymbol,
     GuiTextureEntry,
     GuiTextureSet,
 )
+lazy from utils.hash_util import murmur3_hash_utf16le
+
 lazy from .profiles import gui_runtime
 from .rules import STRINGS, gui_layout
-from .storage import Stored, merged
+from .storage import Stored, animated, baseline_masks, merged, state_flags
 
 
 def gui_version(data: bytes) -> int:
@@ -58,6 +63,8 @@ class _Reader:
         self.animations: dict[int, GuiAnimation] = {}
         self.ends: dict[int, int] = {}
         self.transitions: dict[int, int] = {}
+        self.held: dict[int, dict[str, int]] = {}
+        self.flags: dict[int, int] = {}
         self.declared = 0
 
     def document(self, source: str) -> GuiDocument:
@@ -70,14 +77,15 @@ class _Reader:
         self.declared = symbols_at + len(symbol_offsets) * self.records["pointer"].size
         symbols = [self.symbol(offset) for offset in symbol_offsets]
         root_object = self.object(root["root_object"]) if root["root_object"] else None
-        objects, animations = self.declarations(header["metadata"])
+        objects, animations = self.declarations(header[self.layout.stream_end])
         for offset, target in self.transitions.items():
             if target:
                 if target not in self.animations:
                     raise GuiFormatError("an animation transition targets an unowned descriptor")
                 self.animations[offset].transition = self.animations[target]
-        if self.records["list"].decode(self.data, header["metadata"])["count"]:
+        if "metadata" in header and self.records["list"].decode(self.data, header["metadata"])["count"]:
             raise GuiFormatError("type/field metadata records are not understood")
+        parameters = self.parameters(header["parameters"]) if "parameters" in header else ([], [], [])
         document = GuiDocument(
             version=self.layout.version,
             root_object=root_object,
@@ -87,11 +95,25 @@ class _Reader:
             source=source,
             objects=objects,
             animations=animations,
+            parameters=parameters[0],
+            parameter_references=parameters[1],
+            parameter_overrides=parameters[2],
+            assets=[row["path"] for row in self.table("path", header["assets"])],
         )
         try:
             document.validate_relationships()
         except ValueError as exc:
             raise GuiFormatError(str(exc)) from exc
+        masks = {key: value for symbol in symbols for key, value in animated(symbol).items()}
+        for offset, obj in self.objects.items():
+            derived, held = masks.get(id(obj), {}), self.held[offset]
+            obj.baselines = {name: mask if -1 in (mask, derived.get(name, 0)) else mask & ~derived.get(name, 0)
+                             for name, mask in held.items() if mask != derived.get(name)}
+            names = {item.name for item in obj.properties}
+            if {name: mask for name, mask in baseline_masks(obj, derived).items() if name in names} != held:
+                raise GuiFormatError(f"object {obj.name!r} stores animation baselines its tracks contradict")
+            if self.flags[offset] != state_flags(self.layout.state_flags, obj, derived):
+                raise GuiFormatError(f"object {obj.name!r} stores state flags its tracks contradict")
         return document
 
     def read(self, name: str, offset: int) -> dict:
@@ -148,12 +170,19 @@ class _Reader:
         record = self.read("object", offset)
         obj = self.objects[offset] = GuiObject(uuid.UUID(bytes_le=record["guid"]),
                                                uuid.UUID(bytes_le=record["prototype"]), record["name"], record["type"])
-        properties, name = self.properties(record["properties"]), self.layout.name_property[0]
+        name, ordered = self.layout.name_property[0], "order" in record
+        properties = self.properties(record["properties"], record["order"] if ordered else None)
+        defaults = self.properties(record["defaults"], 0 if ordered else None)
+        self.held[offset], self.flags[offset] = {item.name: item.mask for item in defaults}, record.get("flags", 0)
         if any(item.name == name and item.value != obj.name for item in properties):
             raise GuiFormatError(f"object {obj.name!r} holds another {name}")
+        obj.name_at = next((at for at, item in enumerate(properties) if item.name == name), 0)
+        properties = [item for item in properties if item.name != name]
+        if ordered:
+            declared = {item.name: at for at, item in enumerate(properties)}
+            defaults.sort(key=lambda item: declared.get(item.name, len(declared)))
         try:
-            obj.properties = merged([item for item in properties if item.name != name],
-                                    self.properties(record["defaults"]), self.order(obj.type_name))
+            obj.properties = merged(properties, defaults, {} if ordered else self.order(obj.type_name))
         except ValueError as exc:
             raise GuiFormatError(f"object {obj.name!r}: {exc}") from exc
         if record["special"]:
@@ -167,14 +196,28 @@ class _Reader:
         runtime = gui_runtime(self.layout.version)
         return runtime.runtime_type(type_name).order if type_name in runtime.types else {}
 
-    def properties(self, offset: int) -> list[Stored]:
-        return [self.property(row) for row in self.table("property", offset)] if offset else []
+    def properties(self, offset: int, order: int | None = None) -> list[Stored]:
+        if not offset:
+            return []
+        rows = self.table("property", offset)
+        if order is not None:
+            hashes = [row["hash"] for row in rows]
+            if any(first >= second for first, second in zip(hashes, hashes[1:])):
+                raise GuiFormatError(f"the properties at 0x{offset:X} are not sorted by name hash")
+        if order:
+            places = [row["at"] for row in self.records["order"].decode_table(self.data, order, len(rows))]
+            if sorted(places) != list(range(len(rows))):
+                raise GuiFormatError(f"the declaration order at 0x{order:X} is not one place per property")
+            rows = [rows[at] for at in places]
+        return [self.property(row) for row in rows]
 
     def property(self, row: dict) -> Stored:
         try:
             kind = PropertyType(row["type"])
         except ValueError as exc:
             raise GuiFormatError(f"property {row['name']!r} uses unknown property type {row['type']}") from exc
+        if "hash" in row and row["hash"] != murmur3_hash_utf16le(row["name"]):
+            raise GuiFormatError(f"property {row['name']!r} stores another name hash")
         return Stored(row["name"], kind, self.value(kind, row["value"]), row["mask"])
 
     def value(self, kind: PropertyType, raw: int):
@@ -243,6 +286,24 @@ class _Reader:
         if cursor != end or set(self.objects) != set(object_offsets) or set(self.animations) != set(animation_offsets):
             raise GuiFormatError("invalid native GUI declaration stream")
         return [self.objects[at] for at in object_offsets], [self.animations[at] for at in animation_offsets]
+
+    def parameters(self, offset: int) -> tuple[list, list, list]:
+        table = self.records["parameter_table"].decode(self.data, offset)
+        return ([GuiParameter(uuid.UUID(bytes_le=row["guid"]), row["name"], kind, row["parameter_type"],
+                              self.value(kind, row["value"]), row["enum_type"], row["text"])
+                 for row in self.table("parameter", table["declarations"]) for kind in [self.kind(row)]],
+                [GuiParameterReference(uuid.UUID(bytes_le=row["guid"]), row["path"], self.kind(row), row["mask"],
+                                       row["class"], row["field"])
+                 for row in self.table("parameter_reference", table["references"])],
+                [GuiParameterOverride(uuid.UUID(bytes_le=row["guid"]), kind, row["parameter_type"],
+                                      self.value(kind, row["value"]), row["enum_type"])
+                 for row in self.table("parameter_override", table["overrides"]) for kind in [self.kind(row)]])
+
+    def kind(self, row: dict) -> PropertyType:
+        try:
+            return PropertyType(row["type"])
+        except ValueError as exc:
+            raise GuiFormatError(f"a parameter uses unknown property type {row['type']}") from exc
 
     def bindings(self, offset: int) -> list[GuiBinding]:
         listing, binding, prop = self.records["list"], self.records["binding"].size, self.records["property"].size

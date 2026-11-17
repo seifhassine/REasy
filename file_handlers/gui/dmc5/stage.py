@@ -68,8 +68,14 @@ class Dmc5GuiStage:
         scene.held_segment = lambda: world.segment(key) if self.in_game else None
         if self.in_game and self.placement >= len(placements(scene, world)):
             self.placement = 0
-        self.interaction, self.typing = Dmc5GuiInteraction(self), TextTyping()
+        self.interaction = self._profile.adapter.interaction(self)
+        self.typing = TextTyping()
+        self.animations = self._profile.adapter.text_animations(
+            self._profile, lambda path: self._dependencies.assets.load_text_animation(path, self._game))
         self.layout()
+        if self.animations is not None:
+            self.animations.begin(scene.nodes)
+            self.playback.on_assignments = self.animations.assigned
 
     @property
     def in_game(self) -> bool:
@@ -94,6 +100,9 @@ class Dmc5GuiStage:
 
     def key(self, event) -> bool:
         return self.interaction.key(event)
+
+    def wheel(self, delta: float) -> bool:
+        return self.interaction.wheel(delta)
 
     def release(self, event=None) -> None:
         self.interaction.release(event)
@@ -127,7 +136,7 @@ class Dmc5GuiStage:
         return self.playback.overrides[node.path].get(name)
 
     def script(self, node: GuiSceneNode, name: str, value) -> None:
-        self.playback.assign(node.path, name, value)
+        self.playback.assign(node, name, value)
         self.interaction.assigned(node, name)
         self.typing.assigned(node, name, value)
         self._scripted += 1
@@ -139,6 +148,8 @@ class Dmc5GuiStage:
         self.interaction.advance(frames, frames / rate)
         self.typing.advance(self.scene.tree_nodes, frames)
         self.playback.advance(frames)
+        if self.animations is not None:
+            self.animations.advance(frames)
         if self.live and self.moment is not None:
             self.moment = min(self.world["moves"].end, self.moment + frames / rate * self.world["moves"].rate)
         if self.device is not None and self.device.clock is not None:
@@ -158,12 +169,12 @@ class Dmc5GuiStage:
         self.world, own = placed, scene.runtime_properties(scene.root, held.get(scene.root.path))
         self.flat = placed is None and (self._profile.enum_label(own, "ViewType") != "Screen"
                                         or own["UseGUICamera"])
-        unit = self.flat and scene.screen_size == (1.0, 1.0)
+        unit = self.flat and scene.screen_size == (1.0, 1.0) and self._profile.world_view_output is not None
         if self.output_size is None or not unit:
             self._window = None
         if self.output_size is None:
-            wide, high = size = self._profile.world_view_output
             if unit:
+                wide, high = self._profile.world_view_output
                 scene.update_preview(held)
                 seen = QRectF(-wide / 2, -high / 2, wide, high)
                 for node in scene.draw_nodes:
@@ -171,7 +182,8 @@ class Dmc5GuiStage:
                         seen |= self.outline(node).boundingRect()
                 self._window = QRectF(seen.toAlignedRect()).getRect()
             self.output_size = tuple(round(side) for side in (
-                size if placed is not None else self._window[2:] if unit else scene.screen_size))
+                self._profile.world_view_output if placed is not None else self._window[2:] if unit
+                else scene.screen_size))
         if self._window:
             (left, top, wide, high), (x, y, z) = self._window, own["Position"]
             held = {**held, scene.root.path: {**held.get(scene.root.path, {}), "ScreenSize": [wide, high],
@@ -245,7 +257,9 @@ class Dmc5GuiStage:
                 raise ValueError(value)
             put("safe_area_ratio", value)
 
-        languages = {value: label for label, value in sorted(self._profile.languages.items(), key=lambda item: item[1])}
+        fonts = self._dependencies.font_catalog
+        languages = {value: label for label, value in sorted(self._profile.languages.items(), key=lambda item: item[1])
+                     if fonts is None or value in fonts.languages}
         pointers = {value: label for label, value in self._profile.enum("MouseSelectType").items() if value}
         places = placements(self.scene, self._dependencies.world, self.playback.overrides.get(
             self.scene.root.path)) if self.in_game else ()
@@ -288,16 +302,20 @@ class Dmc5GuiStage:
                   lambda value: put("language", value), languages,
                   translate("GuiStage", "The language messages are shown in. The game sets it; a file does not "
                                         "hold it.")),
-            Field(translate("GuiStage", "Input"), "enum", lambda: int(not self.icon_context.keyboard_mode),
-                  lambda value: put("icon_context", replace(self.icon_context, keyboard_mode=value == 0)),
-                  {0: translate("GuiStage", "Keyboard"), 1: translate("GuiStage", "Gamepad")},
-                  translate("GuiStage", "The device whose button icons texts show.")),
+            *([Field(translate("GuiStage", "Input"), "enum", lambda: int(not self.icon_context.keyboard_mode),
+                     lambda value: put("icon_context", replace(self.icon_context, keyboard_mode=value == 0)),
+                     {0: translate("GuiStage", "Keyboard"), 1: translate("GuiStage", "Gamepad")},
+                     translate("GuiStage", "The device whose button icons texts show."))]
+              if self._profile.icons is not None or "input_reference" in (self._profile.message_tags or {}) else []),
             Field(translate("GuiStage", "Pointer"), "enum",
                   lambda: self._profile.enum("MouseSelectType").get(self.pointer, 0),
                   lambda value: put("pointer", pointers.get(value, "")),
                   {0: translate("GuiStage", "As the file says"), **pointers},
                   translate("GuiStage", "How lists take the pointer in Try (MouseSelectType). A script can set it "
-                                        "while the game runs; a click on the selected item decides it.")),
+                                        "while the game runs; a click on the selected item decides it.")
+                  if self.interaction.decides else
+                  translate("GuiStage", "How lists take the pointer in Try (MouseSelectType). A script can set it "
+                                        "while the game runs.")),
         ]
 
     def sources(self) -> list[tuple[str, str, str]]:
@@ -305,7 +323,8 @@ class Dmc5GuiStage:
             "placement": translate("GuiStage", "Placement"), "camera": translate("GuiStage", "Camera"),
             "timeline": translate("GuiStage", "Timeline"), "lights": translate("GuiStage", "Lights"),
             "segment": translate("GuiStage", "Segment"), "messages": translate("GuiStage", "Added messages"),
-            "commands": translate("GuiStage", "Key commands")}
+            "commands": translate("GuiStage", "Key commands"), "tables": translate("GuiStage", "Tag tables"),
+            "input": translate("GuiStage", "Input assignments")}
         found = {**({} if self.world is None else world.behind(self.world)),
                  **{role: files for role, files in world.asked.items() if self.in_game or role == "commands"}}
         return [(label, path, world.found(path)) for role, label in labels.items() for path in found.get(role, ())]
@@ -321,7 +340,7 @@ class Dmc5GuiStage:
                                             lambda path: (found := loader(path)) and found[1], self._dependencies,
                                             self.icon_context)
                     self.device.language = self.language
-                self.device.typed = self.typing.typed
+                self.device.typed, self.device.animations = self.typing.typed, self.animations
                 texture, left = self.device.frame(self.scene, size, self._drawn, self.world)
             except (RuntimeError, ValueError, FileNotFoundError) as error:
                 self.gaps.append((self.scene.root.path, str(error)))
@@ -422,20 +441,28 @@ class Dmc5GuiStage:
     def _shape(self, node: GuiSceneNode, hit: bool) -> QPainterPath:
         path, kind, profile = QPainterPath(), node.object.type_name, self._profile
         special = node.object.special_data
+        facts = profile.runtime_type(kind).facts
         if kind == "via.gui.TextureSet" and isinstance(special, GuiTextureSet):
             scale = node.render_properties["Scale"]
+            x, y = bounds(node, node.render_properties[facts["size"]])[:2] if "anchored_entries" in facts else (0, 0)
             for entry in special.entries:
                 left, top, right, bottom = entry.bounds
-                path.addRect(QRectF(left * scale[0], top * scale[1], (right - left) * scale[0],
+                path.addRect(QRectF((x + left) * scale[0], (y + top) * scale[1], (right - left) * scale[0],
                                     (bottom - top) * scale[1]).normalized())
         elif kind == "via.gui.HitArea":
             rect, shape = self._rect(node), profile.enum_label(node.render_properties, "Shape", "HitAreaShape")
             if shape == "Triangle":
                 path.addPolygon(QPolygonF([rect.bottomLeft(), QPointF(rect.center().x(), rect.top()),
                                            rect.bottomRight()]))
-            elif shape in profile.runtime_type(kind).facts["polygons"]:
+            elif shape in facts["polygons"]:
                 path.addPolygon(QPolygonF([QPointF(*point) for point in hit_polygon(node, node.size)]))
-            else:
+            elif shape in facts.get("triangles", {}):
+                free = facts["triangles"][shape]
+                for corners in free["vertices"][:node.render_properties[free["count"]]]:
+                    piece = QPainterPath()
+                    piece.addPolygon(QPolygonF([QPointF(*node.render_properties[name]) for name in corners]))
+                    path = path.united(piece)
+            elif shape == "Rect":
                 path.addRect(rect)
         elif kind == "via.gui.Circle":
             points = circle_points(node, node.size, hit_test=hit)

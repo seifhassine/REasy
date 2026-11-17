@@ -25,8 +25,12 @@ def kernel_table(kernel, slots: int, last: float) -> list[F]:
     return [*kept, *[F(0)] * (slots - len(kept) - 1), F(last)]
 
 
+def chain_programs(chain, system) -> list[str]:
+    return [name.format(cut=int(system["BlurFilterCuttingLuminanceLevel"])) for name in chain["programs"]]
+
+
 def chain_values(pixels: tuple[int, int], system, chain, slots: int) -> dict:
-    scale = F(system["BlurFilterScale"])
-    return {"blurSize": tuple(F(scale / F(side)) for side in pixels), "guiFilterBaseLuminance": chain["luminance"],
-            "guiFilterGaussianKernelTbl": kernel_table(chain["kernel"], slots,
-                                                       system["BlurFilterCuttingLuminanceLevel"])}
+    scale, fields = F(system["BlurFilterScale"]), chain["fields"]
+    return {fields["size"]: tuple(F(scale / F(side)) for side in pixels), fields["luminance"]: chain["luminance"],
+            fields["kernel"]: kernel_table(chain["kernel"], slots, system["BlurFilterCuttingLuminanceLevel"]
+                                           if chain["cut"] == "kernel" else 0.0)}

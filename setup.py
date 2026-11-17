@@ -64,10 +64,14 @@ if os.name == 'nt':
             extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
         )
     )
+    harfbuzz = 'native/third_party/harfbuzz/src'
     ext_modules.append(
         Extension(
             'fastglyph',
-            sources=['native/fastglyph.cpp'],
+            sources=['native/fastglyph.cpp', *sorted(f'{harfbuzz}/{name}' for name in os.listdir(harfbuzz)
+                                                     if name.endswith('.cc')), f'{harfbuzz}/hb-ucdn/ucdn.c'],
+            include_dirs=[harfbuzz, f'{harfbuzz}/hb-ucdn'],
+            define_macros=[('HAVE_OT', '1'), ('HAVE_UCDN', '1'), ('HAVE_FALLBACK', '1')],
             extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
         )
     )

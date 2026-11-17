@@ -14,7 +14,7 @@ lazy from ..model import GuiTextureSet
 lazy from ..scene import GuiSceneNode
 lazy from .scene import project_gui_point
 lazy from .text_layout import TextLayoutGap
-lazy from .vertices import bounds, circle_points, hit_polygon
+lazy from .vertices import bounds, circle_points, display_bounds, hit_polygon
 
 _EPSILON = float(np.finfo(np.float32).eps)
 _CONTROL, _LIST, _ITEM = "via.gui.Control", "via.gui.SimpleList", "via.gui.SelectItem"
@@ -78,23 +78,28 @@ def _inside(point: tuple[float, float], first, second, third) -> bool:
 
 
 class Dmc5GuiInteraction:
+    decides = True
+
     def __init__(self, stage) -> None:
         self.stage, self.profile = stage, stage.scene.workspace.profile
         self.selection: dict[str, int] = {}
         self.missed: dict[str, str] = {}
         self.down: dict[int, tuple[float | None, bool]] = {}
         self.clock = f32(0.0)
-        icons = self.profile.icons
-        self.keys = {action: icons["device"][icons["pad"][str(button)]][0]
-                     for action, button in icons["actions"].values()
-                     if icons["pad"].get(str(button)) in icons["device"]}
-        self.actions = {button: action for action, button in icons["actions"].values()}
+        self._bind()
         self.items: dict[str, tuple[GuiSceneNode, ...]] = {}
         self.scrolls: dict[str, _Scroll] = {}
         self.grids: dict[str, _Grid] = {}
         self.bars: dict[str, _Bar] = {}
         stage.scene.withheld.clear()
         self._awake(stage.scene.root)
+
+    def _bind(self) -> None:
+        icons = self.profile.icons
+        self.keys = {action: icons["device"][icons["pad"][str(button)]][0]
+                     for action, button in icons["actions"].values()
+                     if icons["pad"].get(str(button)) in icons["device"]}
+        self.actions = {button: action for action, button in icons["actions"].values()}
 
     def _awake(self, node: GuiSceneNode) -> None:
         build = {_LIST: self._simple, _SCROLL: self._scroll, _GRID: self._grid, _BAR: self._layout}.get(
@@ -109,9 +114,9 @@ class Dmc5GuiInteraction:
             for item in self.stage.scene.drop_clones(node):
                 self.stage.playback.forget(item)
             self._awake(node)
-        elif _BAR in self.profile.runtime_type(node.object.type_name).classes and name in ("Direction",
-                                                                                           "BarVisibility"):
-            if name == "Direction" or node.path not in self.bars:
+        elif _BAR in self.profile.runtime_type(node.object.type_name).classes and name in (
+                "Direction", "BarVisibility", "FlipBarSizeDir"):
+            if name != "BarVisibility" or node.path not in self.bars:
                 self._layout(node)
             if node.path in self.bars:
                 self._place(node)
@@ -136,13 +141,16 @@ class Dmc5GuiInteraction:
         elif count < most:
             rest, share = f32(1.0 / (most - count)), f32(count / most)
         record.step = [0.0, 0.0, 0.0]
-        direction = self.profile.enum_label(held, "Direction", "BarDirection")
+        direction = self._direction(held)
         if direction == "Horizontal":
             record.step[0], width = f32(f32(width - f32(width * share)) * rest), f32(width * share)
         elif direction == "Vertical":
             record.step[1], height = f32(f32(height - f32(height * share)) * rest), f32(height * share)
         size = self.profile.runtime_type(record.thumb.object.type_name).facts["size"]
         self._put(record.thumb, **{size: [width, height]})
+
+    def _direction(self, held: dict[str, object]) -> str:
+        return self.profile.enum_label(held, "Direction", "BarDirection")
 
     def _last(self, bar: GuiSceneNode) -> int:
         held = self._held(bar)
@@ -180,15 +188,16 @@ class Dmc5GuiInteraction:
         return next((child for child in owner.children if child.object.type_name == _ITEM), None)
 
     def _simple(self, owner: GuiSceneNode) -> None:
-        items = self.items[owner.path] = tuple(child for child in owner.children if child.object.type_name == _ITEM)
+        items = self.items[owner.path] = tuple(
+            child for child in owner.children if _ITEM in self.profile.runtime_type(child.object.type_name).classes)
         if not items:
             return
         held = self._held(owner)
         chosen = self.selection[owner.path] = int(held["SelectedIndex"])
         for index, item in enumerate(items):
-            self._put(item, ListIndex=index, Selected=index == chosen)
-            if index == chosen and held["UseFocus"]:
-                self.stage.playback.play_state(item.path, self._state(item, True))
+            self._put(item, ListIndex=index)
+            if held["UseFocus"]:
+                self._focus(item, index == chosen)
 
     def _scroll(self, owner: GuiSceneNode) -> None:
         held, template, bar = self._held(owner), self._template(owner), self._bar(owner)
@@ -361,13 +370,7 @@ class Dmc5GuiInteraction:
             self._scrolled(record.bar, int(held["SelectedIndex"]) - int(held["CursorIndex"]))
 
     def advance(self, frames: float, seconds: float) -> None:
-        self.clock, (start, again) = f32(self.clock + f32(seconds * 1000.0)), self.profile.key_repeat
-        for key, (stamp, taken) in list(self.down.items()):
-            if stamp is None:
-                self.down[key] = (self.clock, taken)
-            elif start <= f32(self.clock - stamp):
-                self.down[key] = (f32(f32(self.clock + again) - start), taken)
-                self._input(key, False)
+        self._repeat(seconds)
         for path in self.grids:
             self._grid_glide(self.items[path][0].parent, frames)
         for path, record in self.scrolls.items():
@@ -387,6 +390,15 @@ class Dmc5GuiInteraction:
             if record.elapsed == time:
                 self._put(items[record.hidden], Visible=False)
                 record.state, record.eased = 0, (0.0, 0.0, 0.0)
+
+    def _repeat(self, seconds: float) -> None:
+        self.clock, (start, again) = f32(self.clock + f32(seconds * 1000.0)), self.profile.key_repeat
+        for key, (stamp, taken) in list(self.down.items()):
+            if stamp is None:
+                self.down[key] = (self.clock, taken)
+            elif start <= f32(self.clock - stamp):
+                self.down[key] = (f32(f32(self.clock + again) - start), taken)
+                self._input(key, False)
 
     def _grid(self, owner: GuiSceneNode) -> None:
         held, template, bars = self._held(owner), self._template(owner), {}
@@ -671,6 +683,8 @@ class Dmc5GuiInteraction:
                 found.append((owner.path, translate(
                     "GuiStage", "this list takes the pointer as {0} here; the file says {1}").format(
                     self.stage.pointer, self.profile.enum_label(owner.render_properties, "MouseSelectType"))))
+            elif self._mode(owner) == "None":
+                found.append((owner.path, translate("GuiStage", "this list takes no pointer (MouseSelectType None)")))
         return [*found, *self.missed.items()]
 
     def action(self, command: str | None) -> int | None:
@@ -804,6 +818,7 @@ class Dmc5GuiInteraction:
             return QRectF(left, top, right - left, bottom - top)
 
         rect, kind = box(node.size), node.object.type_name
+        facts = self.profile.runtime_type(kind).facts
         if kind == "via.gui.Circle":
             rings = circle_points(node, node.size, hit_test=True) if quad(rect) else None
             if rings is None:
@@ -817,6 +832,11 @@ class Dmc5GuiInteraction:
             return False
         if kind == "via.gui.HitArea":
             shape = self.profile.enum_label(node.render_properties, "Shape", "HitAreaShape")
+            if shape in facts.get("triangles", {}):
+                free, held = facts["triangles"][shape], node.render_properties
+                return any(not all(corner[2] > 1.0 for corner in corners) and _inside(target, *corners)
+                           for corners in ([project(QPointF(*held[name])) for name in vertices]
+                                           for vertices in free["vertices"][:held[free["count"]]]))
             if shape == "Triangle":
                 return _inside(target, project(QPointF(rect.center().x(), rect.top())), project(rect.bottomLeft()),
                                project(rect.bottomRight()))
@@ -828,7 +848,7 @@ class Dmc5GuiInteraction:
             middle = project(rect.center())
             return any(_inside(target, polygon[at], polygon[(at + 1) % len(polygon)], middle)
                        for at in range(len(polygon)))
-        if "hit_layout_size" in self.profile.runtime_type(kind).facts:
+        if "hit_layout_size" in facts:
             if not rect.isEmpty() and quad(rect):
                 return True
             try:
@@ -839,10 +859,15 @@ class Dmc5GuiInteraction:
                 self.missed[node.path] = translate(
                     "GuiStage", "its text size is not known, so the pointer misses it ({0})").format(gap)
                 return False
-            return min(shown) > 0.0 and quad(box(shown))
+            if min(shown) <= 0.0 or "hit_display_alignment" not in facts:
+                return min(shown) > 0.0 and quad(box(shown))
+            left, top, right, bottom = display_bounds(node, shown, self.profile.enum_value(
+                node.render_properties, facts["hit_display_alignment"], "PageAlignment"))
+            return quad(QRectF(left, top, right - left, bottom - top))
         if kind == "via.gui.TextureSet" and isinstance(node.object.special_data, GuiTextureSet):
             scale = node.render_properties["Scale"]
-            return any(quad(QRectF(left * scale[0], top * scale[1], (right - left) * scale[0],
+            x, y = bounds(node, node.render_properties[facts["size"]])[:2] if "anchored_entries" in facts else (0, 0)
+            return any(quad(QRectF((x + left) * scale[0], (y + top) * scale[1], (right - left) * scale[0],
                                    (bottom - top) * scale[1]).normalized())
                        for left, top, right, bottom in (entry.bounds for entry in node.object.special_data.entries))
         return not rect.isEmpty() and quad(rect)
@@ -892,6 +917,9 @@ class Dmc5GuiInteraction:
             return False
         self.down[key] = (None, self._input(key, True))
         return self.down[key][1]
+
+    def wheel(self, delta: float) -> bool:
+        return False
 
     def release(self, event=None) -> None:
         if event is None:

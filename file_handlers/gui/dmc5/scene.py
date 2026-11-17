@@ -118,15 +118,16 @@ class Dmc5GuiScene(GuiScene):
         def visit(item: GuiSceneNode, parent_world: Matrix4, parent_raw: Matrix4, parent_visible: bool,
                   parent_scale: tuple[float, float, float, float], parent_offset: tuple[float, float, float],
                   parent_saturation: float, safe_area: bool) -> None:
-            facts = profile.runtime_type(item.object.type_name).facts
+            kind = profile.runtime_type(item.object.type_name)
+            facts, placed_here = kind.facts, "Position" in kind.declared
             properties = self.runtime_properties(item, self._preview_overrides.get(item.path))
             if item is transient_node and transient is not None:
                 properties["Position"] = (*transient[1:3], properties["Position"][2])
                 if len(transient) > 3:
                     properties[facts["size"]] = transient[3]
             item.render_properties = properties
-            position = tuple(properties["Position"])
-            rotation = tuple(properties["Rotation"])
+            position = tuple(properties["Position"]) if placed_here else (0.0, 0.0, 0.0)
+            rotation = tuple(properties["Rotation"]) if placed_here else (0.0, 0.0, 0.0)
             scale = tuple(properties[facts["scale"]]) if "scale" in facts else (1.0, 1.0, 1.0)
             raw_local = _local_matrix(position, rotation, scale, profile.degree_factors)
             raw_world = _multiply4(raw_local, parent_raw)
@@ -146,6 +147,10 @@ class Dmc5GuiScene(GuiScene):
 
             if "ColorScale" in properties:
                 local_scale = tuple(_f32(value) for value in properties["ColorScale"])
+                if "color_scale_srgb" in facts and properties[facts["color_scale_srgb"]]:
+                    threshold, slope, offset, divisor, power = (_f32(value) for value in profile.srgb_to_linear)
+                    local_scale = (*(crt("powf")(_fdiv(_fadd(value, offset), divisor), power) if value > threshold
+                                     else _fdiv(value, slope) for value in local_scale[:3]), local_scale[3])
                 offset = properties["ColorOffset"]
                 local_offset = tuple(_f32(offset[0] if facts.get("color_offset_broadcast") else value)
                                      for value in offset)
@@ -346,7 +351,7 @@ def _resolution_world(
     runtime,
 ) -> Matrix4:
     ratio = _f32(safe_area_ratio)
-    divisor = _f32(1.0) if safe_area else ratio
+    divisor = ratio if safe_area else _f32(1.0)
     source = (
         _fdiv(screen_size[0], _fmul(output_size[0], divisor)),
         _fdiv(screen_size[1], _fmul(output_size[1], divisor)),

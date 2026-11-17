@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from bisect import bisect_left
@@ -6,12 +7,14 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
+from functools import cache
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Iterable, Optional, Tuple
 from weakref import WeakKeyDictionary
 
 lazy from app_config import GAME_NATIVE_PATHS
+lazy from utils.app_paths import resource_path
 lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 
 
@@ -24,6 +27,7 @@ _PLATFORM_SUFFIX = r'\.(?:stm|x64)'
 _VERSION_SUFFIX = rf'\.\d+(?:{_PLATFORM_SUFFIX})?'
 _SUFFIX = rf'(?:{_VERSION_SUFFIX}|{_PLATFORM_SUFFIX})'
 _RESOURCE_SUFFIX = re.compile(_SUFFIX + '$', re.I)
+_LEADING_VERSION = re.compile(r'^\.\d+')
 ResourceDataLoader = Callable[[str], Optional[Tuple[str, bytes]]]
 
 
@@ -34,6 +38,7 @@ class ResourceResolutionContext:
     path_prefix: str = "natives/stm"
     pak_cached_reader: object | None = None
     game: str = ""
+    language: int | None = None
 
     def resolve(
         self,
@@ -53,12 +58,13 @@ class ResourceResolutionContext:
             allow_selection_dialog=allow_selection_dialog,
             game=self.game,
             require_unique=require_unique,
+            language=self.language,
         )
 
     def locate(self, resource_path: str, *, require_unique: bool = False) -> "ResourceLocation | None":
         return next(_locations(resource_path, self.project_dir, self.unpacked_dir, self.path_prefix,
                                self.pak_cached_reader, None, allow_selection_dialog=False, game=self.game,
-                               require_unique=require_unique), None)
+                               require_unique=require_unique, language=self.language), None)
 
     def with_pak_reader(self, reader) -> "ResourceResolutionContext":
         return replace(self, pak_cached_reader=reader)
@@ -295,6 +301,26 @@ def _resource_path_candidates(resource_path: str) -> list[str]:
     return [f"natives/stm/{base}", f"natives/x64/{base}", base]
 
 
+@cache
+def _language_suffixes() -> list[str]:
+    return json.loads(resource_path("resources/data/language_suffixes.json", required=True).read_text(encoding="utf-8"))
+
+
+def _localized_tails(resource_path_text: str, language: int | None) -> tuple[str, ...] | None:
+    if not resource_path_text.strip().startswith("@"):
+        return None
+    if language is None:
+        return ".stm", ".x64", ""
+    suffix = "." + _language_suffixes()[language].casefold()
+    return f".stm{suffix}", ".stm", f".x64{suffix}", ".x64", suffix, ""
+
+
+def _localized_choice(paths: Iterable[str], base: str, tails: tuple[str, ...]) -> str | None:
+    ranked = [(tails.index(rest), path) for path in paths
+              if (rest := _LEADING_VERSION.sub("", resource_path_key(path)[len(base):], count=1)) in tails]
+    return min(ranked)[1] if ranked else None
+
+
 def _iter_lookup_keys(path: str):
     current = path
     while current:
@@ -374,12 +400,15 @@ def _match_pak_lookup(
     *,
     allow_selection_dialog: bool = True,
     require_unique: bool = False,
+    tails: tuple[str, ...] | None = None,
 ) -> tuple[bool, Optional[str]]:
     for pattern in patterns:
         needle = _normalize_lookup_path(pattern)
         if not needle:
             continue
         matches = lookup.get(needle)
+        if matches and tails is not None and (chosen := _localized_choice(matches, needle, tails)):
+            return True, chosen
         if matches:
             if require_unique:
                 matches = list({resource_path_key(p): p for p in matches}.values())
@@ -406,6 +435,7 @@ def find_matching_pak_path(
     *,
     allow_selection_dialog: bool = True,
     require_unique: bool = False,
+    tails: tuple[str, ...] | None = None,
 ) -> Optional[str]:
     if not pak_cached_reader:
         return None
@@ -422,7 +452,7 @@ def find_matching_pak_path(
             cached_norm = cached[1]
 
     pattern_list = list(patterns)
-    options = {"allow_selection_dialog": allow_selection_dialog, "require_unique": require_unique}
+    options = {"allow_selection_dialog": allow_selection_dialog, "require_unique": require_unique, "tails": tails}
     found, match = _match_pak_lookup(cached_norm, pattern_list, parent, **options)
     if found or revision is not None or rebuilt:
         return match
@@ -474,6 +504,7 @@ def _locate_in_root(
     *,
     cache_entries: bool = True,
     require_unique: bool = False,
+    tails: tuple[str, ...] | None = None,
 ) -> Optional[str]:
     if not root_dir or not _looked(os.path.isdir, root_dir):
         return None
@@ -487,6 +518,8 @@ def _locate_in_root(
     base_name = os.path.basename(base_file_path)
     if not _looked(os.path.isdir, dir_path):
         return None
+    if tails is not None and (chosen := _localized_choice(_looked(os.listdir, dir_path), base_name, tails)):
+        return os.path.join(dir_path, chosen)
 
     if require_unique:
         return locate_local_resource(Path(base_file_path), require_unique=True)
@@ -549,11 +582,14 @@ def _locations(
     allow_selection_dialog: bool = True,
     game: str = "",
     require_unique: bool = False,
+    language: int | None = None,
 ) -> Iterator[ResourceLocation]:
+    tails = _localized_tails(resource_path, language)
     resource_path = build_resource_path(resource_path, game)
     candidates = _resource_path_candidates(resource_path)
     for c in candidates:
-        found = _locate_in_root(c, project_dir, path_prefix, cache_entries=False, require_unique=require_unique)
+        found = _locate_in_root(c, project_dir, path_prefix, cache_entries=False, require_unique=require_unique,
+                                tails=tails)
         if found:
             yield ResourceLocation(found)
     match = find_matching_pak_path(
@@ -562,11 +598,12 @@ def _locations(
         selection_parent,
         allow_selection_dialog=allow_selection_dialog,
         require_unique=require_unique,
+        tails=tails,
     )
     if match:
         yield ResourceLocation(match, pak_cached_reader)
     for c in candidates:
-        found = _locate_in_root(c, unpacked_dir, path_prefix, require_unique=require_unique)
+        found = _locate_in_root(c, unpacked_dir, path_prefix, require_unique=require_unique, tails=tails)
         if found:
             yield ResourceLocation(found)
 
@@ -582,10 +619,11 @@ def resolve_resource_data(
     allow_selection_dialog: bool = True,
     game: str = "",
     require_unique: bool = False,
+    language: int | None = None,
 ) -> Optional[Tuple[str, bytes]]:
     locations = _locations(resource_path, project_dir, unpacked_dir, path_prefix, pak_cached_reader,
                            selection_parent, allow_selection_dialog=allow_selection_dialog, game=game,
-                           require_unique=require_unique)
+                           require_unique=require_unique, language=language)
     return next(filter(None, (location.read() for location in locations)), None)
 
 

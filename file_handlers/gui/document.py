@@ -70,7 +70,7 @@ class GuiEditDocument(EditDocument):
         touched, self._touched = self._touched, {}
         for animation in touched.values():
             clip = self.clip(animation)
-            for target, values in shape(animation):
+            for target, values in shape(animation, self.gui.version):
                 for name, value in values.items():
                     setattr(target, name, value)
                     clip.changed.emit(Change(target, name))

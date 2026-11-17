@@ -6,13 +6,11 @@ from collections import Counter
 
 from PySide6.QtCore import QElapsedTimer, QObject, QRectF, QTimer, Signal
 
-lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
-
 from .. import edits, state_edits
 from ..dependencies import GuiDependencyCatalog
 from ..document import GuiEditDocument
 from ..errors import GuiEditError
-from ..model import GuiAnimation, GuiBinding, GuiDocument, GuiObject, GuiProperty, GuiSymbol
+from ..model import GuiAnimation, GuiBinding, GuiDocument, GuiObject, GuiParameterReference, GuiProperty, GuiSymbol
 from ..profiles import gui_runtime
 from ..authoring import GuiField
 from ..scene import GuiResource, GuiSceneNode, GuiWorkspace
@@ -31,13 +29,12 @@ class EditorState(QObject):
     played = Signal(bool)
     refused = Signal(str)
 
-    def __init__(self, document: GuiEditDocument, source: str, loader, locate, lister, game: str,
+    def __init__(self, document: GuiEditDocument, source: str, loader, files, lister, game: str,
                  parent: QObject | None = None):
         super().__init__(parent)
         self.document, self.source = document, source or document.gui.source
         profile = gui_runtime(document.gui.version)
-        self.dependencies, self._lister, self._listed = GuiDependencyCatalog(loader, profile, locate if (
-            mmtr_profile_for_game(game or profile.game).game == profile.game) else lambda path: None), lister, {}
+        self.dependencies, self._lister, self._listed = GuiDependencyCatalog(loader, profile, files), lister, {}
         self.loader = self.dependencies.resource_data_loader
         self.stage = profile.adapter.create_stage(self.dependencies, game)
         self.scope: GuiSymbol | None = None
@@ -139,7 +136,7 @@ class EditorState(QObject):
             dropped = self._build()
         else:
             if lists:
-                self.scene.rebind([] if self.scope is not None else self.document.gui.bindings)
+                self.scene.rebind(None if self.scope is not None else self.document.gui)
             else:
                 self.scene.refresh()
                 self.scene.apply_bindings()
@@ -411,7 +408,7 @@ class EditorState(QObject):
 
     def reveal(self, target) -> None:
         gui, structure = self.document.gui, self.document.structure
-        if isinstance(target, GuiBinding):
+        if isinstance(target, (GuiBinding, GuiParameterReference)):
             self.open_symbol(None)
             if (node := self.scene.binding_target(target.target_path)) is not None:
                 self.select([node])

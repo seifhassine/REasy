@@ -8,7 +8,6 @@ import uuid
 
 from PySide6.QtCore import QCoreApplication
 
-lazy from file_handlers.clip.model import ResourceKind, Timeline
 from file_handlers.document_commands import ReplaceContents
 
 from .codec import parse_gui
@@ -16,10 +15,9 @@ from .document import GuiEditDocument
 from .edits import _insert, _used_guids, new_guid, renew
 from .errors import GuiEditError, GuiFormatError
 from .model import GuiAnimation, GuiBinding, GuiDocument, GuiObject, GuiSymbol
-from .rules import gui_layout
 from .serializer import serialize_gui
 from .state_edits import node_of
-from .states import UNSET, clip_root, shape
+from .states import shape, state_clip
 from .storage import nodes
 from .structure import join
 
@@ -49,14 +47,22 @@ def copied(document: GuiEditDocument, objects: list[GuiObject]) -> bytes:
             reached[symbol.guid] = symbol
             queue += [inner for obj in symbol.objects if (inner := structure.symbol_of(obj)) is not None]
     objects = [obj for obj in dict.fromkeys(objects) if structure.owner[id(obj)].guid not in reached]
-    held, symbols, stand = copy.deepcopy((objects, list(reached.values()), gui.root_object))
+    own = {id(item) for symbol in reached.values() for item in symbol.animations}
+    foreign = {id(item.transition): item.transition for symbol in reached.values() for item in symbol.animations
+               if item.transition is not None and id(item.transition) not in own}
+    held, symbols, stand = copy.deepcopy((objects, list(reached.values()), gui.root_object), dict(foreign))
+    for symbol in symbols:
+        for animation in symbol.animations:
+            if animation.transition is not None and id(animation.transition) in foreign:
+                animation.transition = next((item for item in symbol.animations
+                                             if item.name == animation.transition.name), None)
     root = GuiSymbol(uuid.uuid4(), gui.symbols[0].name, gui.symbols[0].type_name, held)
     stand.prototype_guid = root.guid
     names = [obj.name for obj in objects]
     bindings = [GuiBinding(join("/", obj.name) + binding.target_path[len(prefix):], binding.target_type,
                            copy.deepcopy(binding.property))
                 for obj in objects if names.count(obj.name) == 1 and len(structure.paths(obj)) == 1
-                for binding, prefix in structure.through(obj)]
+                for binding, prefix in structure.through(obj) if isinstance(binding, GuiBinding)]
     tracks: dict[str, dict[str, list]] = {}
     for obj in objects:
         for animation in structure.owner[id(obj)].animations if names.count(obj.name) == 1 else ():
@@ -72,12 +78,10 @@ def copied(document: GuiEditDocument, objects: list[GuiObject]) -> bytes:
 
 def _state(version: int, root: GuiSymbol, name: str, tracks: dict[str, list]) -> GuiAnimation:
     guid = uuid.uuid4()
-    held = clip_root(root, guid.bytes_le)
-    for node in held.children:
+    animation = GuiAnimation(guid, name, False, state_clip(root, guid.bytes_le, version))
+    for node in animation.clip.roots[0].children:
         node.properties = tracks.get(node.name, [])
-    animation = GuiAnimation(guid, name, False, Timeline(gui_layout(version).clip_version, ResourceKind.MOT_CLIP, UNSET,
-                                                          guid.bytes_le, [], [held]))
-    for target, values in shape(animation):
+    for target, values in shape(animation, version):
         for field, value in values.items():
             setattr(target, field, value)
     return animation

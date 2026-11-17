@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "hb.h"
+
 namespace {
 
 using i32 = int32_t;
@@ -474,6 +476,83 @@ i32 darkening(i32 em_ratio, i32 ppem, i32 stem, const int* p) {
     return divfix(out, em_ratio * 2);
 }
 
+// FreeType 2.5.3's FT_Vector_Length (CORDIC).
+i32 vector_length(i32 x, i32 y) {
+    if (x == 0) return std::abs(y);
+    if (y == 0) return std::abs(x);
+    uint32_t z = (uint32_t)std::abs(x) | (uint32_t)std::abs(y);
+    int shift = 0;
+    while (z >>= 1) ++shift;
+    if (shift <= 29) { shift = 29 - shift; x = (i32)((uint32_t)x << shift); y = (i32)((uint32_t)y << shift); }
+    else { shift -= 29; x >>= shift; y >>= shift; shift = -shift; }
+    if (y > x) {
+        if (y > -x) { i32 t = y; y = -x; x = t; }
+        else { x = -x; y = -y; }
+    } else if (y < -x) { i32 t = -y; y = x; x = t; }
+    for (i32 i = 1, b = 1; i < 23; b <<= 1, i++) {
+        i32 t = y > 0 ? x + ((y + b) >> i) : x - ((y + b) >> i);
+        y = y > 0 ? y - ((x + b) >> i) : y + ((x + b) >> i);
+        x = t;
+    }
+    i64 v = ((i64)std::abs(x) * 0xDBD95B16LL + 0x100000000LL) >> 32;
+    x = x < 0 ? -(i32)v : (i32)v;
+    return shift > 0 ? (x + (1 << (shift - 1))) >> shift : (i32)((uint32_t)x << -shift);
+}
+
+// FT_Outline_Get_Orientation: 0 TrueType, 1 PostScript, 2 none.
+int orientation(const std::vector<std::vector<Vec>>& contours) {
+    bool any = false;
+    i32 x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    for (auto& c : contours) for (auto& v : c) {
+        if (!any) { x0 = x1 = v.x; y0 = y1 = v.y; any = true; }
+        x0 = std::min(x0, v.x); x1 = std::max(x1, v.x); y0 = std::min(y0, v.y); y1 = std::max(y1, v.y);
+    }
+    if (!any) return 0;
+    if (x0 == x1 || y0 == y1) return 2;
+    auto msb = [](uint32_t z) { int s = 0; while (z >>= 1) ++s; return s; };
+    int xs = std::max(msb((uint32_t)std::abs(x1) | (uint32_t)std::abs(x0)) - 14, 0);
+    int ys = std::max(msb((uint32_t)(y1 - y0)) - 14, 0);
+    uint32_t area = 0;
+    for (auto& c : contours) {
+        Vec prev = c.back();
+        for (auto& v : c) {
+            area += (uint32_t)((v.y - prev.y) >> ys) * (uint32_t)((v.x + prev.x) >> xs);
+            prev = v;
+        }
+    }
+    return (i32)area > 0 ? 1 : (i32)area < 0 ? 0 : 2;
+}
+
+// FT_Outline_EmboldenXY as SF6's FreeType has it: each point moved by its in and out unit vectors.
+void embolden(std::vector<std::vector<Vec>>& contours, i32 xstrength, i32 ystrength) {
+    xstrength /= 2;
+    ystrength /= 2;
+    int orient = orientation(contours);
+    if ((xstrength == 0 && ystrength == 0) || orient == 2) return;
+    for (auto& c : contours) {
+        Vec first = c.front(), cur = first;
+        i32 inx = cur.x - c.back().x, iny = cur.y - c.back().y, l_in = vector_length(inx, iny);
+        if (l_in) { inx = divfix(inx, l_in); iny = divfix(iny, l_in); }
+        for (size_t n = 0; n < c.size(); ++n) {
+            Vec next = n + 1 < c.size() ? c[n + 1] : first;
+            i32 outx = next.x - cur.x, outy = next.y - cur.y, l_out = vector_length(outx, outy);
+            if (l_out) { outx = divfix(outx, l_out); outy = divfix(outy, l_out); }
+            i32 d = mulfix(inx, outx) + mulfix(iny, outy), sx = 0, sy = 0;
+            if (d > -0xF000) {
+                d += 0x10000;
+                sx = orient == 0 ? -(iny + outy) : iny + outy;
+                sy = orient == 0 ? inx + outx : -(inx + outx);
+                i32 q = orient == 0 ? mulfix(outy, inx) - mulfix(outx, iny) : mulfix(outx, iny) - mulfix(outy, inx);
+                i32 l = std::min(l_in, l_out);
+                sx = mulfix(xstrength, q) <= mulfix(l, d) ? muldiv(sx, xstrength, d) : muldiv(sx, l, q);
+                sy = mulfix(ystrength, q) <= mulfix(l, d) ? muldiv(sy, ystrength, d) : muldiv(sy, l, q);
+            }
+            c[n] = {cur.x + xstrength + sx, cur.y + ystrength + sy};
+            inx = outx; iny = outy; l_in = l_out; cur = next;
+        }
+    }
+}
+
 constexpr int PIXEL_BITS = 8, ONE_PIXEL = 1 << PIXEL_BITS;
 
 i32 cdiv(i32 a, i32 b) { return a / b; }
@@ -643,22 +722,71 @@ struct Gray {
         }
     }
 
+    void conic(Vec control, Vec to) {
+        Vec stack[32 * 3 + 1];
+        int levels[32], top = 0;
+        Vec* arc = stack;
+        arc[0] = {to.x * 4, to.y * 4}; arc[1] = {control.x * 4, control.y * 4}; arc[2] = {x, y};
+        i32 dx = std::max(std::abs(arc[2].x + arc[0].x - 2 * arc[1].x), std::abs(arc[2].y + arc[0].y - 2 * arc[1].y));
+        i32 lo = std::min({arc[0].y, arc[1].y, arc[2].y}), hi = std::max({arc[0].y, arc[1].y, arc[2].y});
+        if (dx < ONE_PIXEL / 4 || (lo >> PIXEL_BITS) >= max_ey || (hi >> PIXEL_BITS) < min_ey)
+            return line(arc[0].x, arc[0].y);
+        levels[0] = 0;
+        do { dx >>= 2; ++levels[0]; } while (dx > ONE_PIXEL / 4);
+        while (top >= 0) {
+            if (levels[top] > 0) {
+                for (int k = 0; k < 2; ++k) {
+                    auto at = [&](int i) -> i32& { return k ? arc[i].y : arc[i].x; };
+                    at(4) = at(2);
+                    i32 b = at(1), a = at(3) = (at(2) + b) / 2;
+                    b = at(1) = (at(0) + b) / 2;
+                    at(2) = (a + b) / 2;
+                }
+                arc += 2;
+                ++top;
+                levels[top] = levels[top - 1] = levels[top - 1] - 1;
+                continue;
+            }
+            line(arc[0].x, arc[0].y);
+            --top;
+            arc -= 2;
+        }
+    }
+
+    // FT_Outline_Decompose: tags 1 on the curve, 0 a conic control, 2 a cubic control.
     void decompose(const std::vector<std::vector<Vec>>& pts, const std::vector<std::vector<uint8_t>>& tags) {
         for (size_t c = 0; c < pts.size(); ++c) {
             const auto& p = pts[c];
             const auto& t = tags[c];
             if (p.empty()) continue;
-            move_to(p[0].x, p[0].y);
-            size_t i = 1, n = p.size();
-            while (i < n) {
-                if (t[i] == 1) { line(p[i].x * 4, p[i].y * 4); ++i; }
-                else {
-                    Vec to = i + 2 < n ? p[i + 2] : p[0];
-                    cubic(p[i], p[i + 1], to);
-                    i += 3;
+            Vec start = p[0];
+            int i = 0, limit = (int)p.size() - 1;
+            bool closed = false;
+            if (t[0] == 0) {
+                if (t[limit] == 1) start = p[limit--];
+                else start = {(start.x + p[limit].x) / 2, (start.y + p[limit].y) / 2};
+                i = -1;
+            }
+            move_to(start.x, start.y);
+            while (i < limit && !closed) {
+                ++i;
+                if (t[i] == 1) line(p[i].x * 4, p[i].y * 4);
+                else if (t[i] == 0) {
+                    Vec control = p[i];
+                    for (;;) {
+                        if (i >= limit) { conic(control, start); closed = true; break; }
+                        Vec to = p[++i];
+                        if (t[i] == 1) { conic(control, to); break; }
+                        conic(control, {(control.x + to.x) / 2, (control.y + to.y) / 2});
+                        control = to;
+                    }
+                } else {
+                    i += 2;
+                    closed = i > limit;
+                    cubic(p[i - 2], p[i - 1], closed ? start : p[i]);
                 }
             }
-            line(p[0].x * 4, p[0].y * 4);
+            if (!closed) line(start.x * 4, start.y * 4);
         }
         record();
     }
@@ -716,16 +844,51 @@ int font_init(PyObject* self, PyObject* args, PyObject*) {
     return 0;
 }
 
-// render(gid, x_ppem, y_ppem, darkening params or None) -> (width, rows, left, top, bytes, box, advance): box the
-// scaled outline's control box (xMin, yMin, xMax, yMax) in 26.6, advance in font units.
+// A scaled outline (26.6) to (width, rows, left, top, bytes, box, advance, strength): box its control box (xMin, yMin,
+// xMax, yMax); a shear moves each point's x by (int)(shear * y) first, and a sheared outline without points has xMin
+// INT_MAX; a strength then emboldens the outline as FT_GlyphSlot_Embolden does (yMax raised by it).
+PyObject* finish(std::vector<std::vector<Vec>>& points, const std::vector<std::vector<uint8_t>>& tags, float shear,
+                 i32 strength, i32 advance) {
+    if (shear != 0.0f)
+        for (auto& contour : points) for (auto& v : contour) v.x += (i32)(shear * (float)v.y);
+    i32 box[4] = {0, 0, 0, 0}, x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    for (int pass = 0; pass < 2; ++pass) {
+        bool any = false;
+        for (auto& contour : points)
+            for (auto& v : contour) {
+                if (!any) { x0 = x1 = v.x; y0 = y1 = v.y; any = true; }
+                x0 = std::min(x0, v.x); x1 = std::max(x1, v.x); y0 = std::min(y0, v.y); y1 = std::max(y1, v.y);
+            }
+        if (pass == 0) {
+            box[0] = shear != 0.0f && !any ? 0x7fffffff : x0, box[1] = y0, box[2] = x1, box[3] = y1 + strength;
+            if (!strength) break;
+            embolden(points, strength, strength);
+        }
+    }
+    x0 &= ~63; y0 &= ~63; x1 = (x1 + 63) & ~63; y1 = (y1 + 63) & ~63;
+    int width = (x1 - x0) >> 6, rows = (y1 - y0) >> 6;
+    std::vector<uint8_t> bitmap((size_t)width * rows, 0);
+    if (width > 0 && rows > 0) {
+        for (auto& contour : points) for (auto& v : contour) v = {v.x - x0, v.y - y0};
+        Gray gray(width, rows);
+        gray.decompose(points, tags);
+        gray.sweep(bitmap.data(), width, rows);
+    }
+    return Py_BuildValue("(iiiiy#(iiii)ii)", width, rows, x0 >> 6, y1 >> 6,
+                         bitmap.empty() ? "" : (const char*)bitmap.data(), (Py_ssize_t)bitmap.size(), box[0], box[1],
+                         box[2], box[3], advance, strength);
+}
+
+// render(gid, x_scale, y_scale, y_ppem, darkening params or None, shear=0, bold=False) -> finish's tuple for the glyph
+// at the size's scales (16.16) and y pixels per em; advance 26.6, without the strength.
 PyObject* font_render(PyObject* self, PyObject* args) {
     unsigned gid;
-    int x_ppem, y_ppem;
+    int x_scale, y_scale, y_ppem, bold = 0;
     PyObject* params;
-    if (!PyArg_ParseTuple(args, "IiiO", &gid, &x_ppem, &y_ppem, &params)) return nullptr;
+    float shear = 0.0f;
+    if (!PyArg_ParseTuple(args, "IiiiO|fp", &gid, &x_scale, &y_scale, &y_ppem, &params, &shear, &bold)) return nullptr;
     Cff* cff = ((FontObject*)self)->cff;
     int upem = ((FontObject*)self)->units;
-    i32 x_scale = divfix(x_ppem << 6, upem), y_scale = divfix(y_ppem << 6, upem);
     if (gid >= cff->charstrings.items.size()) { PyErr_SetString(PyExc_IndexError, "glyph index out of range"); return nullptr; }
     int p[8] = {0};
     bool darkened = params != Py_None;
@@ -761,26 +924,10 @@ PyObject* font_render(PyObject* self, PyObject* args) {
             gp.close_open();
             builder.close();
         }
-        bool any = false;
-        i32 x0 = 0, y0 = 0, x1 = 0, y1 = 0;
         for (auto& contour : builder.points)
-            for (auto& v : contour) {
-                v = {mulfix(v.x, x_scale), mulfix(v.y, y_scale)};
-                if (!any) { x0 = x1 = v.x; y0 = y1 = v.y; any = true; }
-                x0 = std::min(x0, v.x); x1 = std::max(x1, v.x); y0 = std::min(y0, v.y); y1 = std::max(y1, v.y);
-            }
-        i32 box[4] = {x0, y0, x1, y1};
-        x0 &= ~63; y0 &= ~63; x1 = (x1 + 63) & ~63; y1 = (y1 + 63) & ~63;
-        int width = (x1 - x0) >> 6, rows = (y1 - y0) >> 6;
-        std::vector<uint8_t> bitmap((size_t)width * rows, 0);
-        if (width > 0 && rows > 0) {
-            for (auto& contour : builder.points) for (auto& v : contour) v = {v.x - x0, v.y - y0};
-            Gray gray(width, rows);
-            gray.decompose(builder.points, builder.tags);
-            gray.sweep(bitmap.data(), width, rows);
-        }
-        return Py_BuildValue("(iiiiy#(iiii)i)", width, rows, x0 >> 6, y1 >> 6, bitmap.empty() ? "" : (const char*)bitmap.data(),
-                             (Py_ssize_t)bitmap.size(), box[0], box[1], box[2], box[3], advance);
+            for (auto& v : contour) v = {mulfix(v.x, x_scale), mulfix(v.y, y_scale)};
+        return finish(builder.points, builder.tags, shear, bold ? mulfix(upem, y_scale) / 24 : 0,
+                      mulfix(advance, x_scale));
     } catch (const std::exception& error) {
         PyErr_SetString(PyExc_ValueError, error.what());
         return nullptr;
@@ -791,10 +938,31 @@ PyObject* font_glyphs(PyObject* self, PyObject*) {
     return PyLong_FromSize_t(((FontObject*)self)->cff->charstrings.items.size());
 }
 
+// Each glyph's advance in font units as FreeType's FT_Get_Advance reads it unscaled (INT32_MIN where its charstring
+// fails, which FT_Get_Advance reports as an error).
+PyObject* font_widths(PyObject* self, PyObject*) {
+    Cff* cff = ((FontObject*)self)->cff;
+    std::vector<i32> out(cff->charstrings.items.size());
+    for (size_t gid = 0; gid < out.size(); ++gid) {
+        try {
+            Builder builder;
+            GlyphPath gp(builder, false, 0, 0, false);
+            Type2 t2{*cff, cff->fd((unsigned)gid), gp};
+            t2.run(cff->charstrings.items[gid].first, cff->charstrings.items[gid].second);
+            out[gid] = (int16_t)(((uint32_t)t2.advance + 0x8000u) >> 16);
+        } catch (const std::exception&) {
+            out[gid] = INT32_MIN;
+        }
+    }
+    return PyBytes_FromStringAndSize((const char*)out.data(), (Py_ssize_t)(out.size() * sizeof(i32)));
+}
+
 PyMethodDef font_methods[] = {
     {"render", font_render, METH_VARARGS,
-     "render(gid, x_ppem, y_ppem, darkening) -> (width, rows, left, top, bytes, box, advance)"},
+     "render(gid, x_scale, y_scale, y_ppem, darkening, shear=0, bold=False) -> (width, rows, left, top, bytes, box, "
+     "advance, strength)"},
     {"glyph_count", font_glyphs, METH_NOARGS, "glyph_count() -> int"},
+    {"widths", font_widths, METH_NOARGS, "widths() -> bytes: int32 advance per glyph in font units"},
     {nullptr, nullptr, 0, nullptr},
 };
 
@@ -808,18 +976,298 @@ PyType_Slot font_slots[] = {
 
 PyType_Spec font_spec = {"fastglyph.CffFont", sizeof(FontObject), 0, Py_TPFLAGS_DEFAULT, font_slots};
 
-PyModuleDef module_def = {PyModuleDef_HEAD_INIT, "fastglyph", "FreeType 2.6 CFF glyph bitmaps (DMC5).", -1, nullptr};
+// HarfBuzz 1.0.4 over a face as the games' hb-ft font functions see it through FreeType 2.5.3 (unhinted): the cmap
+// FreeType selected, advances FT_MulDiv(width, x_scale, 64) rounded from 16.16 to 26.6, origins 0. A callback hb-ft
+// answers from FreeType that the port lacks records its name and the shape is refused.
+struct Shaping {
+    PyObject* data = nullptr;
+    hb_font_t* font = nullptr;
+    std::vector<uint32_t> codes, glyphs;
+    std::vector<i32> widths;
+    i32 x_scale = 0;
+    bool variants = false;
+    const char* unported = nullptr;
+    ~Shaping() {
+        if (font) hb_font_destroy(font);
+        Py_XDECREF(data);
+    }
+};
+
+struct ShaperObject {
+    PyObject_HEAD
+    Shaping* shaping;
+};
+
+hb_bool_t shaper_glyph(hb_font_t*, void* data, hb_codepoint_t code, hb_codepoint_t selector, hb_codepoint_t* glyph,
+                       void*) {
+    auto* self = (Shaping*)data;
+    *glyph = 0;
+    if (selector) {
+        if (self->variants && !self->unported) self->unported = "a variation selector's glyph";
+        return false;
+    }
+    auto at = std::lower_bound(self->codes.begin(), self->codes.end(), code);
+    if (at != self->codes.end() && *at == code) *glyph = self->glyphs[at - self->codes.begin()];
+    if (*glyph >= self->widths.size()) *glyph = 0;
+    return *glyph != 0;
+}
+
+hb_position_t shaper_advance(hb_font_t*, void* data, hb_codepoint_t glyph, void*) {
+    auto* self = (Shaping*)data;
+    if (glyph >= self->widths.size() || self->widths[glyph] == INT32_MIN) return 0;
+    return (muldiv(self->widths[glyph], self->x_scale, 64) + 0x200) >> 10;
+}
+
+hb_bool_t shaper_origin(hb_font_t*, void*, hb_codepoint_t, hb_position_t*, hb_position_t*, void*) { return true; }
+
+template <const char* Name, typename R, typename... A>
+R shaper_unported(hb_font_t*, void* data, A..., void*) {
+    auto* self = (Shaping*)data;
+    if (!self->unported) self->unported = Name;
+    return R();
+}
+
+const char vertical[] = "a vertical advance or origin", kerning[] = "a kerning pair outside GPOS",
+           extents[] = "a glyph's extents", contour[] = "a contour point", names[] = "a glyph name";
+
+hb_font_funcs_t* shaper_funcs() {
+    static hb_font_funcs_t* funcs = [] {
+        hb_font_funcs_t* f = hb_font_funcs_create();
+        hb_font_funcs_set_glyph_func(f, shaper_glyph, nullptr, nullptr);
+        hb_font_funcs_set_glyph_h_advance_func(f, shaper_advance, nullptr, nullptr);
+        hb_font_funcs_set_glyph_h_origin_func(f, shaper_origin, nullptr, nullptr);
+        hb_font_funcs_set_glyph_v_advance_func(f, shaper_unported<vertical, hb_position_t, hb_codepoint_t>, nullptr,
+                                               nullptr);
+        hb_font_funcs_set_glyph_v_origin_func(
+            f, shaper_unported<vertical, hb_bool_t, hb_codepoint_t, hb_position_t*, hb_position_t*>, nullptr, nullptr);
+        hb_font_funcs_set_glyph_h_kerning_func(
+            f, shaper_unported<kerning, hb_position_t, hb_codepoint_t, hb_codepoint_t>, nullptr, nullptr);
+        hb_font_funcs_set_glyph_v_kerning_func(
+            f, shaper_unported<kerning, hb_position_t, hb_codepoint_t, hb_codepoint_t>, nullptr, nullptr);
+        hb_font_funcs_set_glyph_extents_func(
+            f, shaper_unported<extents, hb_bool_t, hb_codepoint_t, hb_glyph_extents_t*>, nullptr, nullptr);
+        hb_font_funcs_set_glyph_contour_point_func(
+            f, shaper_unported<contour, hb_bool_t, hb_codepoint_t, unsigned, hb_position_t*, hb_position_t*>, nullptr,
+            nullptr);
+        hb_font_funcs_set_glyph_name_func(f, shaper_unported<names, hb_bool_t, hb_codepoint_t, char*, unsigned>,
+                                          nullptr, nullptr);
+        hb_font_funcs_set_glyph_from_name_func(
+            f, shaper_unported<names, hb_bool_t, const char*, int, hb_codepoint_t*>, nullptr, nullptr);
+        hb_font_funcs_make_immutable(f);
+        return f;
+    }();
+    return funcs;
+}
+
+void shaper_dealloc(PyObject* self) {
+    delete ((ShaperObject*)self)->shaping;
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Free(self);
+    Py_DECREF(type);
+}
+
+// Shaper(sfnt, cmap, widths, variants): cmap the (code point, glyph) uint32 pairs FreeType's Unicode charmap gives,
+// sorted by code point; widths int32 per glyph (CffFont.widths); variants whether the font has a cmap format 14.
+int shaper_init(PyObject* self, PyObject* args, PyObject*) {
+    PyObject* data;
+    Py_buffer cmap, widths;
+    int variants;
+    if (!PyArg_ParseTuple(args, "Sy*y*p", &data, &cmap, &widths, &variants)) return -1;
+    auto* s = new Shaping();
+    delete ((ShaperObject*)self)->shaping;
+    ((ShaperObject*)self)->shaping = s;
+    s->widths.assign((const i32*)widths.buf, (const i32*)widths.buf + widths.len / 4);
+    const uint32_t* pairs = (const uint32_t*)cmap.buf;
+    for (Py_ssize_t at = 0; at + 1 < cmap.len / 4; at += 2) {
+        s->codes.push_back(pairs[at]);
+        s->glyphs.push_back(pairs[at + 1]);
+    }
+    PyBuffer_Release(&cmap);
+    PyBuffer_Release(&widths);
+    Py_INCREF(data);
+    s->data = data;
+    s->variants = variants != 0;
+    hb_blob_t* blob = hb_blob_create(PyBytes_AS_STRING(data), (unsigned)PyBytes_GET_SIZE(data), HB_MEMORY_MODE_READONLY,
+                                     nullptr, nullptr);
+    hb_face_t* face = hb_face_create(blob, 0);
+    s->font = hb_font_create(face);
+    hb_face_destroy(face);
+    hb_blob_destroy(blob);
+    hb_font_set_funcs(s->font, shaper_funcs(), s, nullptr);
+    return 0;
+}
+
+// shape(text, script, rtl, x_scale, y_scale, size_scale) -> (infos, positions): text uint32 code points shaped as the
+// games' hb_buffer_add_utf32(text, -1, 0, -1) reads them (up to the first 0), the font's scales the 26.6 size,
+// size_scale FreeType's 16.16 x scale for the advances; the buffer's 20-byte glyph infos and positions.
+PyObject* shaper_shape(PyObject* self, PyObject* args) {
+    Shaping* s = ((ShaperObject*)self)->shaping;
+    Py_buffer text;
+    unsigned script;
+    int rtl, x, y, scale;
+    if (!s) { PyErr_SetString(PyExc_ValueError, "the shaper has no font"); return nullptr; }
+    if (!PyArg_ParseTuple(args, "y*Ipiii", &text, &script, &rtl, &x, &y, &scale)) return nullptr;
+    std::vector<uint32_t> codes((const uint32_t*)text.buf, (const uint32_t*)text.buf + text.len / 4);
+    PyBuffer_Release(&text);
+    codes.push_back(0);
+    s->x_scale = scale;
+    s->unported = nullptr;
+    hb_font_set_scale(s->font, x, y);
+    hb_buffer_t* buffer = hb_buffer_create();
+    hb_buffer_set_script(buffer, (hb_script_t)script);
+    hb_buffer_set_direction(buffer, rtl ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+    hb_buffer_add_utf32(buffer, codes.data(), -1, 0, -1);
+    hb_shape(s->font, buffer, nullptr, 0);
+    unsigned count = hb_buffer_get_length(buffer);
+    PyObject* out = s->unported ? nullptr : Py_BuildValue(
+        "(y#y#)", (const char*)hb_buffer_get_glyph_infos(buffer, nullptr), (Py_ssize_t)count * 20,
+        (const char*)hb_buffer_get_glyph_positions(buffer, nullptr), (Py_ssize_t)count * 20);
+    hb_buffer_destroy(buffer);
+    if (s->unported) PyErr_Format(PyExc_ValueError, "HarfBuzz asked the font for %s, which is not ported", s->unported);
+    return out;
+}
+
+PyMethodDef shaper_methods[] = {
+    {"shape", shaper_shape, METH_VARARGS,
+     "shape(text, script, rtl, x_scale, y_scale, size_scale) -> (infos, positions): 20-byte records each"},
+    {nullptr, nullptr, 0, nullptr},
+};
+
+PyType_Slot shaper_slots[] = {
+    {Py_tp_dealloc, (void*)shaper_dealloc},
+    {Py_tp_init, (void*)shaper_init},
+    {Py_tp_methods, (void*)shaper_methods},
+    {Py_tp_new, (void*)PyType_GenericNew},
+    {0, nullptr},
+};
+
+PyType_Spec shaper_spec = {"fastglyph.Shaper", sizeof(ShaperObject), 0, Py_TPFLAGS_DEFAULT, shaper_slots};
+
+struct DfCell {
+    int32_t x, y;
+    uint32_t d2;
+    uint8_t inside;
+};
+
+void df_take(DfCell& cell, int32_t x, int32_t y, bool inside_rule) {
+    uint32_t d2 = (uint32_t)y * (uint32_t)y + (uint32_t)x * (uint32_t)x;
+    if (inside_rule ? (cell.d2 == 0 || d2 < cell.d2) : d2 < cell.d2) cell = {x, y, d2, (uint8_t)(x < 1 && y <= 0)};
+}
+
+void df_vertical(DfCell& cell, const DfCell& from) {
+    if (!cell.inside)
+        df_take(cell, from.inside ? 0 : from.x, from.inside ? 0x100 : from.y + 0x100, false);
+    else
+        df_take(cell, from.x < 0x100 ? from.x - 0x100 : 0, from.y < 0x100 ? from.y - 0x200 : -0x100, true);
+}
+
+void df_horizontal(DfCell& cell, const DfCell& from) {
+    if (!cell.inside)
+        df_take(cell, from.inside ? 0x100 : from.x + 0x100, from.inside ? 0 : from.y, false);
+    else
+        df_take(cell, from.x < 0x100 ? from.x - 0x200 : -0x100, from.y < 0x100 ? from.y - 0x100 : 0, true);
+}
+
+void df_row(std::vector<DfCell>& grid, int columns, int row, int from_row) {
+    DfCell* cells = &grid[(size_t)row * columns];
+    for (int c = 0; c < columns; ++c) df_vertical(cells[c], grid[(size_t)from_row * columns + c]);
+    for (int c = 0; c + 1 < columns; ++c) df_horizontal(cells[c + 1], cells[c]);
+    for (int c = columns - 2; c >= 0; --c) df_horizontal(cells[c], cells[c + 1]);
+}
+
+PyObject* distance_field(PyObject*, PyObject* args) {
+    Py_buffer source;
+    int width, height, cell_columns, cell_rows, spread;
+    if (!PyArg_ParseTuple(args, "y*iiiii", &source, &width, &height, &cell_columns, &cell_rows, &spread))
+        return nullptr;
+    const uint8_t* pixels = (const uint8_t*)source.buf;
+    int columns = cell_columns - 2, rows = cell_rows - 2;
+    float left = (float)((uint32_t)(columns - width) >> 1), top = (float)((uint32_t)(rows - height) >> 1);
+    std::vector<DfCell> grid((size_t)std::max(columns, 0) * std::max(rows, 0));
+    for (int r = 0, line = 0; r < rows; ++r) {
+        for (int c = 0; c < columns; ++c) {
+            int32_t value = spread << 8;
+            if (left <= (float)c && (float)c < (float)width + left && top <= (float)r
+                && (float)r < top + (float)height) {
+                uint8_t texel = pixels[(size_t)line * width + (c - (int)left)];
+                if (texel) value = (int32_t)((1.0f - (float)texel / 255.0f) * 256.0f);
+            }
+            grid[(size_t)r * columns + c] = {value, value, (uint32_t)(value * value * 2), (uint8_t)(value < 1)};
+        }
+        if (top <= (float)r && (float)r < top + (float)height) ++line;
+    }
+    for (int r = 1; r < rows; ++r) df_row(grid, columns, r, r - 1);
+    for (int r = rows - 2; r >= 0; --r) df_row(grid, columns, r, r + 1);
+    std::string out((size_t)cell_columns * cell_rows, '\0');
+    float scale = 2.0f / (float)spread;
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < columns; ++c) {
+            const DfCell& cell = grid[(size_t)r * columns + c];
+            float value = (sqrtf((float)cell.d2) * 0.00390625f - 0.5f) * scale;
+            if (cell.inside) value = value * -1.0f;
+            value = 128.0f - value * 127.0f;
+            value = value >= 0.0f ? (value >= 255.0f ? 255.0f : value) : 0.0f;
+            out[(size_t)(r + 1) * cell_columns + c + 1] = (char)(int)value;
+        }
+    }
+    PyBuffer_Release(&source);
+    return PyBytes_FromStringAndSize(out.data(), (Py_ssize_t)out.size());
+}
+
+PyObject* outline(PyObject*, PyObject* args) {
+    Py_buffer points, tags, ends;
+    float shear;
+    int strength, advance;
+    if (!PyArg_ParseTuple(args, "y*y*y*fii", &points, &tags, &ends, &shear, &strength, &advance)) return nullptr;
+    const i32* p = (const i32*)points.buf;
+    const uint8_t* t = (const uint8_t*)tags.buf;
+    const uint16_t* e = (const uint16_t*)ends.buf;
+    Py_ssize_t count = ends.len / 2, at = 0;
+    bool fits = points.len == 8 * tags.len && (!count || e[count - 1] < tags.len);
+    for (Py_ssize_t c = 1; fits && c < count; ++c) fits = e[c - 1] < e[c];
+    std::vector<std::vector<Vec>> contours(fits ? count : 0);
+    std::vector<std::vector<uint8_t>> kinds(contours.size());
+    for (size_t c = 0; c < contours.size(); ++c)
+        for (; at <= e[c]; ++at) { contours[c].push_back({p[2 * at], p[2 * at + 1]}); kinds[c].push_back(t[at]); }
+    PyBuffer_Release(&points);
+    PyBuffer_Release(&tags);
+    PyBuffer_Release(&ends);
+    if (!fits) { PyErr_SetString(PyExc_ValueError, "the contour ends do not fit the points"); return nullptr; }
+    return finish(contours, kinds, shear, strength, advance);
+}
+
+PyObject* length(PyObject*, PyObject* args) {
+    int x, y;
+    if (!PyArg_ParseTuple(args, "ii", &x, &y)) return nullptr;
+    return PyLong_FromLong(vector_length(x, y));
+}
+
+PyMethodDef module_methods[] = {
+    {"distance_field", distance_field, METH_VARARGS,
+     "distance_field(coverage, width, height, columns, rows, spread) -> bytes: SF6's distance-field cell"},
+    {"outline", outline, METH_VARARGS,
+     "outline(points, tags, ends, shear, strength, advance) -> CffFont.render's tuple for a scaled outline: points "
+     "int32 x, y pairs (26.6), a tag per point (1 on the curve, 0 a conic control, 2 a cubic control), ends each "
+     "contour's last point (uint16)"},
+    {"vector_length", length, METH_VARARGS, "vector_length(x, y) -> int: FT_Vector_Length"},
+    {nullptr, nullptr, 0, nullptr},
+};
+
+PyModuleDef module_def = {PyModuleDef_HEAD_INIT, "fastglyph",
+                          "FreeType 2.5.3 glyph bitmaps and HarfBuzz 1.0.4 shaping (DMC5, SF6).", -1, module_methods};
 
 }  // namespace
 
 PyMODINIT_FUNC PyInit_fastglyph(void) {
     PyObject* module = PyModule_Create(&module_def);
     if (!module) return nullptr;
-    PyObject* type = PyType_FromSpec(&font_spec);
-    if (!type || PyModule_AddObject(module, "CffFont", type) < 0) {
-        Py_XDECREF(type);
-        Py_DECREF(module);
-        return nullptr;
+    for (auto [spec, name] : {std::pair{&font_spec, "CffFont"}, std::pair{&shaper_spec, "Shaper"}}) {
+        PyObject* type = PyType_FromSpec(spec);
+        if (!type || PyModule_AddObject(module, name, type) < 0) {
+            Py_XDECREF(type);
+            Py_DECREF(module);
+            return nullptr;
+        }
     }
     return module;
 }

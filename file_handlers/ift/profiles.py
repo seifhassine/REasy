@@ -15,10 +15,11 @@ class IftProfile:
     magic: bytes
     header_size: int
     entry_size: int
+    packed_sequence: bool
 
 
 IFT_PROFILES: dict[int, IftProfile] = {
-    version: IftProfile(version, IFT_MAGIC, header_size, 0x18)
+    version: IftProfile(version, IFT_MAGIC, header_size, 0x18, version == 7)
     for version, header_size in ((1, 0x20), (3, 0x28), (4, 0x28), (7, 0x38))
 }
 
