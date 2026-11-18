@@ -222,7 +222,7 @@ class MeshMaterialResolver:
                 return None
             revision = reader.path_lookup_revision
         return (
-            str(context.project_dir), str(context.unpacked_dir), context.path_prefix,
+            str(context.project_dir), context.path_prefix,
             context.game, reader, revision, os.getcwd(), None if sibling is None else str(sibling.resolve()),
         )
 

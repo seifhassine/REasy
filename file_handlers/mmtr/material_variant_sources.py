@@ -16,7 +16,6 @@ lazy from utils.resource_file_utils import normalize_resource_path, resource_ver
 _ORIGIN_LABELS = {
     "project": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "Project"),
     "pak": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "PAK"),
-    "system": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "System Files"),
     "disk": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "Disk"),
 }
 
@@ -129,7 +128,6 @@ def discover_mdf_consumers(
     *,
     mmtr_resource_path: str,
     project_dir: str = "",
-    unpacked_dir: str = "",
     pak_paths: Iterable[str] = (),
     pak_loader: Callable[[str], bytes | None] | None = None,
     open_sources: Iterable[MdfVariantSourceChoice] = (),
@@ -170,18 +168,17 @@ def discover_mdf_consumers(
         add(read(source.label, data=source.data, path=source.path, origin=source.origin,
                  relative_path=source.relative_path, owner=source.owner))
 
-    for origin, root in (("project", project_dir), ("system", unpacked_dir)):
-        for absolute, relative in _iter_mdf_files(root, mdf_version):
-            key = _path_key(origin, relative)
-            if key in seen:
-                continue
-            report(relative)
-            try:
-                data = Path(absolute).read_bytes()
-            except OSError as exc:
-                unread.append((relative, str(exc)))
-                continue
-            add(read(relative, data=data, path=absolute, origin=origin, relative_path=relative))
+    for absolute, relative in _iter_mdf_files(project_dir, mdf_version):
+        key = _path_key("project", relative)
+        if key in seen:
+            continue
+        report(relative)
+        try:
+            data = Path(absolute).read_bytes()
+        except OSError as exc:
+            unread.append((relative, str(exc)))
+            continue
+        add(read(relative, data=data, path=absolute, origin="project", relative_path=relative))
 
     if pak_loader is not None:
         candidates = sorted(
@@ -224,7 +221,7 @@ def discover_mdf_consumers(
                     unread.append(failure)
                 add(choice)
 
-    rank = {"project": 0, "pak": 1, "system": 2, "disk": 3}
+    rank = {"project": 0, "pak": 1, "disk": 2}
     choices.sort(
         key=lambda item: (
             rank.get(item.origin, 9),

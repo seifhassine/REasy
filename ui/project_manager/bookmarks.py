@@ -15,7 +15,7 @@ from PySide6.QtCore import QObject, Signal
 lazy from utils.app_paths import application_root
 
 _BOOKMARKS_VERSION = 1
-_BOOKMARK_SCOPES = frozenset(("pak", "project", "unpacked"))
+_BOOKMARK_SCOPES = frozenset(("pak", "project"))
 _BookmarkKey = tuple[str, str, str]
 _TAG_MAX_LEN = 24
 _NATIVE_PREFIX = re.compile(r"^natives/[^/]+/", re.IGNORECASE)
@@ -94,6 +94,10 @@ def normalize_scope(scope: object) -> str:
     if normalized not in _BOOKMARK_SCOPES:
         raise ValueError(f"Unsupported bookmark scope: {normalized or '<empty>'}")
     return normalized
+
+
+def _is_legacy_unpacked_entry(entry: object) -> bool:
+    return isinstance(entry, dict) and str(entry.get("scope") or "").strip().lower() == "unpacked"
 
 
 def normalize_bookmark_path(scope: str, path: object) -> str:
@@ -209,7 +213,7 @@ def parse_query(text: str) -> BookmarkQuery:
 class Bookmark:
     id: str
     path: str
-    scope: str  # "pak" | "project" | "unpacked"
+    scope: str  # "pak" | "project"
     game: str = ""
     root: str = ""  # only meaningful for "project" scope
     tags: tuple[str, ...] = ()
@@ -292,6 +296,8 @@ class BookmarksStore(QObject):
         bookmarks: list[Bookmark] = []
         invalid = 0
         for entry in entries:
+            if _is_legacy_unpacked_entry(entry):
+                continue
             try:
                 bookmarks.append(Bookmark.from_dict(entry))
             except (TypeError, ValueError, OverflowError):
@@ -538,6 +544,8 @@ class BookmarksStore(QObject):
         entries = self._payload_entries(data)
         incoming: list[Bookmark] = []
         for index, entry in enumerate(entries, start=1):
+            if _is_legacy_unpacked_entry(entry):
+                continue
             try:
                 incoming.append(Bookmark.from_dict(entry))
             except (TypeError, ValueError, OverflowError) as exc:
@@ -662,6 +670,8 @@ class ScopedBookmarksStore(QObject):
         entries = BookmarksStore._payload_entries(data)
         incoming: list[Bookmark] = []
         for index, entry in enumerate(entries, start=1):
+            if _is_legacy_unpacked_entry(entry):
+                continue
             try:
                 incoming.append(Bookmark.from_dict(entry))
             except (TypeError, ValueError, OverflowError) as exc:
@@ -694,8 +704,8 @@ class ScopedBookmarksStore(QObject):
 
 
 def resolve_filesystem_target(bookmark: Bookmark, root: str = "") -> str:
-    """Absolute path for a project/unpacked bookmark, or '' when missing."""
-    if bookmark.scope not in ("project", "unpacked") or not root:
+    """Absolute path for a project bookmark, or '' when missing."""
+    if bookmark.scope != "project" or not root:
         return ""
     base = Path(root).resolve()
     target = base.joinpath(*bookmark.path.split("/")).resolve()

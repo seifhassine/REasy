@@ -199,7 +199,7 @@ class RszCsvExtractorDialog(QDialog):
         browse.clicked.connect(self._browse_json)
         self.json_path_edit.editingFinished.connect(lambda: self._start_async_load_types(self.json_path_edit.text().strip()))
 
-        self.root_dir_edit = QLineEdit(self.settings.get("unpacked_path", ""))
+        self.root_dir_edit = QLineEdit()
         self.root_dir_edit.setToolTip(self.tr("Search Root"))
         tlay.addWidget(QLabel(self.tr("Directory:")), 1, 0)
         tlay.addWidget(self.root_dir_edit, 1, 1)

@@ -1017,7 +1017,7 @@ class MdfViewer(QWidget):
 		resolved = MeshMaterialResolver._resolve_mmtr_resource(self.handler, resource_path) if resource_path else None
 		if resolved is None:
 			QMessageBox.warning(self, self.tr("Master material not found"), self.tr(
-				"The master material {path} is not in the project, the unpacked files or the game PAKs.").format(
+				"The master material {path} is not in the project or the game PAKs.").format(
 				path=resource_path or self.tr("(none)")))
 			return
 		path, data = resolved

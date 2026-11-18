@@ -275,7 +275,6 @@ class PakThumbnailProvider(QObject):
 		if resource_context is not None:
 			digest.update(repr((
 				resource_context.project_dir,
-				resource_context.unpacked_dir,
 				resource_context.path_prefix,
 				resource_context.game,
 			)).encode())

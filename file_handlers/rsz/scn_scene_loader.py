@@ -126,7 +126,7 @@ class ScnSceneLoader:
             context = self.resource_context_for_source(source)
             project = str(getattr(context, "project_dir", "") or "")
             resource = resolved.path if context is None else self._project_resource_path(
-                resolved.path, project, context.unpacked_dir, context.path_prefix)
+                resolved.path, project, context.path_prefix)
             self.user_documents[key] = ScnDocument(key, resource, project, rsz)
         return self.user_documents[key]
 
@@ -234,7 +234,6 @@ class ScnSceneLoader:
             path = self._project_resource_path(
                 path,
                 context.project_dir,
-                context.unpacked_dir,
                 context.path_prefix,
             )
         return self._linked_scn_resource(source, path, data)
@@ -255,14 +254,11 @@ class ScnSceneLoader:
     def _project_resource_path(
         path: str,
         project_dir: str,
-        unpacked_dir: str,
         path_prefix: str,
     ) -> str:
-        for root in (project_dir, unpacked_dir):
-            if not root:
-                continue
+        if project_dir:
             try:
-                rel = os.path.relpath(path, root).replace("\\", "/")
+                rel = os.path.relpath(path, project_dir).replace("\\", "/")
                 if not rel.startswith("../") and rel != "..":
                     return normalize_scene_path(rel)
             except (TypeError, ValueError):

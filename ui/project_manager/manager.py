@@ -1,7 +1,6 @@
 from __future__ import annotations
 import os
 import re
-import shutil
 import weakref
 from functools import partial
 from pathlib import Path
@@ -63,7 +62,7 @@ lazy from .project_config import (
 )
 lazy from .project_settings_dialog import ProjectSettingsDialog
 lazy from .rsz_jsons import resolve_rsz_json_path
-lazy from .trees import PakPathModel, _DndTree, _DropTree
+lazy from .trees import PakPathModel
 lazy from .view_rail import ViewRail
 lazy from concurrent.futures import ThreadPoolExecutor
 
@@ -83,13 +82,11 @@ def _actual_mesh_path(path: str) -> str:
         return path
     return re.sub(r"(?i)(^|[\\/])streaming[\\/]", r"\1", path, count=1)
 
-def _safe_path(path, root=None):
+def _safe_path(path):
     if not path:
         return None  # Path('') would resolve to the working directory.
     try:
-        path = Path(path).expanduser().resolve(strict=True)
-        path.relative_to(Path(root or path.anchor).resolve(strict=True))
-        return path
+        return Path(path).expanduser().resolve(strict=True)
     except (OSError, RuntimeError, TypeError, ValueError):
         return None
 
@@ -132,7 +129,7 @@ class _LoadingSpinner(QWidget):
 
 def _read_project_sources(config) -> dict:
     """Runs off the GUI thread, so it touches no widgets or project state."""
-    result = {key: str(_safe_path(config.get(key)) or '') for key in ('unpacked_dir', 'pak_game_dir', 'pak_list_path')}
+    result = {key: str(_safe_path(config.get(key)) or '') for key in ('pak_game_dir', 'pak_list_path')}
     paks = scan_all_pak_files(result['pak_game_dir']) if result['pak_game_dir'] else []
     flags = [(path, pak_mod_flags(path)) for path in paks]
     result['selected_paks'] = [path for path, flag in flags if not flag.is_payload]
@@ -298,16 +295,13 @@ class ProjectManager(QDockWidget):
     def _project_target(project_dir: str, rel_path: str) -> str:
         return os.path.join(project_dir, *rel_path.replace("\\", "/").split("/"))
 
-    def _warn_if_project_copy_exists(self, source_path: str, *, pak: bool = False) -> None:
+    def _warn_if_project_copy_exists(self, pak_path: str) -> None:
         if not self.project_dir:
             return
-        try:
-            rel = source_path.replace("\\", "/") if pak else os.path.relpath(source_path, self.unpacked_dir).replace("\\", "/")
-            if rel.startswith("../") or rel == "..":
-                return
-            target = self._project_target(self.project_dir, rel)
-        except (TypeError, ValueError):
+        rel = pak_path.replace("\\", "/")
+        if rel.startswith("../") or rel == "..":
             return
+        target = self._project_target(self.project_dir, rel)
         if os.path.isfile(target):
             QMessageBox.information(
                 self,
@@ -335,7 +329,7 @@ class ProjectManager(QDockWidget):
     def app_win(self):
         return self._app_win()
 
-    def __init__(self, app_window, unpacked_root: str | None = None):
+    def __init__(self, app_window):
         super().__init__(self.tr("Project Browser"), app_window)
         self.setObjectName("projectBrowserDock")
         # Back-references to the window and dock are weak: strong ones would close a cycle only the GC frees, with
@@ -343,7 +337,6 @@ class ProjectManager(QDockWidget):
         self._app_win      = weakref.ref(app_window)
         weak_self = weakref.ref(self)
         self.current_game  = getattr(app_window, "current_game", None)
-        self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
         self.pak_dir = None
         self.project_dir   = None
         self._active_tab   = "proj"
@@ -463,8 +456,7 @@ class ProjectManager(QDockWidget):
         for b in (self.btn_conf, self.btn_zip, self.btn_pak, self.btn_export):
             b.setEnabled(False)
 
-        self.model_sys,  self.tree_sys  = _LineIconFileSystemModel(self), _DndTree()
-        self.model_proj, self.tree_proj = _LineIconFileSystemModel(self), _DropTree(self)
+        self.model_proj, self.tree_proj = _LineIconFileSystemModel(self), QTreeView()
         self._proj_proxy = _ProjectFilesProxy(self)
         self._proj_proxy.setSourceModel(self.model_proj)
         self.tree_proj.hide()
@@ -497,27 +489,25 @@ class ProjectManager(QDockWidget):
         hdr_p.setMinimumSectionSize(160)
         hdr_p.sectionResized.connect(self._on_section_resized)
 
-        for tree, model in ((self.tree_sys, self.model_sys), (self.tree_proj, self._proj_proxy)):
-            tree.setModel(model)
-            tree.setContextMenuPolicy(Qt.CustomContextMenu)
-            tree.setIndentation(12)
-            tree.setUniformRowHeights(True)
-            tree.setAllColumnsShowFocus(True)
-            tree.setHeaderHidden(True)
-            tree.hideColumn(1)
-            tree.hideColumn(2)
-            tree.hideColumn(3)
+        self.tree_proj.setModel(self._proj_proxy)
+        self.tree_proj.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree_proj.setIndentation(12)
+        self.tree_proj.setUniformRowHeights(True)
+        self.tree_proj.setAllColumnsShowFocus(True)
+        self.tree_proj.setHeaderHidden(True)
+        self.tree_proj.hideColumn(1)
+        self.tree_proj.hideColumn(2)
+        self.tree_proj.hideColumn(3)
 
-            hdr = tree.header()
-            hdr.setSectionResizeMode(0, QHeaderView.Stretch)
-            hdr.setStretchLastSection(False)
-            hdr.setMinimumSectionSize(100)
-            hdr.sectionResized.connect(self._on_section_resized)
+        hdr = self.tree_proj.header()
+        hdr.setSectionResizeMode(0, QHeaderView.Stretch)
+        hdr.setStretchLastSection(False)
+        hdr.setMinimumSectionSize(100)
+        hdr.sectionResized.connect(self._on_section_resized)
 
-        for tree in (self.tree_sys, self.tree_proj, self.tree_pak):
+        for tree in (self.tree_proj, self.tree_pak):
             tree.setTextElideMode(Qt.ElideMiddle)
-        self.tree_sys .setItemDelegateForColumn(0, _ActionsDelegate(self, False))
-        self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
+        self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self))
         # Hide dock toggle from global context menus
         try:
             self.toggleViewAction().setVisible(False)
@@ -541,20 +531,14 @@ class ProjectManager(QDockWidget):
         self.dockLocationChanged.connect(self._on_dock_location_changed)
         self._sync_dock_chrome()
 
-        self.tree_sys.doubleClicked .connect(lambda idx: self._on_double(idx, False))
-        self.tree_proj.doubleClicked.connect(lambda idx: self._on_double(idx, True))
+        self.tree_proj.doubleClicked.connect(self._on_double)
         self.tree_pak.doubleClicked.connect(self._on_pak_double)
         self.tree_pak.setItemDelegate(_PakActionsDelegate(self))
 
-        lay.addWidget(self.tree_sys)
         lay.addWidget(self.tree_proj)
         lay.addWidget(self.tree_pak)
-        self.sys_placeholder = _EmptyState("folder_open", page)
-        self.sys_placeholder.button.setText(self.tr("Choose Folder…"))
-        self.sys_placeholder.button.clicked.connect(self._browse)
         self.pak_placeholder = _EmptyState("box", page)
         self.pak_placeholder.button.clicked.connect(self._pak_placeholder_action)
-        lay.addWidget(self.sys_placeholder)
         lay.addWidget(self.pak_placeholder)
 
         self.loading_overlay = QFrame(c)
@@ -574,12 +558,9 @@ class ProjectManager(QDockWidget):
         self.view_rail.currentChanged.connect(self._switch_tab)
         self._switch_tab("proj")
 
-        self.tree_sys .customContextMenuRequested.connect(self._sys_menu)
         self.tree_proj.customContextMenuRequested.connect(self._proj_menu)
         self.tree_pak.customContextMenuRequested.connect(self._pak_menu)
 
-        if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
-            self._apply_unpacked_root(self.unpacked_dir)
         self.bookmarks.changed.connect(self._on_bookmarks_changed)
         self._update_tab_controls_state()
         self._update_placeholders()
@@ -762,21 +743,17 @@ class ProjectManager(QDockWidget):
         if self._active_tab == "pak":
             caption, path = self.tr("Game folder"), self.pak_dir
             self.btn_browse.setToolTip(self.tr("Select Game Directory (contains .pak)"))
-        elif self._active_tab == "proj":
-            caption, path = self.tr("Project folder"), self.project_dir
-            self.btn_browse.setToolTip(self.tr("Change the project folder"))
         elif self._active_tab == "bm":
             caption, path = self.tr("Bookmarks"), None
             self.btn_browse.setToolTip(self.tr("Browse for game directory"))
         else:
-            caption, path = self.tr("Unpacked folder"), self.unpacked_dir
-            self.btn_browse.setToolTip(self.tr("Select unpacked Game folder"))
-        invalid = self._active_tab == "sys" and bool(path) and not self._check_folder(path)
+            caption, path = self.tr("Project folder"), self.project_dir
+            self.btn_browse.setToolTip(self.tr("Change the project folder"))
         empty_text = self.tr("No project open") if self._active_tab == "proj" else self.tr("Not set")
         self.path_caption.setText(caption)
         self.path_label.setText(path or empty_text)
         self.path_label.setToolTip(path or "")
-        set_style_role(self.path_label, tone="danger" if invalid else "" if path else "subtle")
+        set_style_role(self.path_label, tone="" if path else "subtle")
 
     def _set_project_label(self, proj_dir) -> None:
         self.project_label.setText(os.path.basename(proj_dir) if proj_dir else self.tr("No project open"))
@@ -794,29 +771,6 @@ class ProjectManager(QDockWidget):
             d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory (contains .pak)"), self.pak_dir or "")
             if d:
                 self._apply_pak_root(d)
-        else:
-            d = QFileDialog.getExistingDirectory(self, self.tr("Select unpacked Game folder"), self.unpacked_dir or "")
-            if d:
-                self._apply_unpacked_root(d)
-
-    def _apply_unpacked_root(self, path):
-        self.unpacked_dir = os.path.abspath(path)
-        ok = self._check_folder(path)
-        self._update_path_label()
-
-        if ok:
-            self._show_sys_root()
-            self._update_project_cfg({"unpacked_dir": self.unpacked_dir})
-        else:
-            QMessageBox.warning(
-                self,
-                self.tr("Invalid folder"),
-                self.tr("Expected sub‑folder \"{}\".").format('/'.join(self._expected_native()))
-            )
-        self._update_placeholders()
-
-    def apply_unpacked_root(self, path: str):
-        self._apply_unpacked_root(path)
 
     def _try_autoload_default_pak_list(self):
         if self._pak_list_path or self._pak_base_paths:
@@ -841,24 +795,10 @@ class ProjectManager(QDockWidget):
     def apply_pak_root(self, path: str):
         self._apply_pak_root(path)
 
-    def _check_folder(self, root):
-        exp = self._expected_native()
-        root = _safe_path(root)
-        return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
-
     def _native_root(self, root: str) -> str:
         exp = self._expected_native()
         native = os.path.join(root, *exp)
         return native if exp and os.path.isdir(native) else root
-
-    def _show_sys_root(self):
-        root = self._native_root(self.unpacked_dir)
-        self.model_sys.setRootPath(root)
-        self.tree_sys.setRootIndex(self.model_sys.index(root))
-
-
-    def expected_native_tuple(self, game: str | None = None) -> tuple[str, ...]:
-        return GAME_NATIVE_PATHS.get(game or (self.current_game or ""), ())
 
     def has_valid_paks(self, path: str | None) -> bool:
         if not path:
@@ -872,7 +812,6 @@ class ProjectManager(QDockWidget):
         self._active_tab = tab
         self.view_rail.set_current(tab)
         self._prepare_pak_index()
-        self.tree_sys.setVisible(tab == "sys")
         self.tree_proj.setVisible(tab == "proj")
         self.tree_pak.setVisible(tab == "pak")
         self.bookmarks.setVisible(tab == "bm")
@@ -893,17 +832,6 @@ class ProjectManager(QDockWidget):
             self._rebuild_pak_index(verify_paths=False)
 
     def _update_placeholders(self):
-        sys_ok = bool(self.unpacked_dir) and self._check_folder(self.unpacked_dir)
-        if self._active_tab == "sys":
-            if not sys_ok:
-                self.sys_placeholder.setText(
-                    self.tr("Expected sub‑folder \"{}\".").format('/'.join(self._expected_native()))
-                    if self.unpacked_dir else self.tr("No unpacked game folder selected.")
-                )
-            self.tree_sys.setVisible(sys_ok)
-            self.sys_placeholder.setVisible(not sys_ok)
-        else:
-            self.sys_placeholder.setVisible(False)
         if self._active_tab == "pak":
             if not self.pak_dir:
                 self.pak_placeholder.setText(
@@ -971,10 +899,6 @@ class ProjectManager(QDockWidget):
         self._set_pak_list_display(None)
         self.tree_pak.setModel(None)
         self._refresh_mod_warning()
-
-        self.unpacked_dir = None
-        self.model_sys.setRootPath("")
-        self.tree_sys.setRootIndex(self.model_sys.index(""))
         self._update_path_label()
 
     @staticmethod
@@ -1025,7 +949,6 @@ class ProjectManager(QDockWidget):
             config = load_project_config(project_dir)
             pak_dir = str(_safe_path(config.get("pak_game_dir")) or "")
             list_path = str(_safe_path(config.get("pak_list_path")) or "")
-            unpacked_dir = str(_safe_path(config.get("unpacked_dir")) or "")
             if state.get("signature") != (
                 self._path_key(pak_dir),
                 self._pak_signature(
@@ -1045,10 +968,7 @@ class ProjectManager(QDockWidget):
             self._pak_filter_proxy = state.get("filter_proxy")
             self._update_mod_warning(state.get("modded", False))
             self._pak_flat_model = self._pak_filter_proxy.sourceModel()
-            self.unpacked_dir = unpacked_dir
             self._set_pak_list_display(self._pak_list_path)
-            if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
-                self._show_sys_root()
             self.tree_pak.setModel(self._pak_tree_model)
             self._pak_index_dirty = state.get("index_dirty", self._pak_tree_model is None)
             self._update_path_label()
@@ -1134,9 +1054,6 @@ class ProjectManager(QDockWidget):
         try:
             if error:
                 raise OSError(error)
-            self.unpacked_dir = result['unpacked_dir'] or None
-            if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
-                self._show_sys_root()
             self.pak_dir = result['pak_game_dir'] or None
             self._pak_list_path = result['pak_list_path'] or None
             self._pak_selected_paks = result['selected_paks']
@@ -1314,29 +1231,28 @@ class ProjectManager(QDockWidget):
         self._pak_cached_reader = r
         return r
 
-    def ensure_project_pak_context(self, project_dir: str) -> tuple[str, CachedPakReader | None]:
+    def ensure_project_pak_context(self, project_dir: str) -> CachedPakReader | None:
         key = self._path_key(project_dir)
         if not key:
-            return "", None
+            return None
         if key == self._path_key(self.project_dir):
             if self._pak_selected_paks and self._pak_base_paths:
-                return self.unpacked_dir or "", self._ensure_project_pak_reader(full_cache=False)
+                return self._ensure_project_pak_reader(full_cache=False)
             if state := self._load_project_pak_state(project_dir):
-                self.pak_dir, self._pak_list_path, self.unpacked_dir = state["pak_dir"], state["list_path"], state["unpacked_dir"]
+                self.pak_dir, self._pak_list_path = state["pak_dir"], state["list_path"]
                 self._pak_selected_paks, self._pak_base_paths = state["selected_paks"], state["base_paths"]
                 self._pak_all_paths = self._pak_population_paths = state["base_paths"]
                 self._pak_cached_reader = state["reader"]
-            return self.unpacked_dir or "", self._pak_cached_reader
+            return self._pak_cached_reader
         state = self._project_pak_states.get(key)
         if not getattr((state or {}).get("reader"), "cache_ready", False):
             state = self._load_project_pak_state(project_dir)
-        return (state or {}).get("unpacked_dir", ""), (state or {}).get("reader")
+        return (state or {}).get("reader")
 
     def _load_project_pak_state(self, project_dir: str) -> dict:
         cfg = load_project_config(project_dir)
         pak_dir = str(_safe_path(cfg.get("pak_game_dir")) or "")
         list_path = str(_safe_path(cfg.get("pak_list_path")) or "")
-        unpacked_dir = str(_safe_path(cfg.get("unpacked_dir")) or "")
         if not pak_dir or not list_path:
             return {}
         base_paths = read_pak_list_file(list_path)
@@ -1353,7 +1269,6 @@ class ProjectManager(QDockWidget):
             "reader": reader,
             "tree_model": None,
             "filter_proxy": self._new_pak_filter_proxy(),
-            "unpacked_dir": unpacked_dir,
             "signature": (self._path_key(pak_dir), self._pak_signature(paks, list_path)),
         }
         self._project_pak_states[self._path_key(project_dir)] = state
@@ -1509,7 +1424,7 @@ class ProjectManager(QDockWidget):
             return False
         try:
             path = _actual_mesh_path(path)
-            self._warn_if_project_copy_exists(path, pak=True)
+            self._warn_if_project_copy_exists(path)
             r = self._ensure_project_pak_reader()
             stream = r.get_file(path)
             if not stream:
@@ -1538,7 +1453,7 @@ class ProjectManager(QDockWidget):
     def read_project_pak_file(self, project_dir: str, path: str) -> bytes | None:
         if not project_dir or not path:
             return None
-        _unpacked_dir, reader = self.ensure_project_pak_context(project_dir)
+        reader = self.ensure_project_pak_context(project_dir)
         stream = reader.get_file(path) if reader else None
         return stream.read() if stream else None
 
@@ -1572,22 +1487,6 @@ class ProjectManager(QDockWidget):
         except Exception as e:
             QMessageBox.critical(self, self.tr("Add failed"), str(e))
 
-    def _sys_menu(self, pos):
-        idx = self.tree_sys.indexAt(pos)
-        if not idx.isValid():
-            return
-
-        path = self._index_path(idx)
-        menu = QMenu(self)
-        add_act = menu.addAction(self.tr(ADD_TO_PROJECT_TITLE))
-        bm_act = menu.addAction(self.tr("Bookmark & tag…"))
-
-        chosen = menu.exec(self.tree_sys.viewport().mapToGlobal(pos))
-        if chosen is add_act:
-            self._copy_to_project(path)
-        elif chosen is bm_act:
-            self.bookmarks.edit_bookmark(*self._bookmark_info(idx, False))
-
     def _proj_menu(self, pos):
         idx = self.tree_proj.indexAt(pos)
         if not idx.isValid():
@@ -1604,37 +1503,9 @@ class ProjectManager(QDockWidget):
 
         chosen = menu.exec(self.tree_proj.viewport().mapToGlobal(pos))
         if chosen is bm_act:
-            self.bookmarks.edit_bookmark(*self._bookmark_info(idx, True))
+            self.bookmarks.edit_bookmark(*self._bookmark_info(path))
         elif chosen is remove_act:
             self._remove_from_project(path)
-
-    def _copy_to_project(self, src):
-        if not self.project_dir or not self._check_folder(self.unpacked_dir):
-            return
-        rel = os.path.relpath(src, self.unpacked_dir)
-        dst = self._project_target(self.project_dir, rel)
-
-        if os.path.isdir(src) and QMessageBox.question(
-                self, self.tr("Confirm Add"), self.tr("Add entire folder\n\"{}\" and all its contents?").format(os.path.basename(src)),
-                QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
-            return
-
-        if os.path.exists(dst) and not self._confirm_project_overwrite(dst):
-            return
-
-        try:
-            if os.path.isdir(src): 
-                shutil.copytree(src, dst, dirs_exist_ok=True)
-            else:                   
-                (os.makedirs(os.path.dirname(dst), exist_ok=True), shutil.copy2(src, dst))
-            self._refresh_proj()
-            QMessageBox.information(
-                self,
-                self.tr("Added"),
-                self.tr("{path}\nwas copied successfully.").format(path=rel),
-            )
-        except Exception as e:
-            QMessageBox.critical(self, self.tr("Copy failed"), str(e))
 
     def _remove_from_project(self, path: str):
         if not self.project_dir:
@@ -1683,19 +1554,11 @@ class ProjectManager(QDockWidget):
         value = index.data(Qt.DisplayRole)
         return value if isinstance(value, str) else ""
 
-    def _bookmark_info(self, index, for_project: bool):
-        """(scope, rel_path, root, game) describing a filesystem row (file or folder)."""
-        return self._bookmark_info_for_path(self._index_path(index), for_project)
-
-    def _bookmark_info_for_path(self, path: str, for_project: bool):
-        if for_project:
-            scope, base = "project", self.project_dir
-        else:
-            scope, base = "unpacked", self.unpacked_dir
-        base = base or ""
+    def _bookmark_info(self, path: str):
+        """(scope, rel_path, root, game) describing a project row (file or folder)."""
+        base = self.project_dir or ""
         rel = os.path.relpath(path, base).replace("\\", "/") if base else str(path).replace("\\", "/")
-        root = base if for_project else ""
-        return scope, rel, root, self.current_game or ""
+        return "project", rel, base, self.current_game or ""
 
     def _show_proj_tree(self):
         self.tree_proj.setModel(self._proj_proxy)
@@ -1764,14 +1627,12 @@ class ProjectManager(QDockWidget):
         if self.proj_filter_edit.text().strip():
             self._apply_proj_filter_now()
 
-    def _open_in_editor(self, path, *, warn_project_copy: bool = False):
+    def _open_in_editor(self, path):
         actual_mesh_path = _actual_mesh_path(os.fspath(path))
         if actual_mesh_path != os.fspath(path) and os.path.isfile(actual_mesh_path):
             path = actual_mesh_path
         if os.path.isfile(path):
             try:
-                if warn_project_copy:
-                    self._warn_if_project_copy_exists(path)
                 with open(path, "rb") as f:
                     data = f.read()
                 project_dir = self.project_dir if self.project_dir and self._path_key(path).startswith(self._path_key(self.project_dir) + os.sep) else None
@@ -1793,12 +1654,12 @@ class ProjectManager(QDockWidget):
         if hasattr(viewer := getattr(tab, "viewer", None), "show_spawned"):
             viewer.show_spawned(instance, picks)
 
-    def _on_double(self, idx, in_project):
+    def _on_double(self, idx):
         if self._index_is_dir(idx):
             return
         path = self._index_path(idx)
         if path and os.path.isfile(path):
-            self._open_in_editor(path, warn_project_copy=not in_project)
+            self._open_in_editor(path)
 
     def _apply_bookmarks_store(self, proj_dir) -> None:
         if not proj_dir:
@@ -1837,27 +1698,18 @@ class ProjectManager(QDockWidget):
         self.tree_pak.scrollTo(index, QAbstractItemView.PositionAtCenter)
         return True
 
-    def _reveal_filesystem_folder(self, target: str, scope: str) -> bool:
-        if scope == "project":
-            self._switch_tab("proj")
-            if self.proj_filter_edit.text().strip():
-                self.proj_filter_edit.clear()
-                self._apply_proj_filter_now()
-            source = self.model_proj.index(target)
-            if not source.isValid():
-                return False
-            index = self._proj_proxy.mapFromSource(source)
-            tree = self.tree_proj
-        else:
-            self._switch_tab("sys")
-            source = self.model_sys.index(target)
-            if not source.isValid():
-                return False
-            index = source
-            tree = self.tree_sys
-        tree.setCurrentIndex(index)
-        tree.expand(index)
-        tree.scrollTo(index, QAbstractItemView.PositionAtCenter)
+    def _reveal_filesystem_folder(self, target: str) -> bool:
+        self._switch_tab("proj")
+        if self.proj_filter_edit.text().strip():
+            self.proj_filter_edit.clear()
+            self._apply_proj_filter_now()
+        source = self.model_proj.index(target)
+        if not source.isValid():
+            return False
+        index = self._proj_proxy.mapFromSource(source)
+        self.tree_proj.setCurrentIndex(index)
+        self.tree_proj.expand(index)
+        self.tree_proj.scrollTo(index, QAbstractItemView.PositionAtCenter)
         return True
 
     def _open_bookmark(self, bookmark):
@@ -1885,10 +1737,9 @@ class ProjectManager(QDockWidget):
                     ),
                 )
         else:
-            root = self.project_dir if bookmark.scope == "project" else self.unpacked_dir
-            target = resolve_filesystem_target(bookmark, root or "")
+            target = resolve_filesystem_target(bookmark, self.project_dir or "")
             if os.path.isdir(target):
-                opened = self._reveal_filesystem_folder(target, bookmark.scope)
+                opened = self._reveal_filesystem_folder(target)
             elif os.path.isfile(target):
                 self._open_in_editor(target)
                 opened = True
@@ -1904,7 +1755,7 @@ class ProjectManager(QDockWidget):
             self.bookmarks.touch(bookmark.id)
 
     def _on_bookmarks_changed(self):
-        for tree in (self.tree_sys, self.tree_proj, self.tree_pak):
+        for tree in (self.tree_proj, self.tree_pak):
             tree.viewport().update()
 
     def _choose_game(self) -> str | None:
@@ -1914,7 +1765,7 @@ class ProjectManager(QDockWidget):
         lay = QVBoxLayout(dlg)
         lay.setSpacing(8)
 
-        info_lbl = QLabel()
+        info_lbl = QLabel(self.tr("Select the game for this project:"))
         info_lbl.setWordWrap(True)
         lay.addWidget(info_lbl)
 
@@ -1926,16 +1777,6 @@ class ProjectManager(QDockWidget):
         lay.addWidget(btns)
         btns.accepted.connect(dlg.accept)
         btns.rejected.connect(dlg.reject)
-
-        def _upd(idx: int):
-            g = combo.itemText(idx)
-            hint = "/".join(GAME_NATIVE_PATHS.get(g, ()))
-            info_lbl.setText(self.tr(
-                "Expected sub‑folder for <b>{game}</b>: <code>{folder}</code><br>Your directory must contain that "
-                "folder."
-            ).format(game=g, folder=hint or self.tr("‑‑ any ‑‑")))
-        _upd(0)
-        combo.currentIndexChanged.connect(_upd)
 
         return combo.currentText() if dlg.exec() == QDialog.Accepted else None
     
@@ -1949,7 +1790,7 @@ class ProjectManager(QDockWidget):
         if new_size < min_width:
             sender_header.resizeSection(0, min_width)
         
-        for tree in (self.tree_sys, self.tree_proj, self.tree_pak):
+        for tree in (self.tree_proj, self.tree_pak):
             if tree.header() == sender_header:
                 delegate = tree.itemDelegateForColumn(0)
                 if hasattr(delegate, 'set_column_width'):
@@ -1959,7 +1800,7 @@ class ProjectManager(QDockWidget):
 
     def capture_view_state(self) -> dict:
         """Return the persistent, JSON-safe state of the project browser."""
-        trees = ("unpacked", self.tree_sys), ("project", self.tree_proj), ("pak", self.tree_pak)
+        trees = ("project", self.tree_proj), ("pak", self.tree_pak)
         return {
             "active_view": self._active_tab,
             "minimized": bool(self._minimized),
@@ -1982,7 +1823,7 @@ class ProjectManager(QDockWidget):
                 self._docked_size = QSize(max(240, int(docked_size[0])), max(180, int(docked_size[1])))
             except (TypeError, ValueError):
                 pass
-        trees = ("unpacked", self.tree_sys), ("project", self.tree_proj), ("pak", self.tree_pak)
+        trees = ("project", self.tree_proj), ("pak", self.tree_pak)
         widths = state.get("column_widths", {})
         for name, tree in trees:
             try:
@@ -1995,7 +1836,8 @@ class ProjectManager(QDockWidget):
         self._proj_filter_timer.stop()
         self._apply_pak_filter_now()
         self._apply_proj_filter_now()
-        self._switch_tab(str(state.get("active_view", "proj")))
+        active_view = str(state.get("active_view", "proj"))
+        self._switch_tab(active_view if active_view in ("proj", "pak", "bm", "cat") else "proj")
         expanded, current, scroll = (state.get(key, {}) for key in ("expanded", "current", "scroll"))
         for name, tree in trees:
             self._restore_expanded_keys(tree, expanded.get(name, []))
@@ -2046,8 +1888,6 @@ class ProjectManager(QDockWidget):
                 tree.expand(index)
 
     def _index_for_state_key(self, tree, key: str):
-        if tree is self.tree_sys:
-            return self.model_sys.index(key)
         if tree is self.tree_proj:
             source = self.model_proj.index(key)
             return self._proj_proxy.mapFromSource(source) if source.isValid() else QModelIndex()

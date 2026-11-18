@@ -75,11 +75,7 @@ def _entry_from_dir(project_dir: Path, fallback_game: str) -> ProjectEntry:
     cfg = load_project_config(project_dir)
     cfg_game = cfg.get("game")
     game = cfg_game if isinstance(cfg_game, str) and cfg_game.strip() else fallback_game
-    source = "Folder"
-    if cfg.get("pak_game_dir"):
-        source = "PAKs"
-    elif cfg.get("unpacked_dir"):
-        source = "Unpacked"
+    source = "PAKs" if cfg.get("pak_game_dir") else "Folder"
 
     cfg_path = project_config_path(project_dir)
     cfg_mtime = cfg_path.stat().st_mtime if cfg_path.exists() else 0
@@ -258,7 +254,6 @@ class ProjectPickerDialog(QDialog):
         return {
             "Folder": self.tr("Folder"),
             "PAKs": self.tr("PAKs"),
-            "Unpacked": self.tr("Unpacked"),
         }.get(source, source)
 
     def _filtered_entries(self, needle: str, game_filter):

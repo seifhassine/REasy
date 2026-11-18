@@ -65,7 +65,6 @@ lazy from ui.homepage import RECENT_FILES_SHOWN, HomePageStack, HomePageWidget
 lazy from tools.hash_calculator import HashCalculator
 
 lazy from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
-lazy from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 lazy from ui.project_manager.project_sessions import save_modified_tabs  # noqa: E402
 from ui.project_manager import (  # noqa: E402
     ProjectManager, ProjectWorkspaceController, PROJECTS_ROOT, ensure_projects_root
@@ -119,7 +118,7 @@ class REasyEditorApp(QMainWindow):
 
         ensure_projects_root()
         self.current_project = None
-        self.proj_dock = ProjectManager(self, None)
+        self.proj_dock = ProjectManager(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.proj_dock)
         self.proj_dock.hide()
 
@@ -336,25 +335,28 @@ class REasyEditorApp(QMainWindow):
             except RuntimeError:
                 pass
 
+    def _tab_project_folder(self, tab) -> str | None:
+        filename = getattr(tab, "filename", None)
+        project = filename and getattr(self.project_workspace.sessions.session_for_tab(tab), "path", None)
+        if not project:
+            return None
+        folder = os.path.dirname(os.path.abspath(filename))
+        try:
+            if os.path.commonpath([folder, project]) == os.path.abspath(project):
+                return folder
+        except ValueError:
+            pass
+        return None
+
+    def can_reveal_tab_in_project(self, tab) -> bool:
+        return bool(getattr(tab, "pak_source_path", None) or self._tab_project_folder(tab))
+
     def reveal_tab_in_project(self, tab) -> bool:
-        if tab is None:
-            return False
         if pak_path := getattr(tab, "pak_source_path", None):
             folder = pak_path.rsplit("/", 1)[0] + "/" if "/" in pak_path else ""
             return self.proj_dock._reveal_pak_folder(folder)
-        filename = getattr(tab, "filename", None)
-        if not filename:
-            return False
-        folder = os.path.dirname(os.path.abspath(filename))
-        project = getattr(self.project_workspace.sessions.session_for_tab(tab), "path", None)
-        try:
-            in_project = bool(
-                project and os.path.commonpath([folder, project]) == os.path.abspath(project)
-            )
-        except ValueError:
-            in_project = False
-        scope = "project" if in_project else "unpacked"
-        return self.proj_dock._reveal_filesystem_folder(folder, scope)
+        folder = self._tab_project_folder(tab)
+        return bool(folder and self.proj_dock._reveal_filesystem_folder(folder))
 
     def _internal_drag(self, event):
         return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
@@ -594,62 +596,25 @@ class REasyEditorApp(QMainWindow):
         if not game:
             return
 
-        choose_paks = SelectSourceDialog.prompt(self, game)
-        if choose_paks is None:
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            self.tr("Locate game directory (contains .pak)"),
+            "",
+            QFileDialog.ShowDirsOnly
+        )
+        if not folder:
             return
 
-        use_paks = bool(choose_paks)
-
-        if not use_paks:
-            start_dir = str(self.settings.get("unpacked_path", ""))
-            folder = QFileDialog.getExistingDirectory(
-                self,
-                self.tr("Locate unpacked files for {game}").format(game=game),
-                start_dir,
-                QFileDialog.ShowDirsOnly
-            )
-            if not folder:
-                return
-
-            expected = self.proj_dock.expected_native_tuple(game)
-            if expected:
-                test = os.path.join(folder, *expected)
-                if not os.path.isdir(test):
-                    QMessageBox.warning(
-                        self, self.tr("Invalid unpacked folder"),
-                        self.tr(
-                            "The folder you selected doesn't contain:\n"
-                            "  {expected}\n"
-                            "Please select the correct unpacked game directory."
-                        ).format(expected=os.path.join(*expected)))
-                    return
-
-            self.settings["unpacked_path"] = folder
-            self.save_settings()
-        else:
-            start_dir = str(self.settings.get("unpacked_path", ""))
-            folder = QFileDialog.getExistingDirectory(
-                self,
-                self.tr("Locate game directory (contains .pak)"),
-                start_dir,
-                QFileDialog.ShowDirsOnly
-            )
-            if not folder:
-                return
-
-            if not self.proj_dock.has_valid_paks(folder):
-                QMessageBox.warning(self, self.tr("Invalid game folder"), self.tr("No .pak files found in the selected directory."))
-                return
+        if not self.proj_dock.has_valid_paks(folder):
+            QMessageBox.warning(self, self.tr("Invalid game folder"), self.tr("No .pak files found in the selected directory."))
+            return
 
         mod_dir = os.path.join(PROJECTS_ROOT, game, name.strip())
         os.makedirs(mod_dir, exist_ok=True)
 
         self.project_workspace.activate(mod_dir, game)
-        if use_paks:
-            self.proj_dock.switch_tab("pak")
-            self.proj_dock.apply_pak_root(folder)
-        else:
-            self.proj_dock.apply_unpacked_root(folder)
+        self.proj_dock.switch_tab("pak")
+        self.proj_dock.apply_pak_root(folder)
 
     def open_project(self):
         dlg = ProjectPickerDialog(

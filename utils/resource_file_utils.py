@@ -21,7 +21,6 @@ lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 _PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, tuple[object, _PakPathLookup]]" = WeakKeyDictionary()
 # Per reader: builds its lookup once while other threads that need it wait.
 _PAK_PATH_LOOKUP_LOCKS: "WeakKeyDictionary[object, Lock]" = WeakKeyDictionary()
-_DIR_PATH_LOOKUP_CACHE: dict[str, dict[str, str]] = {}
 _HELD_FOLDERS: ContextVar[dict | None] = ContextVar("held_folders", default=None)
 _PLATFORM_SUFFIX = r'\.(?:stm|x64)'
 _VERSION_SUFFIX = rf'\.\d+(?:{_PLATFORM_SUFFIX})?'
@@ -34,7 +33,6 @@ ResourceDataLoader = Callable[[str], Optional[Tuple[str, bytes]]]
 @dataclass(frozen=True, slots=True)
 class ResourceResolutionContext:
     project_dir: str = ""
-    unpacked_dir: str = ""
     path_prefix: str = "natives/stm"
     pak_cached_reader: object | None = None
     game: str = ""
@@ -51,7 +49,6 @@ class ResourceResolutionContext:
         return resolve_resource_data(
             resource_path,
             self.project_dir,
-            self.unpacked_dir,
             self.path_prefix,
             self.pak_cached_reader,
             selection_parent,
@@ -62,7 +59,7 @@ class ResourceResolutionContext:
         )
 
     def locate(self, resource_path: str, *, require_unique: bool = False) -> "ResourceLocation | None":
-        return next(_locations(resource_path, self.project_dir, self.unpacked_dir, self.path_prefix,
+        return next(_locations(resource_path, self.project_dir, self.path_prefix,
                                self.pak_cached_reader, None, allow_selection_dialog=False, game=self.game,
                                require_unique=require_unique, language=self.language), None)
 
@@ -321,17 +318,6 @@ def _localized_choice(paths: Iterable[str], base: str, tails: tuple[str, ...]) -
     return min(ranked)[1] if ranked else None
 
 
-def _iter_lookup_keys(path: str):
-    current = path
-    while current:
-        yield current
-        slash_idx = current.rfind("/")
-        dot_idx = current.rfind(".")
-        if dot_idx <= slash_idx:
-            break
-        current = current[:dot_idx]
-
-
 def _select_matching_path(paths: list[str], parent=None, *, allow_dialog: bool = True, require_unique: bool = False) -> Optional[str]:
     if not paths:
         return None
@@ -360,7 +346,7 @@ def _select_matching_path(paths: list[str], parent=None, *, allow_dialog: bool =
 
 class _PakPathLookup:
     """Known PAK paths by lookup key: a key matches the paths it is, or is with dotted suffixes after the last slash
-    taken off (``_iter_lookup_keys``), in the order the reader gave them."""
+    taken off, in the order the reader gave them."""
     __slots__ = ("_keys", "_order", "_paths")
 
     def __init__(self, paths: Sequence[str]):
@@ -463,19 +449,6 @@ def find_matching_pak_path(
     return _match_pak_lookup(cached_norm, pattern_list, parent, **options)[1]
 
 
-def _get_dir_path_lookup(dir_path: str) -> dict[str, str]:
-    lookup = _DIR_PATH_LOOKUP_CACHE.get(dir_path)
-    if lookup is None:
-        lookup = {}
-        for entry in os.listdir(dir_path):
-            for key in _iter_lookup_keys(entry.casefold()):
-                lookup.setdefault(key, entry)
-            if entry.startswith("."):
-                lookup.setdefault("", entry)
-        _DIR_PATH_LOOKUP_CACHE[dir_path] = lookup
-    return lookup
-
-
 @contextmanager
 def held_folder_lookups() -> Iterator[None]:
     """Within it (one gather) each folder a resource lookup looks into is looked into once, on this thread: what the
@@ -502,7 +475,6 @@ def _locate_in_root(
     root_dir: str,
     path_prefix: str,
     *,
-    cache_entries: bool = True,
     require_unique: bool = False,
     tails: tuple[str, ...] | None = None,
 ) -> Optional[str]:
@@ -524,15 +496,12 @@ def _locate_in_root(
     if require_unique:
         return locate_local_resource(Path(base_file_path), require_unique=True)
 
-    if cache_entries:
-        target_name = _get_dir_path_lookup(dir_path).get(base_name)
-    else:
-        prefix = base_name + "."
-        target_name = next(
-            (entry for entry in _looked(os.listdir, dir_path)
-             if entry.casefold() == base_name or entry.casefold().startswith(prefix)),
-            None,
-        )
+    prefix = base_name + "."
+    target_name = next(
+        (entry for entry in _looked(os.listdir, dir_path)
+         if entry.casefold() == base_name or entry.casefold().startswith(prefix)),
+        None,
+    )
     if target_name is None:
         return None
     return os.path.join(dir_path, target_name)
@@ -574,7 +543,6 @@ def get_path_prefix_for_game(game: str) -> str:
 def _locations(
     resource_path: str,
     project_dir: str,
-    unpacked_dir: str,
     path_prefix: str,
     pak_cached_reader,
     selection_parent=None,
@@ -588,8 +556,7 @@ def _locations(
     resource_path = build_resource_path(resource_path, game)
     candidates = _resource_path_candidates(resource_path)
     for c in candidates:
-        found = _locate_in_root(c, project_dir, path_prefix, cache_entries=False, require_unique=require_unique,
-                                tails=tails)
+        found = _locate_in_root(c, project_dir, path_prefix, require_unique=require_unique, tails=tails)
         if found:
             yield ResourceLocation(found)
     match = find_matching_pak_path(
@@ -602,16 +569,11 @@ def _locations(
     )
     if match:
         yield ResourceLocation(match, pak_cached_reader)
-    for c in candidates:
-        found = _locate_in_root(c, unpacked_dir, path_prefix, require_unique=require_unique, tails=tails)
-        if found:
-            yield ResourceLocation(found)
 
 
 def resolve_resource_data(
     resource_path: str,
     project_dir: str,
-    unpacked_dir: str,
     path_prefix: str,
     pak_cached_reader,
     selection_parent=None,
@@ -621,7 +583,7 @@ def resolve_resource_data(
     require_unique: bool = False,
     language: int | None = None,
 ) -> Optional[Tuple[str, bytes]]:
-    locations = _locations(resource_path, project_dir, unpacked_dir, path_prefix, pak_cached_reader,
+    locations = _locations(resource_path, project_dir, path_prefix, pak_cached_reader,
                            selection_parent, allow_selection_dialog=allow_selection_dialog, game=game,
                            require_unique=require_unique, language=language)
     return next(filter(None, (location.read() for location in locations)), None)
@@ -640,14 +602,12 @@ def resource_context_for_app(
         return None
 
     root = os.fspath(project_dir or getattr(project, "project_dir", "") or "")
-    unpacked_dir = ""
-    reader = None
     ensure_context = getattr(project, "ensure_project_pak_context", None)
-    if root and callable(ensure_context):
-        unpacked_dir, reader = ensure_context(root)
-    else:
-        unpacked_dir = str(getattr(project, "unpacked_dir", "") or "")
-        reader = getattr(project, "_pak_cached_reader", None)
+    reader = (
+        ensure_context(root)
+        if root and callable(ensure_context)
+        else getattr(project, "_pak_cached_reader", None)
+    )
 
     infer_game = getattr(project, "infer_project_game", None)
     inferred_game = infer_game(root) if root and callable(infer_game) else ""
@@ -661,7 +621,6 @@ def resource_context_for_app(
     )
     return ResourceResolutionContext(
         project_dir=root,
-        unpacked_dir=str(unpacked_dir or ""),
         path_prefix=get_path_prefix_for_game(resolved_game),
         pak_cached_reader=reader,
         game=resolved_game,
@@ -796,9 +755,6 @@ def nearby_resource_paths(handler, extension: str, *, source_path=None, parent_l
             return False
         candidates.extend(sorted(p for p in paths if pattern.search(p)
                                  and near(normalize_resource_path(p).casefold().rsplit('/', 1)[0])))
-    for index, directory in enumerate(directories):
-        if context and context.unpacked_dir:
-            collect(Path(context.unpacked_dir) / directory, child_levels if index == len(directories) - 1 else 0)
     unique = {}
     for candidate in candidates:
         key = resource_path_key(candidate)
@@ -823,17 +779,10 @@ def listed_resource_paths(handler, extension: str) -> tuple[str, ...]:
     return tuple(sorted(unique.values(), key=str.casefold))
 
 
-def _resolve_destination_relative_path(resource_path: str, source_path: str | None, unpacked_dir: str, path_prefix: str) -> str:
+def _resolve_destination_relative_path(resource_path: str, source_path: str | None, path_prefix: str) -> str:
     prefix = path_prefix.strip("/").lower()
     if source_path:
         normalized_source = source_path.replace("\\", "/").strip()
-        if os.path.isabs(source_path) and unpacked_dir:
-            try:
-                rel_from_unpack = os.path.relpath(source_path, unpacked_dir).replace("\\", "/")
-                if not rel_from_unpack.startswith(".."):
-                    normalized_source = rel_from_unpack
-            except Exception:
-                pass
         if normalized_source.lower().startswith(prefix + "/"):
             return normalized_source[len(prefix) + 1 :]
 
@@ -846,7 +795,6 @@ def _resolve_destination_relative_path(resource_path: str, source_path: str | No
 def copy_resource_to_project(
     resource_path: str,
     project_dir: str,
-    unpacked_dir: str,
     path_prefix: str,
     pak_cached_reader=None,
     should_overwrite: Callable[[str], bool] | None = None,
@@ -857,7 +805,6 @@ def copy_resource_to_project(
     resolved = resolve_resource_data(
         resource_path,
         project_dir,
-        unpacked_dir,
         path_prefix,
         pak_cached_reader,
         selection_parent,
@@ -872,7 +819,7 @@ def copy_resource_to_project(
         and os.path.abspath(source_path).startswith(os.path.abspath(project_dir) + os.sep)
     )
 
-    relative_path = _resolve_destination_relative_path(resource_path, source_path, unpacked_dir, path_prefix)
+    relative_path = _resolve_destination_relative_path(resource_path, source_path, path_prefix)
     if in_project:
         dest_path = source_path
     else:

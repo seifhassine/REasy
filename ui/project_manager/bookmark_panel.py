@@ -373,7 +373,7 @@ class BookmarksPanel(QWidget):
 
     @staticmethod
     def _in_context(bookmark: Bookmark, active_game: str, active_project: str) -> bool:
-        if bookmark.scope in ("pak", "unpacked"):
+        if bookmark.scope == "pak":
             return bookmark.game.upper() == active_game
         return bookmark.root == active_project
 
@@ -471,9 +471,7 @@ class BookmarksPanel(QWidget):
                 self.remove_bookmark(bookmark.id)
 
     def _scope_label(self, bookmark: Bookmark) -> str:
-        if bookmark.scope == "pak":
-            return self.tr("PAK")
-        return self.tr("Project") if bookmark.scope == "project" else self.tr("Unpacked")
+        return self.tr("PAK") if bookmark.scope == "pak" else self.tr("Project")
 
     def _tooltip(self, bookmark: Bookmark) -> str:
         parts = [bookmark.display_path, self.tr("Source: {scope}").format(scope=self._scope_label(bookmark))]

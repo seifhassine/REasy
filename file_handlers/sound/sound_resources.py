@@ -62,12 +62,12 @@ def local_sound_path(handler, path: str) -> Path | None:
 
 
 def local_sound_directories(handler, path: str) -> tuple[Path, ...]:
-    """Return project/unpacked directories corresponding to a logical path."""
+    """Return project/local directories corresponding to a logical path."""
 
     roots = []
     context = resource_context_for_handler(handler)
-    if context is not None:
-        roots.extend((context.project_dir, context.unpacked_dir))
+    if context is not None and context.project_dir:
+        roots.append(context.project_dir)
     current = str(getattr(handler, "filepath", "") or "").replace("\\", "/")
     marker = current.casefold().find("natives/")
     if marker >= 0 and Path(current).is_absolute():
@@ -84,7 +84,7 @@ def read_sound_resource(
     *,
     cache: bool = True,
 ) -> tuple[str, bytes] | None:
-    """Read a related project, PAK, unpacked, or local sound resource."""
+    """Read a related project, PAK, or local sound resource."""
 
     key = resource_key(path)
     if key == resource_key(getattr(handler, "filepath", "")):

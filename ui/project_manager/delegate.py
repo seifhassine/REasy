@@ -23,7 +23,8 @@ _ACTION_HIT_SIZE, _ACTION_SPACING = 24, 1
 _ACTION_RIGHT, _MIN_TEXT_WIDTH = 3, 60
 _ACTION_ICON_SIZE = 16
 _STAR_COLOR = "#ffd700"
-_BOOKMARK_SCOPE_COLORS = {"pak": "#f59e0b", "project": "#4a7c59", "unpacked": "#64748b"}
+_BOOKMARK_SCOPE_COLORS = {"pak": "#f59e0b", "project": "#4a7c59"}
+_OVERFLOW_CHIP_COLOR = "#64748b"
 _TAG_PALETTE = (
     "#4caf50", "#2196f3", "#ff9800", "#9c27b0", "#e91e63",
     "#00bcd4", "#8bc34a", "#ff5722", "#607d8b", "#3f51b5",
@@ -189,27 +190,19 @@ class _ActionIconsDelegate(QStyledItemDelegate):
 
 
 class _ActionsDelegate(_ActionIconsDelegate):
-    """System/Project files: bookmark and add/remove actions."""
+    """Project files: bookmark and remove actions."""
 
-    def __init__(self, mgr, for_project: bool):
-        parent = mgr.tree_proj if for_project else mgr.tree_sys
-        super().__init__(parent)
-        self.mgr, self.for_project = mgr, for_project
+    def __init__(self, mgr):
+        super().__init__(mgr.tree_proj)
+        self.mgr = mgr
 
         self.close = _ActionIcon("close", hover_tone="danger")
 
     def _row_state(self, index):
         path = self.mgr._index_path(index)
-        bookmark_info = self.mgr._bookmark_info_for_path(path, self.for_project)
-        bookmarked = self.mgr.bookmarks.is_bookmarked(*bookmark_info)
-        actions = []
-        if self.for_project:
-            actions.append((self.close, "primary"))
-            actions.append((self.star_on if bookmarked else self.star_off, "bookmark"))
-        else:
-            actions.append((self.star_on if bookmarked else self.star_off, "bookmark"))
-            actions.append((self.plus, "primary"))
-        return actions, path, bookmark_info
+        bookmark_info = self.mgr._bookmark_info(path)
+        star = self.star_on if self.mgr.bookmarks.is_bookmarked(*bookmark_info) else self.star_off
+        return [(self.close, "primary"), (star, "bookmark")], path, bookmark_info
 
     def _row_actions(self, index):
         return self._row_state(index)[0]
@@ -221,7 +214,7 @@ class _ActionsDelegate(_ActionIconsDelegate):
         if action_id == "bookmark":
             return self.tr("Add or remove bookmark")
         if action_id == "primary":
-            return self.tr("Remove from project") if self.for_project else self.tr("Extract to project")
+            return self.tr("Remove from project")
         return super()._action_tooltip(action_id, index)
 
     def editorEvent(self, ev, model, option, index):
@@ -238,10 +231,7 @@ class _ActionsDelegate(_ActionIconsDelegate):
             return True
 
         if action_id == "primary":
-            if not self.for_project:
-                self.mgr._copy_to_project(path)
-            else:
-                self.mgr._remove_from_project(path)
+            self.mgr._remove_from_project(path)
             return True
 
         return False
@@ -398,7 +388,7 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
         left = max(line.left(), line.right() + 1 - total)
         chips = []
         for (label, overflow), width in zip(entries, widths):
-            color = (QColor(_BOOKMARK_SCOPE_COLORS["unpacked"]) if overflow
+            color = (QColor(_OVERFLOW_CHIP_COLOR) if overflow
                      else _tag_color(label))
             chips.append((QRect(left, top, width, height), label, color, overflow))
             left += width + self._CHIP_SPACING
@@ -451,7 +441,7 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
         badge_width = min(rect.width(), option.fontMetrics.horizontalAdvance(scope) + 12)
         badge = QRectF(rect.right() - badge_width, rect.top() + 1,
                        badge_width, max(18, option.fontMetrics.height() + 2))
-        color = QColor(_BOOKMARK_SCOPE_COLORS[bookmark.scope])
+        color = QColor(_BOOKMARK_SCOPE_COLORS.get(bookmark.scope, _OVERFLOW_CHIP_COLOR))
         fill, edge = QColor(color), QColor(color)
         fill.setAlpha(46)
         edge.setAlpha(150)

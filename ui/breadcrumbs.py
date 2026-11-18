@@ -157,22 +157,19 @@ class BreadcrumbBar(QFrame):
         if root:
             parts = [Path(root).name, *path.relative_to(root).parts]
             base = Path(root).parent
-            scope = "project"
         else:
             parts = list(path.parts)
             base = Path(parts[0]) if parts else path.parent
             parts = parts[1:] if parts else [path.name]
-            scope = "unpacked"
         segments = []
         current = base
         for index, part in enumerate(parts):
             current = current / part
-            target = str(current if current.is_dir() else current.parent)
-            callback = (
-                lambda target=target, scope=scope:
-                self.app_window.proj_dock._reveal_filesystem_folder(target, scope)
-            )
-            segments.append((part, callback if index < len(parts) - 1 else None, str(current)))
+            callback = None
+            if root and index < len(parts) - 1:
+                target = str(current if current.is_dir() else current.parent)
+                callback = lambda target=target: self.app_window.proj_dock._reveal_filesystem_folder(target)
+            segments.append((part, callback, str(current)))
         return self._compact(segments)
 
     @staticmethod

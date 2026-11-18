@@ -103,7 +103,7 @@ class CataloguePanel(QWidget):
     def _listed(self, entries) -> None:
         if not entries:
             return self._show_empty(self.tr("No characters found for {game}. The catalogs REasy knows are read "
-                                            "from the project's PAK files or unpacked folder.").format(game=self._game))
+                                            "from the project's PAK files.").format(game=self._game))
         self._show_empty("")
         groups: dict[tuple[str, str], list] = {}
         for entry in entries:

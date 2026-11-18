@@ -27,8 +27,6 @@ class ViewRail(QWidget):
         self._compact = False
         self._keyboard_focus = False
         self._items = (
-            ("sys", "folder_open", self.tr("Game Files"),
-             self.tr("Game Files\n\nExtracted game assets, used as read-only reference.")),
             ("proj", "briefcase", self.tr("My Mod"),
              self.tr("My Mod\n\nThe mod's own files. Edits here are what gets exported.")),
             ("pak", "box", self.tr("PAK Files"),

@@ -115,8 +115,7 @@ class MmtrViewer(SdfViewer):
         if scope.mdf_handler is None:
             users = QPushButton(self.tr("Objects Using It…"))
             users.setIcon(line_icon("search"))
-            users.setToolTip(self.tr("Find the MDF materials that use this master in the project, unpacked files "
-                                     "and game PAKs."))
+            users.setToolTip(self.tr("Find the MDF materials that use this master in the project and game PAKs."))
             users.clicked.connect(self._show_master_users)
             row.addWidget(users)
         self.layout().insertLayout(1, row)
@@ -235,7 +234,6 @@ class MmtrViewer(SdfViewer):
         seen = set()
         context = resource_context_for_handler(self.handler)
         project_dir = str(getattr(context, "project_dir", "") or "")
-        unpacked_dir = str(getattr(context, "unpacked_dir", "") or "")
         for tab in self._all_file_tabs():
             owner_project = str(getattr(tab, "pak_project_dir", "") or "")
             if (
@@ -261,21 +259,14 @@ class MmtrViewer(SdfViewer):
                 str(getattr(tab, "pak_source_path", "") or "")
             )
             origin = "pak" if relative else "disk"
-            if not relative and absolute:
-                for candidate_origin, root in (
-                    ("project", project_dir),
-                    ("system", unpacked_dir),
-                ):
-                    if not root:
-                        continue
-                    try:
-                        relative = Path(absolute).resolve().relative_to(
-                            Path(root).resolve()
-                        ).as_posix()
-                        origin = candidate_origin
-                        break
-                    except ValueError:
-                        pass
+            if not relative and absolute and project_dir:
+                try:
+                    relative = Path(absolute).resolve().relative_to(
+                        Path(project_dir).resolve()
+                    ).as_posix()
+                    origin = "project"
+                except ValueError:
+                    pass
             if not relative:
                 relative = Path(parse_path).name
             key = (origin, relative.casefold())
@@ -327,12 +318,8 @@ class MmtrViewer(SdfViewer):
             return pak_path, resource
         context = resource_context_for_handler(self.handler)
         absolute = tab_output_path(tab) or source
-        for root in (
-            str(getattr(context, "project_dir", "") or ""),
-            str(getattr(context, "unpacked_dir", "") or ""),
-        ):
-            if not root:
-                continue
+        root = str(getattr(context, "project_dir", "") or "")
+        if root:
             try:
                 return Path(absolute).resolve().relative_to(Path(root).resolve()).as_posix(), resource
             except ValueError:
@@ -350,7 +337,6 @@ class MmtrViewer(SdfViewer):
     def _variant_asset_context(self):
         context = resource_context_for_handler(self.handler)
         project_dir = str(getattr(context, "project_dir", "") or "")
-        unpacked_dir = str(getattr(context, "unpacked_dir", "") or "")
         reader = getattr(context, "pak_cached_reader", None)
         app = getattr(self.handler, "app", None)
         project = getattr(app, "proj_dock", None)
@@ -372,7 +358,7 @@ class MmtrViewer(SdfViewer):
             stream = reader.get_file(path) if reader is not None else None
             return stream.read() if stream is not None else None
 
-        return project_dir, unpacked_dir, pak_paths, load_pak if reader is not None else None
+        return project_dir, pak_paths, load_pak if reader is not None else None
 
     def _dirty_output_tab(self, path: str, *, allowed=None):
         tab = self._output_tab(path, excluded=allowed)
@@ -407,13 +393,13 @@ class MmtrViewer(SdfViewer):
         finally:
             _PENDING_SCOPES.pop(key, None)
 
-    def _discover_mdf_sources(self, resource_path, project_dir, unpacked_dir, pak_paths, pak_loader):
+    def _discover_mdf_sources(self, resource_path, project_dir, pak_paths, pak_loader):
         open_sources, unwritten = self._open_mdf_sources()
         mdf_version = self.mmtr_document.profile.mdf_resource_version
         found = run_job(
             self, self.tr("Finding MDF consumers"),
             lambda progress, _cancelled: discover_mdf_consumers(
-                mmtr_resource_path=resource_path, project_dir=project_dir, unpacked_dir=unpacked_dir,
+                mmtr_resource_path=resource_path, project_dir=project_dir,
                 pak_paths=pak_paths, pak_loader=pak_loader, open_sources=open_sources,
                 progress=lambda count, _label: progress(count, 0), mdf_version=mdf_version),
             status=self.tr("Finding MDF consumers…"),
@@ -435,7 +421,7 @@ class MmtrViewer(SdfViewer):
             self.tr("Find material instance"),
             self.tr(
                 "This MMTR was opened without an MDF, so its material textures and parameters are unknown.\n\n"
-                "Search open files, the project, unpacked files and game PAKs for an MDF that uses it?"
+                "Search open files, the project and game PAKs for an MDF that uses it?"
             ),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.Yes,
@@ -478,7 +464,7 @@ class MmtrViewer(SdfViewer):
 
     def _material_variant_requested(self, build, project) -> None:
         source_mmtr_path, source_resource_path = self._variant_source_paths()
-        project_dir, unpacked_dir, pak_paths, pak_loader = self._variant_asset_context()
+        project_dir, pak_paths, pak_loader = self._variant_asset_context()
         if not project_dir:
             QMessageBox.information(
                 self,
@@ -490,7 +476,7 @@ class MmtrViewer(SdfViewer):
             return
 
         mdf_sources = self._discover_mdf_sources(
-            source_resource_path, project_dir, unpacked_dir, pak_paths, pak_loader,
+            source_resource_path, project_dir, pak_paths, pak_loader,
         )
 
         app = getattr(self.handler, "app", None)

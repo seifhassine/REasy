@@ -1528,7 +1528,6 @@ class StringInput(BaseValueWidget):
         dest_path = copy_resource_to_project(
             resource_path,
             project_dir,
-            context.unpacked_dir,
             context.path_prefix,
             context.pak_cached_reader,
             should_overwrite=_confirm_overwrite,
@@ -1556,7 +1555,7 @@ class StringInput(BaseValueWidget):
             self.tr(ADD_RESOURCE_TITLE),
             self.tr(
                 "Error: Resource file not found.\n\nResource: {}\n\n"
-                "Searched in both PAK files and system files."
+                "Searched in project files and PAK files."
             ).format(resource_path),
         )
 
@@ -1591,7 +1590,7 @@ class StringInput(BaseValueWidget):
             self.tr(OPEN_RESOURCE_TITLE),
             self.tr(
                 "Error: Resource file not found.\n\nResource: {}\n\n"
-                "Searched in both PAK files and system files."
+                "Searched in project files and PAK files."
             ).format(resource_path),
         )
 

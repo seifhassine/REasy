@@ -56,13 +56,13 @@ def _inspector_stylesheet() -> str:
     """
 
 
-def _file_source_path(filename: str | None, project_dir: str | None, unpacked_dir: str | None) -> tuple[str, str]:
-    for root, origin in ((project_dir, "project"), (unpacked_dir, "pak")):
+def _file_source_path(filename: str | None, project_dir: str | None) -> str:
+    if filename and project_dir:
         with suppress(TypeError, ValueError):
-            rel = os.path.relpath(filename, root).replace("\\", "/")
+            rel = os.path.relpath(filename, project_dir).replace("\\", "/")
             if not rel.startswith("../") and rel != "..":
-                return rel, origin
-    return "", ""
+                return rel
+    return ""
 
 
 def _make_scn_source(path: str, handler=None, *, project_dir: str = "", game_version: str = "", origin: str = "") -> ScnSceneSource:
@@ -87,10 +87,10 @@ def scn_source_from_tab(tab) -> ScnSceneSource | None:
     session = getattr(getattr(app, "project_workspace", None), "sessions", None)
     session = session.session_for_tab(tab) if session is not None else None
     project_dir = str(getattr(tab, "pak_project_dir", None) or getattr(session, "path", "") or getattr(proj, "project_dir", "") or "")
-    path = str(getattr(tab, "pak_source_path", None) or "")
-    origin = "pak" if path else ""
-    if not path and project_dir and getattr(tab, "filename", None):
-        path, origin = _file_source_path(tab.filename, project_dir, getattr(proj, "unpacked_dir", ""))
+    if pak_path := str(getattr(tab, "pak_source_path", None) or ""):
+        path, origin = pak_path, "pak"
+    else:
+        path, origin = _file_source_path(getattr(tab, "filename", None), project_dir), "project"
     if not path:
         return None
     return _make_scn_source(
@@ -950,10 +950,10 @@ class ScnSceneController:
     def source_from_open_request(self, filename: str | None, pak_source_path: str | None = None, pak_project_dir: str | None = None) -> ScnSceneSource | None:
         proj = getattr(self.app, "proj_dock", None)
         project_dir = self.app._source_project_dir(filename, pak_project_dir) or str(pak_project_dir or getattr(proj, "project_dir", "") or "")
-        path = str(pak_source_path or "")
-        origin = "pak" if path else ""
-        if not path and filename:
-            path, origin = _file_source_path(filename, project_dir, getattr(proj, "unpacked_dir", ""))
+        if pak_path := str(pak_source_path or ""):
+            path, origin = pak_path, "pak"
+        else:
+            path, origin = _file_source_path(filename, project_dir), "project"
         if not path:
             return None
         return _make_scn_source(

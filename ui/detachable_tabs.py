@@ -449,7 +449,8 @@ class CustomNotebook(QTabWidget):
         tab = getattr(page, "parent_tab", None)
         path = getattr(tab, "pak_source_path", None) or getattr(tab, "filename", None)
         copy_path.setEnabled(bool(path))
-        reveal.setEnabled(bool(path and self.app_instance))
+        can_reveal = getattr(self.app_instance, "can_reveal_tab_in_project", None)
+        reveal.setEnabled(bool(can_reveal(tab) if callable(can_reveal) else (path and self.app_instance)))
         chosen = menu.exec(self.tabBar().mapToGlobal(position))
         if chosen is split_right:
             host.split_page(page, Qt.Horizontal)

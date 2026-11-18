@@ -143,7 +143,7 @@ class GuiFontCatalog:
 
         root = os.fspath(asset_root)
         contexts = [
-            ResourceResolutionContext(unpacked_dir=root, path_prefix=prefix)
+            ResourceResolutionContext(project_dir=root, path_prefix=prefix)
             for prefix in path_prefixes
         ]
 

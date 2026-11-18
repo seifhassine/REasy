@@ -175,10 +175,9 @@ class TexHandler(TextureViewerHandler):
 
     def _resource_path(self, context: ResourceResolutionContext) -> str:
         path = (self.filepath or "").replace("\\", "/")
-        for root in (context.project_dir, context.unpacked_dir):
-            root = str(root or "").replace("\\", "/").rstrip("/")
-            if root and path.casefold().startswith(root.casefold() + "/"):
-                return path[len(root) + 1 :]
+        root = str(context.project_dir or "").replace("\\", "/").rstrip("/")
+        if root and path.casefold().startswith(root.casefold() + "/"):
+            return path[len(root) + 1 :]
         return path
 
     def _adopt(self, authored: "authoring.Authored") -> None:

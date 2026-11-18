@@ -96,7 +96,7 @@ class MaterialVariantDialog(QDialog):
         source_tools.setSpacing(4)
         self.source_search = QLineEdit()
         self.source_search.setPlaceholderText(
-            self.tr("Search Project, PAK, and System MDF results…")
+            self.tr("Search Project and PAK MDF results…")
         )
         self.source_search.addAction(line_icon("search"), QLineEdit.ActionPosition.LeadingPosition)
         self.source_search.textChanged.connect(self._filter_sources)
@@ -200,7 +200,7 @@ class MaterialVariantDialog(QDialog):
             )
             if count
             else self.tr(
-                "No matching MDF was found in the active Project, PAK, or System sources. Add one by disk or PAK path."
+                "No matching MDF was found in the active Project or PAK sources. Add one by disk or PAK path."
             )
         )
         if selected_item is not None:

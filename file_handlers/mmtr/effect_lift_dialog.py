@@ -113,8 +113,7 @@ class EffectFromMaterialDialog(QDialog):
         mdf = MdfFile()
         try:
             if found is None:
-                raise ValueError(self.tr("REasy found no file there, in the project, the unpacked files or the "
-                                         "game's PAKs."))
+                raise ValueError(self.tr("REasy found no file there, in the project or the game's PAKs."))
             mdf.read(found[1], found[0])
         except ValueError as exc:
             QMessageBox.warning(self, self.tr("Material file not read"), str(exc))
