@@ -1378,7 +1378,8 @@ class REasyEditorApp(QMainWindow):
             self.tr("Open File"),
             "",
             "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.cfil* *.rcol* *.fol* *.uvs* *.motbank* *.mcambank* "
-            "*.clip* *.tml* *.ucurve* *.mot.* *.motlist* *.mottree* *.motpack* *.jcns* *.gui* *.gcf* *.ift* *.oft* "
+            "*.clip* *.tml* *.ucurve* *.mot.* *.motlist* *.mottree* *.motpack* *.jcns* "
+            "*.gui* *.gcf* *.gcp* *.ift* *.oft* "
             "*.bhvt* *.fsmv2* *.fsm.* *.motfsm* *.tmlfsm2* "
             "*.tex* *.dds *.mesh* *.stmesh* *.sdftex* *.mdf2* *.mmtr* *.sdf* *.vsdf* *.csdf* *.bnk* *.pck* *.sbnk* "
             "*.spck* *.wel* *.wcc* *.wcp* *.wcst* *.wgs* *.wss* *.wcsw* *.wcss* *.wcsa* *.wcsf* *.mov*);;"

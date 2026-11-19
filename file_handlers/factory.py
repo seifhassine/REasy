@@ -20,6 +20,7 @@ lazy from file_handlers.jcns.jcns_handler import JcnsHandler
 lazy from file_handlers.uvs.uvs_handler import UvsHandler
 lazy from file_handlers.gui.gui_handler import GuiHandler
 lazy from file_handlers.gcf.gcf_handler import GcfHandler
+lazy from file_handlers.gcp.gcp_handler import GcpHandler
 lazy from file_handlers.ift.ift_handler import IftHandler
 lazy from file_handlers.oft.oft_handler import OftHandler
 lazy from file_handlers.rcol.rcol_handler import RcolHandler
@@ -57,6 +58,7 @@ def _handler_classes():
     yield UvsHandler
     yield GuiHandler
     yield GcfHandler
+    yield GcpHandler
     yield IftHandler
     yield OftHandler
     yield RcolHandler

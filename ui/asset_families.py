@@ -14,7 +14,7 @@ FAMILIES = {
     "timeline": ("clock", "#d6c14f", "clip tml ucurve dlgtml motclip"),
     "logic": ("graph", "#d67fb0", "bhvt fsm fsmv2 motfsm motfsm2 tmlfsm2"),
     "collision": ("box", "#8fa3b0", "rcol cfil"),
-    "gui": ("template", "#4fa3d6", "gui gcf"),
+    "gui": ("template", "#4fa3d6", "gui gcf gcp"),
     "text": ("text", "#a0a3aa", "msg oft ift"),
     "video": ("play", "#c77fd6", "mov"),
     "sound": ("sound", "#5f8ad9", "spck sbnk pck bnk wel wcc wcp wcst wgs wss wcsw wcss wcsa wcsf wcbk wcggp wcgp wcja "

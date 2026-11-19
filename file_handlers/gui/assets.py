@@ -9,7 +9,7 @@ from functools import cache, cached_property
 from typing import Any
 from uuid import UUID
 
-lazy from file_handlers.gcp.gcp_file import ColorPreset, parse_gcp
+lazy from file_handlers.gcp.gcp_file import ColorPreset, preset_lookup
 lazy from file_handlers.mdf.mdf_file import MdfFile
 lazy from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
 lazy from file_handlers.rsz.game_registry import game_type_registry
@@ -60,7 +60,7 @@ class GuiAssetCatalog:
             return {}
         source, data, _version = self._load_resource(path, "gcp")
         try:
-            return parse_gcp(data)
+            return preset_lookup(data)
         except ValueError as exc:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
 

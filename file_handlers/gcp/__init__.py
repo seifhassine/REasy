@@ -1,3 +1,3 @@
-from .gcp_file import ColorPreset, parse_gcp
+from .gcp_file import PATTERNS, ColorPreset, GcpFile, preset_lookup, read_gcp, write_gcp
 
-__all__ = ["ColorPreset", "parse_gcp"]
+__all__ = ["PATTERNS", "ColorPreset", "GcpFile", "preset_lookup", "read_gcp", "write_gcp"]

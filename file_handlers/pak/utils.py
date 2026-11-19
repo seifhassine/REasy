@@ -38,6 +38,7 @@ def guess_extension_from_header(header: bytes) -> str | None:
     if len(h) >= 8:
         versioned_extension = {
             b"GCFG": "gcf",
+            b"GCPR": "gcp",
             b"IFNT": "ift",
         }.get(h[4:8])
         if versioned_extension:
