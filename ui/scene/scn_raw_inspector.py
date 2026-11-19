@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Signal
+from PySide6.QtCore import QItemSelectionModel, QModelIndex, QPersistentModelIndex, Signal
 from PySide6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
 lazy from file_handlers.rsz.rsz_array_operations import RszArrayOperations
@@ -131,7 +131,7 @@ def select_instance_in_tree(tree, instance_id: int, cache: dict[int, QPersistent
     while parent.isValid():
         tree.expand(parent)
         parent = parent.parent()
-    tree.setCurrentIndex(index)
+    tree.selectionModel().setCurrentIndex(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
     tree.scrollTo(index)
 
 

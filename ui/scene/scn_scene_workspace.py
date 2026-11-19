@@ -5,7 +5,7 @@ from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QItemSelectionModel, QT_TRANSLATE_NOOP, QTimer, Qt
 lazy from PySide6.QtGui import QIcon
 lazy from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -645,9 +645,7 @@ class ScnSceneTab(ScnSceneFeatures):
         if item is None:
             return
         blocked = self.source_tree.blockSignals(True)
-        self.source_tree.clearSelection()
-        item.setSelected(True)
-        self.source_tree.setCurrentItem(item)
+        self.source_tree.setCurrentItem(item, 0, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
         self.source_tree.scrollToItem(item)
         self.source_tree.blockSignals(blocked)
         self._refresh_controls(focus_changed=False)

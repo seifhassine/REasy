@@ -238,7 +238,7 @@ class AdvancedTreeView(QTreeView):
 
         def embed_children_on_expand(parent_index):
             modifiers = QApplication.keyboardModifiers()
-            self.shift_pressed = bool(modifiers & Qt.ShiftModifier)
+            self.shift_pressed = self.hasFocus() and bool(modifiers & Qt.ShiftModifier)
             
             self.create_widgets_for_children(parent_index)
             
