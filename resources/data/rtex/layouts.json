@@ -9,6 +9,8 @@
   "ImageQualityRateRecieveSetting": "via.render.RenderTargetTextureResource.ImageQualityRateRecieveSetting"
  },
  "flags": ["TextureCube", "MipChain", "RenderTargetView", "UnorderedAccessView"],
+ "games": {"DMC5": 4, "RE2": 4, "RE3": 4, "RE2RT": 5, "RE3RT": 5, "RE7RT": 5, "RE8": 5, "RE4": 5, "SF6": 5, "RE9": 6,
+           "DD2": 6, "MHWilds": 6, "Pragmata": 6, "OnimushaWOTS": 6},
  "versions": {
   "4": [
    {"at": 0, "type": "u32", "const": 1480938578, "what": "the magic"},

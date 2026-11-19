@@ -34,6 +34,7 @@ lazy from ui.styles import current_colors, set_style_role
 lazy from ui.editor_widgets import editor_strip, search_field, styled_label, tool_button
 lazy from .material_graph import MdfMaterialGraph, layer_color_channel, pick_parameter_color
 lazy from .parameter_model import MdfParameterModel
+lazy from .texture_list import MdfTextureList
 lazy from .texture_paths import TexturePathCompleter, TexturePathDelegate
 
 
@@ -166,6 +167,9 @@ class MdfViewer(QWidget):
 		self.export_btn.setText(self.tr("Export"))
 		self.template_btn = tool_button("template", self.tr("Open the MDF template manager"), self._open_template_manager)
 		self.template_btn.setText(self.tr("Templates"))
+		self.textures_btn = tool_button("image", self.tr(
+			"List every texture the materials use and where the game finds it"), self._open_texture_list)
+		self.textures_btn.setText(self.tr("Textures"))
 		for btn in (
 			self.add_btn,
 			self.del_btn,
@@ -173,6 +177,7 @@ class MdfViewer(QWidget):
 			self.paste_btn,
 			self.export_btn,
 			self.template_btn,
+			self.textures_btn,
 		):
 			toolbar.addWidget(btn)
 		toolbar.addStretch(1)
@@ -761,6 +766,14 @@ class MdfViewer(QWidget):
 		dlg = MdfTemplateManagerDialog(self, viewer=self)
 		dlg.template_imported.connect(self._on_template_imported)
 		dlg.exec()
+
+	def _open_texture_list(self):
+		dialog = MdfTextureList(self.handler, self._texture_completer, self)
+		dialog.exec()
+		if dialog.renamed:
+			self._refresh_details_for_current_material()
+			self.modified = True
+		dialog.deleteLater()
 
 	def _on_template_imported(self, material, metadata):
 		if material is None:

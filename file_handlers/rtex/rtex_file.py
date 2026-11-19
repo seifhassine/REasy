@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 lazy from file_handlers.layout_codec import RecordCodec, game_enums, load_table
+lazy from file_handlers.mmtr.profiles.base import same_mmtr_profile
 lazy from utils.enum_manager import EnumDefinitionError
 
 DATA_DIRECTORY = "resources/data/rtex"
@@ -22,6 +23,10 @@ class RtexFormatError(ValueError):
 @functools.cache
 def _layouts() -> dict:
     return load_table(DATA_DIRECTORY, "layouts", RtexFormatError)
+
+
+def rtex_version(game: str) -> int | None:
+    return next((version for name, version in _layouts()["games"].items() if same_mmtr_profile(name, game)), None)
 
 
 @functools.cache
