@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import weakref
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
@@ -264,14 +265,14 @@ def pick_parameter_color(parent: QWidget, material, index: int) -> bool:
 class MovableMaterialGraphNode(QGraphicsProxyWidget):
     def __init__(self, moved_callback):
         super().__init__()
-        self._moved_callback = moved_callback
+        self._moved_callback = weakref.WeakMethod(moved_callback)
         self.setFlag(self.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges, True)
 
     def itemChange(self, change, value):
         result = super().itemChange(change, value)
         if change == self.GraphicsItemChange.ItemPositionHasChanged:
-            self._moved_callback()
+            self._moved_callback()()
         return result
 
 
