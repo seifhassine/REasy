@@ -358,7 +358,7 @@ class ProjectManager(QDockWidget):
         project_lay.addWidget(self.project_label, 1)
         self.btn_conf = tool_button(
             "settings",
-            self.tr("Fluffy Mod Manager package settings (mod name, author, description, screenshot)"),
+            self.tr("Fluffy Mod Manager settings (modinfo.ini) and PAK file name"),
             self._proj_settings,
             parent=self.project_bar,
         )
@@ -1934,7 +1934,7 @@ class ProjectManager(QDockWidget):
         mods_folder = base_dir / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
         cfg = load_project_config(proj)
-        name = cfg.get("name", proj.name)
+        name = cfg.get("name") or proj.name
         zip_path = mods_folder / f"{name}.zip"
 
         try:
