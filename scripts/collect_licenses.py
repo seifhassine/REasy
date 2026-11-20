@@ -20,6 +20,7 @@ UNRECORDED = {
     "rgbcx": ("bc7enc_rdo b943862", [VENDORED / "rgbcx" / "LICENSE"]),
     "miniaudio": ("0.11.25", [VENDORED / "miniaudio" / "LICENSE"]),
     "HarfBuzz": ("1.0.4", [VENDORED / "harfbuzz" / "COPYING"]),
+    "libdeflate": ("1.26", [VENDORED / "libdeflate" / "COPYING"]),
     "UCDN": ("", [VENDORED / "harfbuzz" / "src" / "hb-ucdn" / "COPYING"]),
     "DirectXShaderCompiler": (DXC_VERSION, [DXC / name for name in DXC_FILES.values() if name.endswith(".txt")]),
 }

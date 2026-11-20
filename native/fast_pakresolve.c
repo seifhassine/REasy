@@ -1,6 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdint.h>
+#include "third_party/libdeflate/lib/deflate_compress.c"
+#include "third_party/libdeflate/lib/utils.c"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -185,17 +187,40 @@ static PyObject* read_at(PyObject* self, PyObject* args) {
 	return out;
 }
 
+static PyObject* deflate_raw(PyObject* self, PyObject* args) {
+	Py_buffer data;
+	int level;
+	if (!PyArg_ParseTuple(args, "y*i", &data, &level)) {
+		return NULL;
+	}
+	struct libdeflate_compressor* compressor = libdeflate_alloc_compressor(level);
+	size_t bound = libdeflate_deflate_compress_bound(compressor, (size_t)data.len), size = 0;
+	PyObject* out = compressor ? PyBytes_FromStringAndSize(NULL, (Py_ssize_t)bound) : PyErr_NoMemory();
+	if (out) {
+		Py_BEGIN_ALLOW_THREADS
+		size = libdeflate_deflate_compress(compressor, data.buf, (size_t)data.len, PyBytes_AS_STRING(out), bound);
+		Py_END_ALLOW_THREADS
+	}
+	libdeflate_free_compressor(compressor);
+	PyBuffer_Release(&data);
+	if (out && _PyBytes_Resize(&out, (Py_ssize_t)size) < 0) {
+		return NULL;
+	}
+	return out;
+}
+
 static PyMethodDef Methods[] = {
 	{"path_hashes", (PyCFunction)path_hashes, METH_VARARGS, "path_hashes(paths): each normalized path's PAK hash, as little-endian u64 bytes (0 for a non-string)"},
 	{"murmur3_hash", (PyCFunction)murmur3_hash, METH_VARARGS, "Compute MurmurHash3 32-bit hash of bytes"},
 	{"read_at", (PyCFunction)read_at, METH_VARARGS, "read_at(path, offset, size): the bytes there, read without the GIL"},
+	{"deflate", (PyCFunction)deflate_raw, METH_VARARGS, "deflate(data, level): data as raw DEFLATE, compressed by libdeflate without the GIL"},
 	{NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef Module = {
 	PyModuleDef_HEAD_INIT,
 	"fast_pakresolve",
-	"Fast resolve of PAK paths into cache entries.",
+	"PAK path hashes, reads and DEFLATE compression.",
 	-1,
 	Methods
 };

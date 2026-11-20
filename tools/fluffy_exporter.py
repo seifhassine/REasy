@@ -6,10 +6,10 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
 
-lazy from tools.pak_exporter import _ensure_packer, run_packer
+lazy from file_handlers.pak.writer import write_pak
 lazy from ui.project_manager.bookmarks import BOOKMARKS_PROJECT_NAME
-lazy from ui.project_manager.project_config import load_project_config
-lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER
+lazy from ui.project_manager.project_config import load_project_config, project_files
+lazy from utils.app_paths import PROJECT_CONFIG_NAME
 
 translate = QCoreApplication.translate
 _MODINFO_NAME = "modinfo.ini"
@@ -51,23 +51,19 @@ def modinfo_problems(cfg: dict, project_dir: Path) -> dict[str, str]:
     return problems
 
 
-def _write_bundled_pak(zf: zipfile.ZipFile, project_dir: Path, arcname: str) -> None:
-    _ensure_packer(auto_download=True)
+def _write_bundled_pak(zf: zipfile.ZipFile, project_dir: Path, arcname: str, compression: str) -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         pak_tmp = Path(temp_dir) / "bundle.pak"
-        code, output = run_packer(str(project_dir), str(pak_tmp))
-        if code != 0:
-            raise RuntimeError(f"PAK build failed:\n{output}")
-        zf.writestr(arcname, pak_tmp.read_bytes())
+        write_pak(project_files(project_dir), pak_tmp, compression)
+        zf.write(pak_tmp, arcname)
 
 
 def _write_project_files(zf: zipfile.ZipFile, project_dir: Path, prefix: str) -> None:
     skipped = {PROJECT_CONFIG_NAME, BOOKMARKS_PROJECT_NAME,
                *(name.removeprefix(prefix) for name in zf.namelist() if name.startswith(prefix))}
-    for path in project_dir.rglob("*"):
-        relative = path.relative_to(project_dir)
-        if path.is_file() and relative.as_posix() not in skipped and PROJECT_METADATA_FOLDER not in relative.parts:
-            zf.write(path, prefix + relative.as_posix())
+    for name, path in project_files(project_dir):
+        if name not in skipped:
+            zf.write(path, prefix + name)
 
 
 def create_fluffy_zip(project_dir: Path, zip_path: Path):
@@ -93,6 +89,7 @@ def create_fluffy_zip(project_dir: Path, zip_path: Path):
             if screenshot := mod.get("screenshot"):
                 zf.write(path / screenshot, prefix + Path(screenshot).name)
             if mod.get("bundle_pak"):
-                _write_bundled_pak(zf, path, prefix + Path(f"{mod.get('pak_name') or path.name}.pak").name)
+                _write_bundled_pak(zf, path, prefix + Path(f"{mod.get('pak_name') or path.name}.pak").name,
+                                   mod.get("pak_compression", "deflate"))
             else:
                 _write_project_files(zf, path, prefix)

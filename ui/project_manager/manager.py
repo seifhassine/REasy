@@ -20,8 +20,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QDialogButtonBox,
     QDockWidget, QFileDialog, QFileSystemModel, QFrame, QGridLayout, QHeaderView,
-    QLabel, QLineEdit, QMenu, QMessageBox, QProgressBar,
-    QPushButton, QSizePolicy, QStyle, QTextEdit, QToolButton, QTreeView,
+    QLabel, QLineEdit, QMenu, QMessageBox,
+    QPushButton, QSizePolicy, QStyle, QToolButton, QTreeView,
     QVBoxLayout, QWidget,
 )
 
@@ -29,9 +29,9 @@ lazy from app_config import GAMES, GAME_NATIVE_PATHS
 lazy from file_handlers.pak import scan_all_pak_files, scan_pak_files
 lazy from file_handlers.pak.reader import CachedPakReader
 lazy from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header, pak_mod_flags
+lazy from file_handlers.pak.writer import write_pak
 lazy from services.file_operations import FileOperationError, FolderFileOperations
 lazy from tools.fluffy_exporter import create_fluffy_zip
-lazy from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
 lazy from ui.background_jobs import BackgroundJobs
 lazy from ui.editor_widgets import ElidedLabel, editor_strip, styled_label, tool_button
 lazy from ui.icons import line_icon
@@ -54,9 +54,11 @@ lazy from .constants import PROJECTS_ROOT
 lazy from .delegate import _ActionsDelegate, _PakActionsDelegate
 lazy from .dock_chrome import DockTitleBar, SideTab
 lazy from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
+lazy from .pak_status_dialog import run_with_progress
 lazy from .project_config import (
     load_project_config,
     project_config_path,
+    project_files,
     save_project_config,
     update_project_config,
 )
@@ -64,7 +66,6 @@ lazy from .project_settings_dialog import ProjectSettingsDialog
 lazy from .rsz_jsons import resolve_rsz_json_path
 lazy from .trees import PakPathModel
 lazy from .view_rail import ViewRail
-lazy from concurrent.futures import ThreadPoolExecutor
 
 def _custom_message_handler(mode, ctx, msg):
     if "QFileSystemWatcher: FindNextChangeNotification failed" in msg:
@@ -1961,80 +1962,28 @@ class ProjectManager(QDockWidget):
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(output_path.parent)))
 
     def _export_mod(self):
-
-        need, latest = packer_status()
-        if need:
-            tag_txt = latest or "latest"
-            msg = (
-                self.tr("The REE.PAK packer ({}) is not downloaded yet\n").format(tag_txt)
-                if not _EXE_PATH.exists()
-                else self.tr("A newer packer release ({}) is available\n").format(tag_txt)
-            ) + self.tr("Do you want to download it now?")
-            if QMessageBox.question(self, self.tr("Download packer?"), msg,
-                                    QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
-                return
-            try:
-                _ensure_packer(auto_download=True)
-            except Exception as e:
-                QMessageBox.critical(self, self.tr("Download failed"), str(e))
-                return
-
         base_dir    = application_root()
         mods_folder = base_dir  / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
 
         project_dir = self.project_dir
-        pak_name = quitely_get_pak_name(Path(project_dir)) or Path(project_dir).name
+        config = load_project_config(project_dir)
+        pak_name = config.get("pak_name") or Path(project_dir).name
         if not pak_name.lower().endswith(".pak"):
             pak_name += ".pak"
         dest_path = mods_folder / pak_name
+        label = self.tr("Packing {name}…").format(name=pak_name)
 
-        dlg = QDialog(self)
-        dlg.setWindowTitle(self.tr("REE.Packer output"))
-        v = QVBoxLayout(dlg)
-        v.setSpacing(6)
-        status = styled_label(self.tr("Packing {name}…").format(name=pak_name), dlg, tone="muted")
-        v.addWidget(status)
-        log = QTextEdit(readOnly=True, lineWrapMode=QTextEdit.NoWrap)
-        set_style_role(log, mono=True)
-        v.addWidget(log)
-        bar = QProgressBar()
-        bar.setRange(0, 0)
-        v.addWidget(bar)
-        dlg.resize(600, 400)
-        dlg.show()
+        def _pack(bridge):
+            bridge.text.emit(label)
+            write_pak(project_files(project_dir), dest_path, config.get("pak_compression", "deflate"), bridge.prog.emit)
 
-        exec_ = ThreadPoolExecutor(max_workers=1)
-
-        def _work():
-            return run_packer(project_dir, str(dest_path))
-
-        fut = exec_.submit(_work)
-        # A child timer polls: a self-rescheduling function would be a reference cycle holding this dock until the GC
-        # runs.
-        poll_timer = QTimer(dlg)
-        poll_timer.setInterval(150)
-
-        def _poll():
-            if not fut.done():
-                return
-            poll_timer.stop()
-            code, out = fut.result()
-            bar.hide()
-            log.append(out)
-            status.setText(self.tr("Finished") if code == 0 else self.tr("Failed"))
-            set_style_role(status, tone="success" if code == 0 else "danger")
-            if code == 0:
-                self._show_export_done_dialog(
-                    self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path),
-                    dest_path,
-                )
-            else:
-                QMessageBox.critical(self, self.tr("Error"),
-                                     self.tr("PAK packer returned an error."))
-
-        poll_timer.timeout.connect(_poll)
-        poll_timer.start()
-        
-def quitely_get_pak_name(project_dir: Path) -> str | None:
-    return load_project_config(project_dir).get("pak_name")
+        try:
+            run_with_progress(self, self.tr("Export .PAK"), _pack)
+        except (OSError, ValueError) as e:
+            QMessageBox.critical(self, self.tr("Error"), str(e))
+            return
+        self._show_export_done_dialog(
+            self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path),
+            dest_path,
+        )

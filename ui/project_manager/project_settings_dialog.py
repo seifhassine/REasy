@@ -5,9 +5,10 @@ from PySide6.QtCore    import Qt
 from PySide6.QtGui     import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QDialogButtonBox, QPlainTextEdit, QSpinBox, QListWidget,
-    QListWidgetItem, QToolButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox
+    QListWidgetItem, QToolButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox, QComboBox
 )
 
+lazy from file_handlers.pak.writer import pak_compressions
 lazy from tools.fluffy_exporter import MAX_CATEGORIES, modinfo_problems
 lazy from ui.editor_widgets import set_invalid, styled_label
 lazy from ui.icons import line_icon
@@ -53,6 +54,12 @@ class ProjectSettingsDialog(QDialog):
             QListWidgetItem(self.tr("No other projects of this game"), options).setFlags(Qt.NoItemFlags)
         options.itemDoubleClicked.connect(self._edit_option)
 
+        compression = QComboBox()
+        labels = {"deflate": self.tr("Deflate"), "zstd": self.tr("Zstandard"), "none": self.tr("None")}
+        for name in pak_compressions(project_dir.parent.name):
+            compression.addItem(labels[name], name)
+        compression.setCurrentIndex(max(0, compression.findData(cfg.get("pak_compression"))))
+
         self.edits = {
             "name": QLineEdit(cfg.get("name", project_dir.name)),
             "version": QLineEdit(cfg.get("version", "v1.0")),
@@ -68,6 +75,7 @@ class ProjectSettingsDialog(QDialog):
             "menu_priority": QSpinBox(minimum=-999, maximum=999, value=cfg.get("menu_priority", 0)),
             "dummy_mod": QCheckBox(self.tr("Only groups add-ons"), checked=cfg.get("dummy_mod", False)),
             "pak_name": QLineEdit(cfg.get("pak_name", project_dir.name)),
+            "pak_compression": compression,
             "bundle_pak": QCheckBox(self.tr("Build PAK instead of loose folders in Fluffy ZIP"),
                                     checked=cfg.get("bundle_pak", False)),
             "option_projects": options,
@@ -140,6 +148,9 @@ class ProjectSettingsDialog(QDialog):
                     "The entry only organizes add-ons and stays hidden until an add-on names it (DummyMod)")),
                 ("", self.tr("Package"), ""),
                 ("pak_name", self.tr("PAK File Name:"), ""),
+                ("pak_compression", self.tr("Compression:"), self.tr(
+                    "Deflate works in every game. Zstandard makes smaller PAKs and is listed for games whose own PAKs "
+                    "use it.")),
                 ("bundle_pak", "", ""),
                 ("", self.tr("Options in this ZIP"), ""),
                 ("option_projects", self.tr("Projects:"), self.tr(
@@ -189,6 +200,8 @@ class ProjectSettingsDialog(QDialog):
                 values[key] = widget.isChecked()
             elif isinstance(widget, QSpinBox):
                 values[key] = widget.value()
+            elif isinstance(widget, QComboBox):
+                values[key] = widget.currentData()
             elif isinstance(widget, QListWidget):
                 items = (widget.item(row) for row in range(widget.count()))
                 values[key] = [item.text() for item in items if item.checkState() == Qt.Checked]
