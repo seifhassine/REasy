@@ -69,4 +69,4 @@ def run_with_progress(parent, title: str,
     t.start()
     dlg.exec()
     if err:
-        raise err[0]
+        raise err.pop()

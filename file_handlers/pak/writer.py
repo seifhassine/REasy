@@ -17,6 +17,8 @@ from .utils import filepath_hash
 
 # Video (ASF, .mov, MP4) and Wwise banks and packages must be stored uncompressed.
 _STORED_MAGICS = (b"\x30\x26\xb2\x75", b"REMV", b"BKHD", b"AKPK")
+_HEADER = struct.Struct("<4I")
+_FINGERPRINT = 0xDEC0ADDE
 _ROW = struct.Struct("<QqqqqQ")
 
 
@@ -57,7 +59,7 @@ def write_pak(files: Iterable[tuple[str, Path]], destination: str | Path, compre
                       for name, path in files), key=lambda entry: entry[1].stat().st_size, reverse=True)
     rows = []
     with open(destination, "wb") as out, ThreadPoolExecutor() as pool:
-        out.write(struct.pack("<4I", MAGIC, 4, len(entries), 0xDEC0ADDE) + bytes(_ROW.size * len(entries)))
+        out.write(_HEADER.pack(MAGIC, 4, len(entries), _FINGERPRINT) + bytes(_ROW.size * len(entries)))
         packed = pool.map(partial(_packed, compression), [path for _, path in entries],
                           buffersize=os.process_cpu_count())
         for done, ((value, _), (stored, *fields)) in enumerate(zip(entries, packed), 1):
@@ -66,3 +68,10 @@ def write_pak(files: Iterable[tuple[str, Path]], destination: str | Path, compre
             progress(100 * done // len(entries))
         out.seek(16)
         out.write(b"".join(_ROW.pack(*row) for row in sorted(rows)))
+
+
+def written_entry_hashes(pak: str | Path) -> set[int]:
+    with open(pak, "rb") as stream:
+        magic, version, count, fingerprint = _HEADER.unpack(stream.read(_HEADER.size).ljust(_HEADER.size, b"\0"))
+        rows = stream.read(_ROW.size * count) if (magic, version, fingerprint) == (MAGIC, 4, _FINGERPRINT) else b""
+    return {row[0] for row in _ROW.iter_unpack(rows[:len(rows) - len(rows) % _ROW.size])}

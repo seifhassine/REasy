@@ -1,0 +1,17 @@
+{
+  "DD2": {"exe": "DD2.exe", "reframework": 2262},
+  "DMC5": {"exe": "DevilMayCry5.exe"},
+  "MHST3": {"exe": "MONSTER_HUNTER_STORIES_3_TWISTED_REFLECTION.exe", "reframework": 2169},
+  "MHWilds": {"exe": "MonsterHunterWilds.exe", "reframework": 2124},
+  "OnimushaWOTS": {"exe": "OnimushaWotS.exe", "reframework": 2262},
+  "Pragmata": {"exe": "PRAGMATA.exe", "reframework": 2169},
+  "RE2": {"exe": "re2.exe"},
+  "RE2RT": {"exe": "re2.exe"},
+  "RE3": {"exe": "re3.exe"},
+  "RE3RT": {"exe": "re3.exe"},
+  "RE4": {"exe": "re4.exe"},
+  "RE7RT": {"exe": "re7.exe"},
+  "RE8": {"exe": "re8.exe"},
+  "RE9": {"exe": "re9.exe", "reframework": 2169},
+  "SF6": {"exe": "StreetFighter6.exe"}
+}

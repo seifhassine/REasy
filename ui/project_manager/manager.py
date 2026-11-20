@@ -31,6 +31,7 @@ lazy from file_handlers.pak.reader import CachedPakReader
 lazy from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header, pak_mod_flags
 lazy from file_handlers.pak.writer import write_pak
 lazy from services.file_operations import FileOperationError, FolderFileOperations
+lazy from services.game_install import play_games
 lazy from tools.fluffy_exporter import create_fluffy_zip
 lazy from ui.background_jobs import BackgroundJobs
 lazy from ui.editor_widgets import ElidedLabel, editor_strip, styled_label, tool_button
@@ -53,6 +54,7 @@ lazy from .catalogue_panel import CataloguePanel
 lazy from .constants import PROJECTS_ROOT
 lazy from .delegate import _ActionsDelegate, _PakActionsDelegate
 lazy from .dock_chrome import DockTitleBar, SideTab
+lazy from .game_test import GameTestRun
 lazy from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
 lazy from .pak_status_dialog import run_with_progress
 lazy from .project_config import (
@@ -364,6 +366,10 @@ class ProjectManager(QDockWidget):
             parent=self.project_bar,
         )
         project_lay.addWidget(self.btn_conf)
+        self.btn_play = tool_button("play", slot=self._play, text=self.tr("Play"), parent=self.project_bar)
+        project_lay.addWidget(self.btn_play)
+        self.game_test = GameTestRun(self)
+        self.game_test.changed.connect(self._update_play_button)
         export_menu = QMenu(self.project_bar)
         export_menu.setToolTipsVisible(True)
         self.btn_zip = export_menu.addAction(self.tr("Export Fluffy ZIP"), self._export_zip)
@@ -456,6 +462,7 @@ class ProjectManager(QDockWidget):
 
         for b in (self.btn_conf, self.btn_zip, self.btn_pak, self.btn_export):
             b.setEnabled(False)
+        self._update_play_button()
 
         self.model_proj, self.tree_proj = _LineIconFileSystemModel(self), QTreeView()
         self._proj_proxy = _ProjectFilesProxy(self)
@@ -1001,6 +1008,7 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setEnabled(not proj_dir)
         for b in (self.btn_conf, self.btn_zip, self.btn_pak, self.btn_export):
             b.setEnabled(bool(proj_dir))
+        self._update_play_button()
         self.proj_filter_edit.clear()
         self._set_project_label(proj_dir)
         if proj_dir:
@@ -1913,6 +1921,31 @@ class ProjectManager(QDockWidget):
             return
         dlg = ProjectSettingsDialog(Path(self.project_dir), self)
         dlg.exec()
+
+    def _play(self):
+        if self.game_test.stuck:
+            self.game_test.end_game()
+        elif self.game_test.pak:
+            self.game_test.finish()
+        else:
+            self.game_test.start(self.current_game, self.pak_dir, self.project_dir, self.app_win.settings)
+
+    def _update_play_button(self):
+        run = self.game_test
+        icon, text, tooltip = (
+            ("play", self.tr("Play"), self.tr("Pack the project into a test PAK the game loads, start the game, and "
+                                              "remove the PAK when the game closes")) if not run.pak else
+            ("stop", self.tr("Cancel"), self.tr("Waiting for {game} to start. Cancel removes the test PAK."))
+            if not run.started else
+            ("stop", self.tr("End game"), self.tr("{game} closed its window but is still running. End it, and REasy "
+                                                  "removes the test PAK.")) if run.stuck else
+            ("play", self.tr("Playing"), self.tr("{game} is running with the test PAK. REasy removes it when the game "
+                                                 "closes.")))
+        self.btn_play.setIcon(line_icon(icon))
+        self.btn_play.setText(text)
+        self.btn_play.setToolTip(tooltip.format(game=run.game))
+        self.btn_play.setVisible(bool(run.pak) or self.current_game in play_games())
+        self.btn_play.setEnabled((not run.started or run.stuck) and bool(run.pak or self.project_dir))
 
     def _export_zip(self):
         if not self.project_dir:

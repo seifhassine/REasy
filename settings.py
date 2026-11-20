@@ -80,6 +80,7 @@ DEFAULT_SETTINGS = {
     "verify_rsz_crc_on_open": True,
     "save_workspace_on_close": True,
     "recently_closed_files": [],
+    "test_pak_folders": [],
     "last_seen_version": "",
     "enum_prompt_checked_json_path": "",
     "renderer_texture_quality": "balanced",

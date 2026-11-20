@@ -1073,7 +1073,7 @@ class REasyEditorApp(QMainWindow):
                 self._shared_find_dialog.close()
             except RuntimeError:
                 pass
-        if not self._confirm_tabs_close(list(self.tabs.values())):
+        if not self._confirm_tabs_close(list(self.tabs.values())) or not self.proj_dock.game_test.confirm_quit():
             event.ignore()
             return
         if self.settings.get("save_workspace_on_close", True):
