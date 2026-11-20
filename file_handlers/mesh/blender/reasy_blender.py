@@ -59,7 +59,7 @@ def _orthonormal(matrix):
 def _build_armature(manifest, arrays, root):
     skeleton = manifest["skeleton"]
     data = bpy.data.armatures.new(manifest["title"] + " skeleton")
-    data["reasy_format"] = BLEND_FORMAT
+    data["reasy_format"], data["reasy_at_bind"] = BLEND_FORMAT, skeleton["at_bind"]
     data.display_type = "STICK"
     armature = bpy.data.objects.new(manifest["title"] + " skeleton", data)
     root.objects.link(armature)
@@ -538,6 +538,7 @@ def export_motions(package, output, blend=""):
             bpy.context.scene.collection.children.link(root)
             built.append(_build_armature(manifest, arrays, root))
         armature, names = built[-1 if target is None else target]
+        armature.data["reasy_version"] = manifest["skeleton"]["version"]
         _relate(built, manifest)
     scene = bpy.context.scene
     turns = _rest_turns(armature, names, arrays["bones.matrix"].reshape(-1, 4, 4))
@@ -596,12 +597,16 @@ def _armatures(blend):
 
 def _dump_bones(armature):
     bones = armature.data.bones
+    built = [list(bone.get("reasy_built", bone.get("reasy_rest", []))) for bone in bones]
+    skins = any(modifier.type == "ARMATURE" and modifier.object == armature
+                for item in bpy.data.objects if item.type == "MESH" for modifier in item.modifiers)
     return {"name": armature.name, "names": [bone.name for bone in bones],
             "turn": [value for row in armature.matrix_world.to_quaternion().to_matrix().to_4x4() for value in row],
             "parents": [bone.parent.name if bone.parent else "" for bone in bones],
-            "rest": [[value for row in bone.matrix_local for value in row] for bone in bones],
-            "built": [list(bone.get("reasy_built", bone.get("reasy_rest", []))) for bone in bones],
-            "blend_format": int(armature.data.get("reasy_format", 1))}
+            "rest": [[value for row in bone.matrix_local for value in row] for bone in bones], "built": built,
+            "blend_format": int(armature.data.get("reasy_format", 1)),
+            "at_bind": bool(armature.data.get("reasy_at_bind", skins or not any(built))),
+            "version": armature.data.get("reasy_version")}
 
 
 def dump_armatures(blend, package):

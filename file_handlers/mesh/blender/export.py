@@ -193,7 +193,7 @@ def build_export_package(mesh, *, title, source_main, source_streaming, file_ver
         parents = [int(node.parent_index) for node in mesh.bones]
         arrays["bones.matrix"] = np.array(world, dtype=np.float64).reshape(-1, 16)
         arrays["bones.length"] = bone_lengths(parents, heads)
-        skeleton = {"names": names, "parents": parents, "palette": palette}
+        skeleton = {"names": names, "parents": parents, "palette": palette, "at_bind": True}
 
     manifest = {
         "title": title,

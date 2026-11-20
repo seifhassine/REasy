@@ -89,15 +89,52 @@ def _leg(found, bones: list[Bone]) -> float:
     return float(np.mean(lengths)) if lengths else 0.0
 
 
+def limb_lengths(names, parents, frames) -> dict[tuple[str, str], float]:
+    table = role_table()
+    found, (top, end), hand = resolve(bones_of(names, parents, frames)), table.leg, table.reach[0][-1]
+    if found is None or not found.bones(top):
+        return {}
+    rows, above, lengths = {name: row for row, name in enumerate(names)}, set(), {}
+    for row in (rows[bone] for bone in found.bones(top)):
+        while row >= 0:
+            above.add(row)
+            row = parents[row]
+    for key in found.roles:
+        row = rows[found.bones(key)[-1]] if split_key(key)[0] in (end, hand) else -1
+        while row >= 0 and row not in above and (parent := parents[row]) >= 0:
+            lengths[names[parent], names[row]] = float(np.linalg.norm(frames[row][:3, 3] - frames[parent][:3, 3]))
+            row = parent
+    return lengths
+
+
+def _reaches(found, rig: Rig, driver: np.ndarray) -> tuple:
+    chain, targets = role_table().reach
+    rows = {name: row for row, name in enumerate(rig.names)}
+
+    def row(key):
+        bones = found.bones(key)
+        return rows[bones[-1]] if bones and driver[rows[bones[-1]]] >= 0 else -1
+
+    reaches = []
+    for side, listed in targets.items():
+        arm = [row(f"{role}.{side}") for role in chain]
+        held = [(at, inner, outer) for key, inner, outer in listed if (at := row(key)) >= 0]
+        if min(arm) >= 0 and held:
+            reaches.append((tuple(arm), tuple(held)))
+    return tuple(reaches)
+
+
 @dataclass(frozen=True, slots=True, eq=False)
 class Retarget:
     bones: np.ndarray
     turns: np.ndarray
     anchors: np.ndarray
     scale: float
+    reaches: tuple = ()  # ((upper arm, forearm, hand rows), ((target row, inner, outer), ...)) per side, in order
 
     @classmethod
-    def of(cls, rig: Rig, names, parents, rest: np.ndarray, pairs, engine: np.ndarray) -> Retarget:
+    def of(cls, rig: Rig, names, parents, rest: np.ndarray, pairs, engine: np.ndarray,
+           at_bind: bool = False) -> Retarget:
         def lineage(bone):
             while (bone := parents[bone]) >= 0:
                 yield bone
@@ -136,6 +173,7 @@ class Retarget:
         upright = target[:, :3, :3] / np.linalg.norm(target[:, :3, :3], axis=1, keepdims=True)
         local_turns = rig.base_locals[:, :3, :3].astype(np.float64)
         local_turns /= np.linalg.norm(local_turns, axis=1, keepdims=True)
+        relative = role_table().bind_relative if at_bind and rig.at_bind else frozenset()
         aligned, turns = np.empty((len(rig.names), 3, 3)), np.tile(np.eye(3), (len(rig.names), 1, 1))
         for row in (row for level in rig.levels for row in level.tolist()):
             parent, bone = rig.parents[row], driver[row]
@@ -149,7 +187,9 @@ class Retarget:
             offsets = np.reshape(list(reach(row, row)) if anchors[row] >= 0 else [], (-1, 2, 3))
             local, world = (offsets[:, side] / np.linalg.norm(offsets[:, side], axis=1, keepdims=True)
                             for side in (0, 1))
-            if engine[bone]:
+            if split_key(parts[1].get(rig.names[row], ""))[0] in relative:
+                aligned[row], turns[row] = carried, frame.T @ carried
+            elif engine[bone]:
                 source = rest[parents[bone], :3, :3] if parents[bone] >= 0 else np.eye(3)
                 turns[row] = _convention(local, world @ frame, frame.T @ carried,
                                          turns[anchors[row]] if anchors[row] >= 0 else None, source.T @ above)
@@ -158,4 +198,5 @@ class Retarget:
                 aligned[row] = _fit(carried, local, world)
                 turns[row] = frame.T @ aligned[row]
         legs = _leg(found[0], skeletons[0]), _leg(found[1], skeletons[1])
-        return cls(driver, turns, anchors, legs[1] / legs[0] if min(legs) > 0 else 1.0)
+        return cls(driver, turns, anchors, legs[1] / legs[0] if min(legs) > 0 else 1.0,
+                   () if found[1] is None else _reaches(found[1], rig, driver))

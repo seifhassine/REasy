@@ -160,6 +160,10 @@ def offset_rules(version: int) -> dict | None:
     return rules if version in rules["mot"] else None
 
 
+def helper_rules(version: int) -> dict[str, list[dict[str, str]]]:
+    return _load("versions")["helpers"].get(str(version), {})
+
+
 def joint_attributes(game: str) -> dict[str, int]:
     return {name: value for value, name in _game_enums(game)["JointAttr"].items()}
 

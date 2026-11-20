@@ -34,7 +34,7 @@ from file_handlers.document_commands import Change
 
 from .. import edits
 from ..banks import entry_mirrored, entry_motion, entry_sequences, handler_reader, stop_row
-from ..blender import action_bones, action_tracks, export_blend, read_actions, read_armatures
+from ..blender import action_bones, action_tracks, export_blend, limbs_apart, read_actions, read_armatures
 from ..model import MotionList, MotionListEntry, MotionTree, Sequence
 from ..pose import Rig
 from ..preview import MotionPreview
@@ -287,7 +287,10 @@ class MotionEditor(QWidget):
                     QMessageBox.information(self, title, self.tr(
                         "None of the armature's bones map onto the motion's joints."))
                 return
-            target, start = (scene, armature, pairs), str(Path(scene).with_name(f"{Path(scene).stem}_{stem}.blend"))
+            if (retarget := self._retargets(title, armature, rig, pairs, motions[0].version)) is None:
+                return
+            target = scene, armature, pairs, retarget
+            start = str(Path(scene).with_name(f"{Path(scene).stem}_{stem}.blend"))
         path, _filter = QFileDialog.getSaveFileName(self, caption, start, "Blender (*.blend)")
         blender = (blender or require_blender(self, self.handler.app)) if path else None
         add = played and self.preview.adds()
@@ -300,6 +303,9 @@ class MotionEditor(QWidget):
     def _import_blend(self) -> None:
         title = self.tr("Import from Blender")
         motion, rig = self.state.motion, self._rig()
+        played, skeletons = rig is not None and rig is self.preview.rig(), self._skeletons()
+        if played and skeletons:
+            rig = rig.joined(Rig.of_skeleton(*skeletons))
         if motion not in self.document.motions() or rig is None:
             QMessageBox.information(self, title, self.tr("Select a motion of this file first; its joints come from "
                                                          "the file's skeleton or the previewed prefab."))
@@ -320,25 +326,45 @@ class MotionEditor(QWidget):
                 return
             number = names.index(chosen)
         action = manifest["actions"][number]
-        pairs = self._pairs(manifest["armatures"][action["armature"]], action["bones"], rig, motion.name)
-        if pairs is None:
+        armature = manifest["armatures"][action["armature"]]
+        pairs = self._pairs(armature, action["bones"], rig, motion.name)
+        if pairs is None or (retarget := self._retargets(title, armature, rig, pairs, motion.version)) is None:
             return
-        tracks, end = action_tracks(manifest, arrays, number, rig, motion, pairs,
-                                    rig is self.preview.rig() and self.preview.adds())
-        if not tracks:
+        tracks, end = action_tracks(manifest, arrays, number, rig, motion, pairs, played and self.preview.adds(),
+                                    retarget)
+        if not any(tracks.values()):
             QMessageBox.information(self, title, self.tr("The action keys none of the joints its bones map onto."))
             return
         joint_ids = {murmur3_hash_utf16le(joint.name): joint.joint_id
-                     for skeleton in reversed(self._skeletons()) for joint in skeleton.joints}
+                     for skeleton in reversed(skeletons) for joint in skeleton.joints}
         edits.replace_tracks(self.document, motion, tracks, end, joint_ids, title)
 
     def _pairs(self, armature: dict, keyed, rig: Rig, label: str, export: bool = False) -> list | None:
         mapping = suggest(action_bones(armature), bones_of(rig.names, rig.parents, rig.models(rig.base_locals)),
                           dict.fromkeys(keyed, 1), positions=False)
         if any(row.target != row.source for row in mapping.rows if row.mapped) and not review_mapping(
-                self, self.handler.app, mapping, rig.names, label, motion=True, export=export):
+                self, self.handler.app, mapping, rig.names, label, motion=True, export=export,
+                at_bind=armature["at_bind"] and rig.at_bind):
             return None
         return [(row.source, row.target) for row in mapping.rows if row.mapped]
+
+    def _retargets(self, title: str, armature: dict, rig: Rig, pairs, version: int) -> bool | None:
+        if not (apart := limbs_apart(armature, rig, pairs, version)):
+            return False
+        (parent, joint), mine, theirs = max(apart, key=lambda bone: abs(bone[1] - bone[2]))
+        box = QMessageBox(QMessageBox.Icon.Question, title, self.tr(
+            "The armature has the motion's joint names, but its arms, legs or spine measure differently from the "
+            "motion's skeleton. Bones differing: {0}; the furthest, {1} to {2}, is {3} mm in the armature and {4} mm "
+            "in the skeleton.").format(
+                len(apart), parent, joint, f"{mine * 1000:.1f}", f"{theirs * 1000:.1f}"), parent=self)
+        box.setInformativeText(self.tr(
+            "Same character: the motion is taken by joint name, as keyed.\n"
+            "Another character: it is retargeted, as between games (an import then replaces the whole motion)."))
+        same = box.addButton(self.tr("Same Character"), QMessageBox.ButtonRole.AcceptRole)
+        other = box.addButton(self.tr("Another Character"), QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.exec()
+        return {same: False, other: True}.get(box.clickedButton())
 
     def _duplicate(self) -> None:
         if copies := edits.duplicate(self.document, list(self.state.selection)):

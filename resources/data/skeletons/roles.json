@@ -4,6 +4,9 @@
  "proportional": ["spine", "neck"],
  "anchors": {"spine": "hips", "neck": "spine", "thumb": "hand", "index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand"},
  "leg": ["hips", "ankle"],
+ "bind_relative": ["hand", "palm", "thumb", "index", "middle", "ring", "pinky"],
+ "reach": {"chain": ["upperarm", "forearm", "hand"],
+           "targets": {"l": [["hand.r", 0.13, 0.2]], "r": [["hand.l", 0.13, 0.2]]}},
  "fallbacks": {
   "cog": ["hips"],
   "spine": ["hips"],

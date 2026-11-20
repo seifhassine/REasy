@@ -177,7 +177,7 @@ class _Delegate(QStyledItemDelegate):
 
 
 class BoneMappingDialog(QDialog):
-    def __init__(self, mapping, reference_label="", parent=None, motion=False, export=False):
+    def __init__(self, mapping, reference_label="", parent=None, motion=False, export=False, at_bind=True):
         """``motion``: bones drive joints of a motion (the rows' ``weighted`` counts keyed bones)."""
         super().__init__(parent)
         self.mapping, self.motion = mapping, motion
@@ -193,7 +193,10 @@ class BoneMappingDialog(QDialog):
             if motion else self.tr(
             "Each bone or vertex group of the model sends its weights to a joint of {reference}. "
             "Rows needing a look: guesses by position, weighted bones without a joint, and bones far from "
-            "their joint's rest position.")).format(reference=reference_label or self.tr("the reference")))
+            "their joint's rest position.")).format(reference=reference_label or self.tr("the reference")) + (
+            "" if at_bind or not motion else " " + self.tr(
+                "Hands and fingers line up by their axes only, as one end holds no bind pose (a motion list's "
+                "skeleton or an armature exported from one): preview the prefab at both ends for exact hands.")))
         intro.setWordWrap(True)
         layout.addWidget(intro)
         self.summary = QLabel()

@@ -141,18 +141,20 @@ def delete_keys(document: MotionDocument, owner: JointChannels | PropertyTrack, 
         set_keys(document, owner, field, frames[kept], values[kept], "Delete Keys")
 
 
-def replace_tracks(document: MotionDocument, motion: Motion, tracks: dict[int, dict[str, Track]], end_frame: float,
-                   joint_ids: dict[int, int], text: str) -> None:
-    """``tracks`` and ``joint_ids`` are by joint name hash."""
+def replace_tracks(document: MotionDocument, motion: Motion, tracks: dict[int, dict[str, Track | None]],
+                   end_frame: float, joint_ids: dict[int, int], text: str) -> None:
+    """``tracks`` and ``joint_ids`` are by joint name hash; None clears a transform, no tracks remove the channel."""
     with document.macro(text):
-        channels = list(motion.channels)
+        channels = [channel for channel in motion.channels if tracks.get(channel.name_hash, True)]
         by_hash = {channel.name_hash: channel for channel in channels}
         for name_hash, given in tracks.items():
+            if not given:
+                continue
             if (channel := by_hash.get(name_hash)) is None:
                 channels.append(JointChannels(joint_ids.get(name_hash, 0), name_hash, **given))
             else:
                 document.push(SetFields(document, [(channel, given)], text))
-        if len(channels) != len(motion.channels):
+        if channels != motion.channels:
             document.push(ReplaceContents(document, motion, "channels", channels, text))
         set_fields(document, motion, text, end_frame=end_frame)
 

@@ -18,11 +18,12 @@ from .keys import full_track
 from .layers import posed as layer_posed
 from .model import Motion, Track
 from .pose import TRANSFORMS, MotionSampler, Rig
-from .retarget import Retarget, bones_of
-from .rules import mot_profile
+from .retarget import NEAR, Retarget, bones_of, limb_lengths
+from .rules import helper_rules, mot_profile
 
 CHANNELS = {"translation": "location", "rotation": "rotation_quaternion", "scale": "scale"}
 TOLERANCE = {"translation": 1e-5, "rotation": 1e-6, "scale": 1e-6}
+LIMB_TOLERANCE = 1e-3
 
 
 def _product(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -65,10 +66,10 @@ def _decompose(matrices: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray
     return matrices[..., :3, 3], _rotation(axes), scales
 
 
-def _bone_rig(names, parents, frames: np.ndarray) -> Rig:
+def _bone_rig(names, parents, frames: np.ndarray, at_bind: bool = False) -> Rig:
     above = np.array([frames[parent] if parent >= 0 else np.eye(4) for parent in parents])
     return Rig.of([murmur3_hash_utf16le(name) for name in names], parents,
-                  *_decompose(np.linalg.inv(above) @ frames), names)
+                  *_decompose(np.linalg.inv(above) @ frames), names, (), at_bind)
 
 
 def _space(armature: dict) -> np.ndarray:
@@ -76,8 +77,8 @@ def _space(armature: dict) -> np.ndarray:
     return np.eye(4) if np.isclose(np.reshape(armature["turn"], (4, 4))[2, 1], 1) else _axes().T
 
 
-def _own(armature: dict, rig: Rig, pairs) -> tuple[Rig, np.ndarray] | None:
-    if 2 * sum(bone == joint for bone, joint in pairs) <= len(pairs):
+def _own(armature: dict, rig: Rig, pairs, version: int) -> tuple[Rig, np.ndarray] | None:
+    if armature["version"] not in (None, version) or 2 * sum(bone == joint for bone, joint in pairs) <= len(pairs):
         return None
     _stored, built, made = _rest(armature)
     # Only REasy's first format turned each bone's own axes too.
@@ -89,29 +90,38 @@ def _own(armature: dict, rig: Rig, pairs) -> tuple[Rig, np.ndarray] | None:
     return _bone_rig(names, _bone_parents(armature), joints), turns
 
 
-def _onto(armature: dict, rig: Rig, pairs) -> tuple[Rig, Rig, Retarget]:
+def limbs_apart(armature: dict, rig: Rig, pairs, version: int) -> list[tuple[tuple[str, str], float, float]]:
+    """((parent, joint), the armature's length, the rig's) per limb bone of an own armature that measures otherwise."""
+    if (own := _own(armature, rig, pairs, version)) is None:
+        return []
+    mine, theirs = (limb_lengths(each.names, each.parents, each.models(each.base_locals)) for each in (own[0], rig))
+    return [(bone, length, theirs[bone]) for bone, length in mine.items() if bone in theirs
+            and min(length, theirs[bone]) > LIMB_TOLERANCE and abs(length - theirs[bone]) > LIMB_TOLERANCE]
+
+
+def _onto(armature: dict, rig: Rig, pairs, version: int, retarget: bool) -> tuple[Rig, Rig, Retarget]:
     names, parents = armature["names"], _bone_parents(armature)
     _stored, built, made = _rest(armature)
-    bones = _bone_rig(names, parents, _space(armature) @ built)
+    bones = _bone_rig(names, parents, _space(armature) @ built, armature["at_bind"])
     pairs = [(name, name) for name in names] if pairs is None else pairs
-    if own := _own(armature, rig, pairs):
+    if not retarget and (own := _own(armature, rig, pairs, version)):
         return own[0], bones, Retarget(np.arange(len(names)), own[1], bones.parents, 1.0)
     engine = {joint: made[names.index(bone)] for bone, joint in pairs}
     rest = rig.models(rig.base_locals).astype(np.float64)
     rest[:, :3, :3] /= _rest_scales(rig)[:, None]
     return rig, bones, Retarget.of(bones, rig.names, rig.parents, rest, [(joint, bone) for bone, joint in pairs],
-                                   np.array([engine.get(name, False) for name in rig.names]))
+                                   np.array([engine.get(name, False) for name in rig.names]), rig.at_bind)
 
 
 def action_package(rig: Rig, motions: list[Motion], title: str, add: bool = False, armature: dict | None = None,
-                   pairs=None) -> tuple[dict, dict]:
+                   pairs=None, retarget: bool = False) -> tuple[dict, dict]:
     bones, plan = rig, None
     if armature is None:
         world = _axes() @ rig.models(rig.base_locals).astype(np.float64)
         arrays = {"bones.matrix": world.reshape(-1, 16),
                   "bones.length": bone_lengths(rig.parents.tolist(), world[:, :3, 3])}
     else:
-        rig, bones, plan = _onto(armature, rig, pairs)
+        rig, bones, plan = _onto(armature, rig, pairs, motions[0].version, retarget)
         arrays = {"bones.matrix": _rest(armature)[1].reshape(-1, 16)}
     t0, q0, s0 = (array.astype(np.float64) for array in bones.base)
     sizes, above = _rest_scales(rig), np.vstack([_rest_scales(bones), np.ones(3)])[bones.parents]
@@ -150,7 +160,8 @@ def action_package(rig: Rig, motions: list[Motion], title: str, add: bool = Fals
         actions.append(spec)
     manifest = {"title": title, "armature": armature and armature["name"],
                 "skeleton": {"names": list(bones.names), "parents": bones.parents.tolist(),
-                             "palette": list(range(len(bones.hashes)))},
+                             "palette": list(range(len(bones.hashes))), "at_bind": bones.at_bind,
+                             "version": motions[0].version},
                 "channels": CHANNELS, "actions": actions, "models": [], "follows": [], "hangs": []}
     return manifest, arrays
 
@@ -160,7 +171,7 @@ def _model_armature(number: int, manifest: dict, arrays: dict) -> dict:
     rest = [orthonormal(matrix).ravel().tolist() for matrix in arrays["bones.matrix"].reshape(-1, 4, 4)]
     return {"name": number, "names": names, "turn": np.eye(4), "rest": rest, "built": rest,
             "parents": [names[parent] if 0 <= parent != joint else "" for joint, parent in enumerate(parents)],
-            "blend_format": BLEND_FORMAT}
+            "blend_format": BLEND_FORMAT, "at_bind": True, "version": None}
 
 
 def _relations(rigs, main: int, models: list[tuple[int, list[str]]]) -> tuple[list, list]:
@@ -190,7 +201,7 @@ def _relations(rigs, main: int, models: list[tuple[int, list[str]]]) -> tuple[li
 
 
 def export_blend(blender, rig: Rig, motions: list[Motion], output, title: str, add: bool = False, scene="",
-                 armature: dict | None = None, pairs=None, rigs=(), meshes=()) -> None:
+                 armature: dict | None = None, pairs=None, retarget: bool = False, rigs=(), meshes=()) -> None:
     with temporary_directory() as folder:
         models = []
         for number, (at, handler) in enumerate(meshes):
@@ -206,7 +217,7 @@ def export_blend(blender, rig: Rig, motions: list[Motion], output, title: str, a
         target = next((number for number, model in enumerate(models) if model[0] == main), None)
         if target is not None:
             armature = _model_armature(target, *models[target][1:])
-        manifest, arrays = action_package(rig, motions, title, add, armature, pairs)
+        manifest, arrays = action_package(rig, motions, title, add, armature, pairs, retarget)
         if models:
             manifest["models"] = [f"model{number}" for number in range(len(models))]
             manifest["follows"], manifest["hangs"] = _relations(
@@ -302,7 +313,82 @@ def _solved(rig: Rig, plan: Retarget, frames_of: np.ndarray, keyed: np.ndarray) 
                 mask = keyed[rows, component]
                 values[component][:, rows[mask]] = part[:, mask]
         world[:, level] = above @ _compose(*(value[:, level] for value in values))
+    for arm, targets in plan.reaches:
+        if keyed[list(arm), 1].all():
+            world = _reached(rig, plan, frames_of, values, world, arm, targets)
     return values
+
+
+def _turning(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    a, b = (vector / np.linalg.norm(vector, axis=-1, keepdims=True) for vector in (a, b))
+    axis, k = np.cross(a, b), np.zeros((*a.shape, 3))
+    k[..., 0, 1], k[..., 0, 2], k[..., 1, 2] = -axis[..., 2], axis[..., 1], -axis[..., 0]
+    k -= k.swapaxes(-1, -2)
+    return np.eye(3) + k + k @ k / (1.0 + np.sum(a * b, -1))[..., None, None]
+
+
+def _about(turn: np.ndarray, pivot: np.ndarray) -> np.ndarray:
+    matrices = np.tile(np.eye(4), (len(turn), 1, 1))
+    matrices[:, :3, :3], matrices[:, :3, 3] = turn, pivot - (turn @ pivot[..., None])[..., 0]
+    return matrices
+
+
+def _reached(rig: Rig, plan: Retarget, frames_of: np.ndarray, values: list, world: np.ndarray, arm, targets):
+    upper, fore, hand = arm
+    source, goal = frames_of[..., :3, 3], world[:, hand, :3, 3].copy()
+    for target, inner, outer in targets:
+        offset = plan.scale * (source[:, plan.bones[hand]] - source[:, plan.bones[target]])
+        weight = np.clip((outer - np.linalg.norm(offset, axis=-1)) / (outer - inner), 0.0, 1.0)[:, None]
+        goal += weight * (world[:, target, :3, 3] + offset - goal)
+    shoulder, elbow, wrist = (world[:, row, :3, 3] for row in arm)
+    spans = np.linalg.norm([elbow - shoulder, wrist - elbow, goal - shoulder], axis=-1)
+    if not (frames := np.flatnonzero((goal != wrist).any(-1) & (spans.min(0) > NEAR))).size:
+        return world
+    held, (upper_length, fore_length, far) = world[frames], spans[:, frames]
+    shoulder, elbow, wrist = (held[:, row, :3, 3] for row in arm)
+    span = goal[frames] - shoulder
+    reach = np.clip(far, np.abs(upper_length - fore_length), upper_length + fore_length)
+    along = span / far[:, None]
+    side = elbow - shoulder - np.sum((elbow - shoulder) * along, -1, keepdims=True) * along
+    side /= np.maximum(np.linalg.norm(side, axis=-1, keepdims=True), 1e-12)
+    cos = np.clip((upper_length ** 2 + reach ** 2 - fore_length ** 2) / (2 * upper_length * reach), -1, 1)[:, None]
+    first = _turning(elbow - shoulder, cos * along + np.sqrt(1 - cos * cos) * side)
+    bent, swung = (shoulder + (first @ (point - shoulder)[..., None])[..., 0] for point in (elbow, wrist))
+    one = _about(first, shoulder)
+    both = _about(_turning(swung - bent, shoulder + reach[:, None] * along - bent), bent) @ one
+    turned = {upper: one @ held[:, upper], fore: both @ held[:, fore], hand: both @ held[:, hand]}
+    turned[hand][:, :3, :3] = held[:, hand, :3, :3]
+    above = {upper: held[:, rig.parents[upper]], fore: one @ held[:, rig.parents[fore]],
+             hand: both @ held[:, rig.parents[hand]]}
+    for row in arm:
+        values[1][frames, row] = _decompose(np.linalg.inv(above[row]) @ turned[row])[1]
+    return _world(rig, values)
+
+
+def _helpers(rig: Rig, values: list, keyed: np.ndarray, rules: dict) -> None:
+    rows = {name: row for row, name in enumerate(rig.names)}
+    rest, world = rig.models(rig.base_locals)[:, :3, 3], _world(rig, values)
+    for row in (row for level in rig.levels[1:] for row in level.tolist()):
+        found = [{part: rows[name] for part, name in rule.items()} for rule in rules.get(rig.names[row], ())
+                 if all(name in rows for name in rule.values())]
+        if not found:
+            continue
+        sources = next((sources for sources in found[1:] if all(
+            np.linalg.norm(rest[at] - rest[row]) < 0.01 for at in sources.values())), found[0])
+        aim = world[:, row].copy()
+        if "T" in sources:
+            aim[:, :3, 3] = world[:, sources["T"], :3, 3]
+        if "R" in sources:
+            turn = world[:, sources["R"], :3, :3]
+            aim[:, :3, :3] = turn / np.linalg.norm(turn, axis=-2, keepdims=True) * np.linalg.norm(
+                aim[:, :3, :3], axis=-2, keepdims=True)
+        for component, part in enumerate(_decompose(np.linalg.inv(world[:, rig.parents[row]]) @ aim)[:2]):
+            if "TR"[component] in sources:
+                values[component][:, row] = part
+        keyed[row, :2] |= ("T" in sources, "R" in sources)
+        for each in (under := [row]):
+            world[:, each] = world[:, rig.parents[each]] @ _compose(*(value[:, each] for value in values))
+            under += np.flatnonzero(rig.parents == each).tolist()
 
 
 def action_bones(armature: dict) -> list:
@@ -311,7 +397,7 @@ def action_bones(armature: dict) -> list:
 
 
 def action_tracks(manifest: dict, arrays: dict, number: int, rig: Rig, motion: Motion,
-                  pairs=None, add: bool = False) -> tuple[dict, float]:
+                  pairs=None, add: bool = False, retarget: bool = False) -> tuple[dict, float]:
     action = manifest["actions"][number]
     armature = manifest["armatures"][action["armature"]]
     names, parents, space = armature["names"], _bone_parents(armature), _space(armature)
@@ -320,16 +406,18 @@ def action_tracks(manifest: dict, arrays: dict, number: int, rig: Rig, motion: M
     frames_of = space @ posed @ np.linalg.inv(stored) @ built
     pairs = [(name, name) for name in names if name in rig.names] if pairs is None else pairs
     parts = {bone: action["bones"].get(bone, ()) for bone, _joint in pairs}
-    if own := _own(armature, rig, pairs):
+    if own := not retarget and _own(armature, rig, pairs, motion.version):
         rig, plan = own[0], Retarget(np.arange(len(names)), own[1].swapaxes(1, 2), own[0].parents, 1.0)
     else:
-        plan = Retarget.of(rig, names, parents, space @ built, pairs, made)
+        plan = Retarget.of(rig, names, parents, space @ built, pairs, made, armature["at_bind"])
     keyed = np.zeros((len(rig.hashes), 3), bool)
     for row in np.flatnonzero(plan.bones >= 0):
         components = parts.get(names[plan.bones[row]], ())
         keyed[row] = ("location" in components, any(component.startswith("rotation") for component in components),
                       "scale" in components)
     values = _solved(rig, plan, frames_of, keyed)
+    if not own:
+        _helpers(rig, values, keyed, helper_rules(motion.version))
     if add:
         base = [part.astype(np.float64) for part in rig.base]
         values = [values[0] - base[0], _product(_inverse(base[1]), values[1]), values[2] - base[2] + 1.0]
@@ -346,4 +434,7 @@ def action_tracks(manifest: dict, arrays: dict, number: int, rig: Rig, motion: M
         kept = _reduced(frames, values[component][:, row], TOLERANCE[transform])
         tracks.setdefault(rig.hashes[row], {})[transform] = full_track(
             kinds[transform], frames[kept].tolist(), values[component][kept, row], end if legacy else 0.0)
+    if not own:
+        tracks = {channel.name_hash: {} for channel in motion.channels} | {
+            joint: dict.fromkeys(TRANSFORMS) | given for joint, given in tracks.items()}
     return tracks, end

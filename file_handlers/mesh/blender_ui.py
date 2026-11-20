@@ -275,13 +275,14 @@ def _store_mapping(app, joints, mapping):
     remember_setting(app, MAPPINGS_KEY, saved)
 
 
-def review_mapping(parent, app, mapping, joints, label, motion=False, export=False) -> bool:
+def review_mapping(parent, app, mapping, joints, label, motion=False, export=False, at_bind=True) -> bool:
     unread = _recall_mapping(app, joints, mapping)
     if unread:
         QMessageBox.warning(parent, translate("BlenderRoundTrip", "Bone mapping"), translate("BlenderRoundTrip",
             "The bone mapping remembered for this skeleton could not be read; the suggested mapping is shown."
         ) + "\n\n" + unread)
-    if BoneMappingDialog(mapping, label, parent, motion=motion, export=export).exec() != QDialog.Accepted:
+    if BoneMappingDialog(mapping, label, parent, motion=motion, export=export,
+                         at_bind=at_bind).exec() != QDialog.Accepted:
         return False
     _store_mapping(app, joints, mapping)
     return True

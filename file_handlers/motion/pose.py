@@ -139,9 +139,10 @@ class Rig:
     base_locals: np.ndarray
     names: tuple[str, ...] = ()
     symmetry: tuple[int, ...] = ()
+    at_bind: bool = False
 
     @classmethod
-    def of(cls, hashes, parents, translations, rotations, scales, names=(), symmetry=()) -> Rig:
+    def of(cls, hashes, parents, translations, rotations, scales, names=(), symmetry=(), at_bind=False) -> Rig:
         count = len(hashes)
         parents = np.array([parent if 0 <= parent < count else -1 for parent in parents], np.int64)
         depths = np.full(count, -1, np.int64)
@@ -159,12 +160,12 @@ class Rig:
         base = (np.asarray(translations, np.float32).reshape(count, 3),
                 np.asarray(rotations, np.float32).reshape(count, 4), np.asarray(scales, np.float32).reshape(count, 3))
         return cls(tuple(int(value) for value in hashes), parents, base, levels, _locals(*base), tuple(names),
-                   tuple(int(other) for other in symmetry) or (-1,) * count)
+                   tuple(int(other) for other in symmetry) or (-1,) * count, at_bind)
 
     @classmethod
     def of_joints(cls, joints) -> Rig:
         return cls.of(joints.hashes, joints.parents, joints.positions, joints.rotations, joints.scales, joints.names,
-                      joints.symmetry)
+                      joints.symmetry, True)
 
     @classmethod
     def of_skeleton(cls, *skeletons: Skeleton) -> Rig:
@@ -178,6 +179,15 @@ class Rig:
                       [index.get(getattr(joint.parent, "name", None), -1) for joint in joints],
                       [joint.translation for joint in joints], [joint.rotation for joint in joints],
                       np.ones((len(joints), 3), np.float32), list(named))
+
+    def joined(self, other: Rig) -> Rig:
+        rows = [row for row, name in enumerate(other.names) if name not in self.names]
+        names = [*self.names, *(other.names[row] for row in rows)]
+        index = {name: at for at, name in enumerate(names)}
+        parents = [index.get(other.names[other.parents[row]], -1) if other.parents[row] >= 0 else -1 for row in rows]
+        return Rig.of([*self.hashes, *(other.hashes[row] for row in rows)], [*self.parents.tolist(), *parents],
+                      *(np.concatenate([mine, theirs[rows]]) for mine, theirs in zip(self.base, other.base)), names,
+                      [*self.symmetry, *(-1 for _ in rows)], self.at_bind)
 
     @property
     def root(self) -> int:
