@@ -17,6 +17,8 @@ lazy from file_handlers.clip.clip_handler import ClipHandler
 lazy from file_handlers.bhvt.bhvt_handler import BhvtHandler
 lazy from file_handlers.motion.motion_handler import MotionHandler
 lazy from file_handlers.jcns.jcns_handler import JcnsHandler
+lazy from file_handlers.skeleton.skeleton_handler import SkeletonHandler
+lazy from file_handlers.maba.maba_handler import MabaHandler
 lazy from file_handlers.uvs.uvs_handler import UvsHandler
 lazy from file_handlers.gui.gui_handler import GuiHandler
 lazy from file_handlers.gcf.gcf_handler import GcfHandler
@@ -55,6 +57,8 @@ def _handler_classes():
     yield BhvtHandler
     yield MotionHandler
     yield JcnsHandler
+    yield SkeletonHandler
+    yield MabaHandler
     yield UvsHandler
     yield GuiHandler
     yield GcfHandler

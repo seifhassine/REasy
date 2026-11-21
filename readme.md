@@ -32,7 +32,7 @@ The interface is available in English, Chinese, Russian and Spanish.
 
 ## Supported files
 
-- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR, SDF, SDFTEX (baked from a mesh), MESH, TEX (import DDS, PNG and TGA; export by lane), MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, JCNS, CLIP, MOTCLIP, TML, UCURVE, DLGTML, BHVT, FSM, FSMV2, MOTFSM, MOTFSM2, TMLFSM2, GUI, GCF, IFT, OFT, BNK, PCK, WEL, WCC and other headless sound files, hair strands
+- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR, SDF, SDFTEX (baked from a mesh), MESH, TEX (import DDS, PNG and TGA; export by lane), MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, JCNS, FBXSKEL, SKELETON, REFSKEL, MABA, CLIP, MOTCLIP, TML, UCURVE, DLGTML, BHVT, FSM, FSMV2, MOTFSM, MOTFSM2, TMLFSM2, GUI, GCF, IFT, OFT, BNK, PCK, WEL, WCC and other headless sound files, hair strands
 - **View:** FOL, STMESH, RTEX, light probes (in SCN scenes)
 - **Other:** PAK through *Tools > PAK Browser*, MOV in your default video player
 

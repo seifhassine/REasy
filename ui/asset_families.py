@@ -10,7 +10,7 @@ FAMILIES = {
     "scene": ("layers", "#e09a3a", "scn fol"),
     "prefab": ("gameobject", "#e09a3a", "pfb"),
     "data": ("variable", "#b07fd6", "user uvar"),
-    "motion": ("bone", "#d9825f", "mot motlist motbank motpack mottree jcns mcambank"),
+    "motion": ("bone", "#d9825f", "mot motlist motbank motpack mottree jcns mcambank fbxskel skeleton refskel maba"),
     "timeline": ("clock", "#d6c14f", "clip tml ucurve dlgtml motclip"),
     "logic": ("graph", "#d67fb0", "bhvt fsm fsmv2 motfsm motfsm2 tmlfsm2"),
     "collision": ("box", "#8fa3b0", "rcol cfil"),

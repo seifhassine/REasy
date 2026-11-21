@@ -5,7 +5,7 @@ import re
 import uuid
 from functools import cache
 
-from PySide6.QtCore import (QAbstractTableModel, QItemSelection, QItemSelectionModel, QModelIndex,
+from PySide6.QtCore import (QAbstractTableModel, QEvent, QItemSelection, QItemSelectionModel, QModelIndex,
                             QSortFilterProxyModel, Qt, QTimer, Signal)
 from PySide6.QtGui import QColor, QIcon, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import QApplication, QColorDialog, QHeaderView, QLineEdit, QTableView, QVBoxLayout, QWidget
@@ -159,7 +159,6 @@ class GcpEditor(QWidget):
         self._clear.timeout.connect(self._show_problems)
         for keys, slot, widget in ((QKeySequence.StandardKey.Undo, document.undo_stack.undo, self),
                                    (QKeySequence.StandardKey.Redo, document.undo_stack.redo, self),
-                                   (QKeySequence.StandardKey.Find, self.filter.setFocus, self),
                                    (QKeySequence.StandardKey.Delete, self._delete, self.table),
                                    (QKeySequence.StandardKey.Copy, self._copy, self.table),
                                    (QKeySequence.StandardKey.Paste, self._paste, self.table),
@@ -174,6 +173,14 @@ class GcpEditor(QWidget):
         self.proxy.modelReset.connect(self._restore)
         self._selection_changed()
         self._show_problems()
+
+    def event(self, event) -> bool:
+        # Accepting ShortcutOverride gives the filter Ctrl+F before the window's own Find.
+        if event.type() == QEvent.Type.ShortcutOverride and event.matches(QKeySequence.StandardKey.Find):
+            self.filter.setFocus()
+            event.accept()
+            return True
+        return super().event(event)
 
     def _toolbar(self) -> QWidget:
         strip, row = editor_strip()

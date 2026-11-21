@@ -1,0 +1,21 @@
+{
+	"4": {
+		"game": "RE9",
+		"commands": {
+			"pos": {"class": "OrclKey_Pos", "components": "XYZ"},
+			"posxz": {"class": "OrclKey_Pos", "components": "XZ"},
+			"posxz_n": {"class": "OrclKey_Pos"},
+			"posx": {"class": "OrclKey_Pos"},
+			"posy": {"class": "OrclKey_Pos"},
+			"posz": {"class": "OrclKey_Pos"},
+			"dirx": {"class": "OrclKey_Dir", "components": "XYZ"},
+			"diry": {"class": "OrclKey_Dir"},
+			"dirz": {"class": "OrclKey_Dir", "components": "XYZ"},
+			"lrot": {"class": "OrclKey_LocalRot"}
+		},
+		"default_class": "OrclKey",
+		"joint_classes": ["OrclKey_Pos", "OrclKey_Dir", "OrclKey_LocalRot"],
+		"motion_tags": ["app.orcl.ch4000_Damage_MotionTags"],
+		"sampled": {"pos": "position", "posxz_n": "xz_direction", "dirx": "x_axis", "dirz": "z_axis"}
+	}
+}

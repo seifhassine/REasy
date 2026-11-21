@@ -1,21 +1,16 @@
 """See docs/internals/strands-rendering.md, Transforms and joints."""
 from __future__ import annotations
 
-import struct
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
 
 lazy from file_handlers.engine_math import make_trs_matrix, transform_product
+lazy from file_handlers.skeleton.skeleton_file import read_skeleton
 lazy from utils.hash_util import murmur3_hash_utf16le
 
 F = np.float32
-# A ``.fbxskel``'s joints: their offset, hash table offset and count in its header, and the bytes of each; per file
-# version (the header's first word), where a joint holds its rotation, position and scale.
-_SKELETON_HEADER, _SKELETON_JOINT = struct.Struct("<QQI"), 64
-_SKELETON_TRANSFORMS = {version: (0x20, 0x10, 0x30) for version in (2, 3, 4)} | {
-    version: (0x10, 0x20, 0x2C) for version in (5, 6, 7, 8)}
 
 
 def trs(position: Sequence[float], rotation: Sequence[float], scale: Sequence[float]) -> np.ndarray:
@@ -66,21 +61,11 @@ class JointSet:
 
 
 def skeleton_joint_descs(data: bytes) -> tuple[tuple[str, ...], tuple[int, ...], list, list, list, tuple[int, ...]]:
-    start, _hashes, count = _SKELETON_HEADER.unpack_from(data, 0x10)
-    rotation_at, position_at, scale_at = _SKELETON_TRANSFORMS[struct.unpack_from("<I", data, 0)[0]]
-    names, parents, positions, rotations, scales, symmetry = [], [], [], [], [], []
-    for at in range(start, start + count * _SKELETON_JOINT, _SKELETON_JOINT):
-        name, _hash, parent, mirror = struct.unpack_from("<QIhh", data, at)
-        end = name
-        while data[end:end + 2] != b"\0\0":
-            end += 2
-        names.append(data[name:end].decode("utf-16-le"))
-        parents.append(parent)
-        symmetry.append(mirror)
-        rotations.append(struct.unpack_from("<4f", data, at + rotation_at))
-        positions.append(struct.unpack_from("<3f", data, at + position_at))
-        scales.append(struct.unpack_from("<3f", data, at + scale_at))
-    return tuple(names), tuple(parents), positions, rotations, scales, tuple(symmetry)
+    skeleton = read_skeleton(data)
+    joints, rows = skeleton.joints, skeleton.rows()
+    return (tuple(joint.name for joint in joints), tuple(rows[id(joint.parent)] for joint in joints),
+            [joint.position for joint in joints], [joint.rotation for joint in joints],
+            [joint.scale for joint in joints], tuple(rows[id(joint.mirror)] for joint in joints))
 
 
 class Placed:
