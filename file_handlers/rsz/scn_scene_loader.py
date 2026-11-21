@@ -9,6 +9,7 @@ lazy from utils.resource_file_utils import (
     ResourceResolutionContext,
     resource_context_for_app,
     resource_context_for_handler,
+    resource_key,
 )
 
 from .scn_scene_graph import (
@@ -96,6 +97,7 @@ class ScnSceneLoader:
         self._building_source: ScnSceneSource | None = None
         self.user_documents: dict[str, ScnDocument] = {}
         self.user_reads: dict = {}
+        self.edited: dict = {}
 
     def source_for_graph(self, graph: ScnSceneGraph) -> ScnSceneSource | None:
         return self._source_by_graph.get(id(graph))
@@ -228,6 +230,8 @@ class ScnSceneLoader:
         if hit is None:
             return None
         path, data = hit
+        if (edited := self.edited.get(resource_key(path))) is not None:
+            data = edited()
         if ".scn" not in normalized.lower() or source is None:
             return ScnResolvedResource(path=path, data=data)
         if context:

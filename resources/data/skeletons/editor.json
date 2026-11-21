@@ -1,0 +1,7 @@
+{
+ "format": 1,
+ "mirror": {"normal": [1.0, 0.0, 0.0], "tolerance": 0.001},
+ "kept": 0.000001,
+ "angles": {"digits": 4, "pole": 1e-12},
+ "follow": {"live": 0.02, "pause": 0.12}
+}

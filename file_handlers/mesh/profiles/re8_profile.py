@@ -50,6 +50,7 @@ class Re8MeshProfile(MeshGameProfile):
     blend_shape_reserved_storage_is_inert = True
     normal_redirect_annotation_is_runtime_semantic = True
     submesh_index_ranges_are_even_aligned = True
+    skin_weight_uses_implicit_last_weight = True
     skin_weight_influences_by_raw = ((0x01, 8),)
     canonical_import_contract = "mesh"
     canonical_vertex_semantics = frozenset({0, 1, 2, 3, 4})

@@ -1,0 +1,53 @@
+{
+ "format": 1,
+ "header": {
+  "size": 40,
+  "fields": [
+   [0, "u32", "version"],
+   {"at": 4, "type": "u32", "const": 1852599155, "what": "magic"},
+   [8, "u32", "err_flags"],
+   [12, "u32", "master_size"],
+   [16, "u64", "joints"],
+   [24, "u64", "hashes"],
+   [32, "u32", "count"]
+  ]
+ },
+ "table_align": 16,
+ "hash": {"size": 8, "fields": [[0, "u32", "hash"], [4, "u32", "index"]]},
+ "joints": {
+  "wide": {
+   "size": 64,
+   "fields": [
+    [0, "u64", "name"],
+    [8, "u32", "name_hash"],
+    [12, "i16", "parent"],
+    [14, "i16", "symmetry"],
+    [16, "f32x3", "position"],
+    [32, "f32x4", "rotation"],
+    [48, "f32x3", "scale"]
+   ]
+  },
+  "packed": {
+   "size": 64,
+   "fields": [
+    [0, "u64", "name"],
+    [8, "u32", "name_hash"],
+    [12, "i16", "parent"],
+    [14, "i16", "symmetry"],
+    [16, "f32x4", "rotation"],
+    [32, "f32x3", "position"],
+    [44, "f32x3", "scale"],
+    {"at": 56, "type": "u32", "bits": [[0, 1, "segment_scale"]]}
+   ]
+  }
+ },
+ "versions": {
+  "2": "wide",
+  "3": "wide",
+  "4": "wide",
+  "5": "packed",
+  "6": "packed",
+  "7": "packed",
+  "8": "packed"
+ }
+}

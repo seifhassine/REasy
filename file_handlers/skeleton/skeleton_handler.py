@@ -22,6 +22,6 @@ class SkeletonHandler(DocumentHandler):
         self.modified = False
 
     def create_viewer(self):
-        editor = SkeletonEditor(self.document)
+        editor = SkeletonEditor(self)
         editor.modified_changed.connect(self._set_modified)
         return editor

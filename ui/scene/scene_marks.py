@@ -26,16 +26,16 @@ def unorm(colour: Iterable[float]) -> tuple[int, ...]:
     return (*channels, 255) if len(channels) == 3 else tuple(channels)
 
 
-def gizmo_circle_points(center: np.ndarray, radius: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def gizmo_circle_points(center: np.ndarray, radius: float, axes: np.ndarray = GIZMO_AXES) -> tuple[np.ndarray, ...]:
     angles = np.linspace(0.0, np.pi * 2.0, 49, dtype=np.float32)
-    circle = np.stack((np.cos(angles), np.sin(angles)), axis=1) * radius
-    return (center + np.column_stack((np.zeros(len(circle)), circle[:, 0], circle[:, 1])),
-            center + np.column_stack((circle[:, 0], np.zeros(len(circle)), circle[:, 1])),
-            center + np.column_stack((circle[:, 0], circle[:, 1], np.zeros(len(circle)))))
+    circle = (np.stack((np.cos(angles), np.sin(angles)), axis=1) * radius).astype(np.float64)
+    axes = np.asarray(axes, np.float64)
+    return tuple(center + circle[:, :1] * axes[a] + circle[:, 1:] * axes[b] for a, b in ((1, 2), (0, 2), (0, 1)))
 
 
-def gizmo_plane_corners(center: np.ndarray, size: float, a: int, b: int) -> tuple[np.ndarray, ...]:
-    u, v = GIZMO_AXES[a], GIZMO_AXES[b]
+def gizmo_plane_corners(center: np.ndarray, size: float, a: int, b: int,
+                        axes: np.ndarray = GIZMO_AXES) -> tuple[np.ndarray, ...]:
+    u, v = axes[a], axes[b]
     return (center + (u + v) * size * 0.22, center + (u * 0.42 + v * 0.22) * size, center + (u + v) * size * 0.42,
             center + (u * 0.22 + v * 0.42) * size)
 
@@ -54,9 +54,9 @@ def _cube(center: np.ndarray, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np
                      for face in GIZMO_BOX_FACES for i in (1, 2)], np.float64)
 
 
-def _arrow(center: np.ndarray, axis: int, size: float, active) -> list:
-    direction = GIZMO_AXES[axis]
-    p1, p2 = GIZMO_AXES[(axis + 1) % 3], GIZMO_AXES[(axis + 2) % 3]
+def _arrow(center: np.ndarray, axis: int, size: float, active, axes: np.ndarray) -> list:
+    direction = axes[axis]
+    p1, p2 = axes[(axis + 1) % 3], axes[(axis + 2) % 3]
     end = center + direction * size
     base = end - direction * size * 0.16
     radius = size * (0.07 if axis == active else 0.05)
@@ -67,18 +67,18 @@ def _arrow(center: np.ndarray, axis: int, size: float, active) -> list:
                          False)]
 
 
-def gizmo_marks(mode: str, center: np.ndarray, size: float, active) -> tuple:
+def gizmo_marks(mode: str, center: np.ndarray, size: float, active, axes: np.ndarray = GIZMO_AXES) -> tuple:
     center = np.asarray(center, np.float64)
     marks = []
     if mode == "rotation":
-        for axis, points in enumerate(gizmo_circle_points(center, size)):
+        for axis, points in enumerate(gizmo_circle_points(center, size, axes)):
             marks.append(LitLines(np.stack([points[:-1], points[1:]], axis=1).astype(np.float64),
                                   4.5 if axis == active else 2.4, _axis_colour(axis, active), False))
     elif mode == "scale":
         for axis in range(3):
-            marks += _arrow(center, axis, size * 0.82, active)
-            direction = GIZMO_AXES[axis]
-            p1, p2 = GIZMO_AXES[(axis + 1) % 3], GIZMO_AXES[(axis + 2) % 3]
+            marks += _arrow(center, axis, size * 0.82, active, axes)
+            direction = axes[axis]
+            p1, p2 = axes[(axis + 1) % 3], axes[(axis + 2) % 3]
             end = center + direction * size
             half = size * (0.085 if axis == active else 0.065)
             marks.append(LitTriangles(_cube(end, direction * half, p1 * half, p2 * half), _axis_colour(axis, active),
@@ -89,12 +89,12 @@ def gizmo_marks(mode: str, center: np.ndarray, size: float, active) -> tuple:
             if active in ((a, b), (b, a)):
                 rgba[:3] = np.clip(rgba[:3] * 1.2 + 0.25, 0.0, 1.0)
                 rgba[3] = min(float(rgba[3]) * 1.9, 0.55)
-            q = gizmo_plane_corners(center, size, a, b)
+            q = gizmo_plane_corners(center, size, a, b, axes)
             marks.append(LitTriangles(np.array([[q[0], q[1], q[2]], [q[0], q[2], q[3]]], np.float64), unorm(rgba),
                                       False))
         for axis in range(3):
-            marks += _arrow(center, axis, size, active)
-    marks.append(LitTriangles(_cube(center, *GIZMO_AXES * size * 0.045), unorm(_CENTRE_COLOUR), False))
+            marks += _arrow(center, axis, size, active, axes)
+    marks.append(LitTriangles(_cube(center, *axes * size * 0.045), unorm(_CENTRE_COLOUR), False))
     return tuple(marks)
 
 

@@ -32,6 +32,7 @@ class ReRtMeshProfile(Re8MeshProfile):
     has_split_legacy_buffer_sizes = False
     canonical_import_contract = None
     submesh_index_ranges_are_even_aligned = False
+    skin_weight_uses_implicit_last_weight = False
     skin_weight_influences_by_raw = ()
     canonical_ordinary_uv_half2_domains = (
         Half2ValueDomain.FINITE,

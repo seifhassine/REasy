@@ -36,6 +36,7 @@ class Re4MeshProfile(ReRtMeshProfile):
     resident_buffer_tail_is_corpus_zero = True
     shape_key_weight_pointer_is_corpus_zero = True
     submesh_index_ranges_are_even_aligned = True
+    skin_weight_uses_implicit_last_weight = True
     skin_weight_influences_by_raw = ((0x12, 8),)
     canonical_import_contract = "mesh"
     canonical_vertex_semantics = frozenset({0, 1, 2, 3, 4, 5})

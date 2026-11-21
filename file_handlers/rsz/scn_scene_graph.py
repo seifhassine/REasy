@@ -75,6 +75,7 @@ VIA_MOTION_SKELETONS = frozenset({"via.motion.DummySkeleton", "via.motion.Custom
 FOLDER_OPTIONS_RESOURCE = "resources/data/scene_folder_options.json"
 SCENE_FIELDS_RESOURCE = "resources/data/scene_fields.json"
 JOINT_CONSTRAINTS_RESOURCE = "resources/data/joint_constraints.json"
+JOINT_SETTERS_RESOURCE = "resources/data/joint_setters.json"
 LIGHT_PROBE_PREVIEW_GAMES = frozenset({
     "DD2",
     "DMC5",
@@ -675,6 +676,7 @@ class ScnJoints:
     inverse_binds: np.ndarray | None = None
     remap: tuple[int, ...] = ()
     symmetry: tuple[int, ...] = ()
+    source: str = ""
 
     @classmethod
     def of_descs(cls, names, parents, positions, rotations, scales, inverse_binds=None, remap=(),
@@ -1096,6 +1098,10 @@ def joint_constraint_copiers(game: str) -> dict[str, dict]:
 
 def joint_constraint_phases() -> tuple[int | str, ...]:
     return tuple(type_table(JOINT_CONSTRAINTS_RESOURCE)["phases"])
+
+
+def joint_setters(game: str) -> tuple[str, ...]:
+    return tuple(type_table(JOINT_SETTERS_RESOURCE)["games"].get(str(game).upper(), ()))
 
 
 def _first_name(fields: Mapping[str, object], fallback: str) -> str:
@@ -1597,8 +1603,13 @@ class ScnSceneGraphBuilder(ScnSceneAssembly, ScnPartSwapper, ScnSceneFolders, Sc
         skeleton_path = "" if skeleton is None else normalize_scene_path(
             document.resources.get(skeleton.id, {}).get(name) or plain_value(skeleton.fields.get(name, "")))
         if mesh_path and skeleton_path:
-            return None, (f"its Mesh and its {skeleton.type_name} both set them, and which one sets them last is not "
-                          "known")
+            if not {mesh.type_name, skeleton.type_name} <= set(joint_setters(self.game_version)):
+                return None, (f"its Mesh and its {skeleton.type_name} both set them, and the order they load in is "
+                              "not read in this game's code")
+            if components.index(mesh) < components.index(skeleton):
+                mesh_path = ""
+            else:
+                skeleton_path = ""
         if mesh_path and plain_value(mesh.fields.get(self.fields.get("shared skeleton"), False)):
             return None, "its Mesh shares another's skeleton (SharedSkeleton)"
         if item.transform is not None and item.transform.joint_segment_scale and (mesh_path or skeleton_path):
@@ -1684,7 +1695,7 @@ class ScnSceneGraphBuilder(ScnSceneAssembly, ScnPartSwapper, ScnSceneFolders, Sc
                         found = mesh_joints(mesh)
                     else:
                         *descs, symmetry = skeleton_joint_descs(bytes(resolved.data))
-                        found = ScnJoints.of_descs(*descs, symmetry=symmetry)
+                        found = replace(ScnJoints.of_descs(*descs, symmetry=symmetry), source=resolved.path)
             except Exception:
                 found = False
             self._joints_cache[key] = found

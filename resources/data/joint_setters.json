@@ -1,0 +1,10 @@
+{
+ "format": 1,
+ "games": {
+  "RE2": ["via.render.Mesh", "via.motion.DummySkeleton"],
+  "RE3": ["via.render.Mesh", "via.motion.DummySkeleton", "via.motion.CustomSkeleton"],
+  "RE2RT": ["via.render.Mesh", "via.motion.DummySkeleton", "via.motion.CustomSkeleton"],
+  "RE3RT": ["via.render.Mesh", "via.motion.DummySkeleton", "via.motion.CustomSkeleton"],
+  "DD2": ["via.render.Mesh", "via.motion.DummySkeleton", "via.motion.CustomSkeleton"]
+ }
+}

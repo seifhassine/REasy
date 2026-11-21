@@ -131,6 +131,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self.campaign: CampaignChoice | None = None
         self.variations: dict[str, int] = {}
         self.spawn_choices: dict[str, int] = {}
+        self.idle_scene = None
         self._stale = False
         self._mesh_cache: dict[str, tuple[MeshHandler | None, SceneDrawMesh | None]] = {}
         # By document id: the scope of its source's meshes.
@@ -418,6 +419,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
 
     def cleanup(self) -> None:
         self._stop_timers()
+        self.idle_scene = None
         self._clear_runtime_state()
         self.preview.cleanup()
         self._sources_getter = self._graphs_changed_callback = None
@@ -474,7 +476,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         held = loading and self._adding and self._device_preview.active
         self._device_preview.hold(held)
         if not held:
-            self._device_preview.set_active(bool(self.graphs) and not loading)
+            self._device_preview.set_active(bool(self.graphs or self.idle_scene) and not loading)
         if not loading:
             self._adding = False
             self._materials.stop_parses()
@@ -726,8 +728,9 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         if not self.graphs:
             self.status_label.setText(self.tr("No SCN is loaded."))
             self.preview.set_light_probe_instances([])
-            self.preview.set_scene([])
+            self.preview.set_scene(self._shown_meshes())
             self._sync_preview_materials()
+            self._show_device_frames()
             self._update_diagnostics()
             self._notify_graphs_changed()
             return
@@ -934,13 +937,19 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
             self._variation_values = {name: self._variation_values.get(name, {}) for mesh in self._draw_meshes
                                       if mesh.key in self._varied
                                       for name in {batch.material_name for batch in mesh.batches}}
-            self.preview.set_scene(self._draw_meshes, reset_camera=not self._camera_initialized)
+            self.preview.set_scene(self._shown_meshes(), reset_camera=not self._camera_initialized)
             self._pose_started_meshes()
             self._camera_initialized = True
             self.renderables_changed.emit()
         if self._pending_material_renderables and not self._material_timer.isActive():
             self._material_timer.start(0)
         self._show_device_frames()
+
+    def _shown_meshes(self) -> list[SceneDrawMesh]:
+        idle = not self._draw_meshes and self.idle_scene is not None
+        if self.idle_scene is not None:
+            self.preview.refuse_game_lighting(self.tr("Game lighting needs a loaded mesh.") if idle else "")
+        return self.idle_scene() if idle else self._draw_meshes
 
     def _pose_started_meshes(self) -> None:
         drawn = {mesh.key for mesh in self._draw_meshes}

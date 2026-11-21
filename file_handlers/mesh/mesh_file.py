@@ -825,15 +825,17 @@ def _decode_skin_weights(
         records[:, 8 : 8 + influence_count].astype(np.float32) / 255.0
     )
     implicit_last_weight = bool(profile.skin_weight_uses_implicit_last_weight)
+    if implicit_last_weight:
+        stored_units = np.sum(
+            records[:, 8 : 7 + influence_count].astype(np.int16),
+            axis=1,
+            dtype=np.int16,
+        )
+        implicit_last_weight = influence_count != 8 or int(stored_units.max(initial=0)) <= 255
     stored_weight_count = influence_count - 1 if implicit_last_weight else influence_count
     runtime_ignored_weight_bytes = b""
     if implicit_last_weight:
         runtime_ignored_weight_bytes = records[:, 8 + stored_weight_count : 16].tobytes()
-        stored_units = np.sum(
-            records[:, 8 : 8 + stored_weight_count].astype(np.int16),
-            axis=1,
-            dtype=np.int16,
-        )
         decoded_weights[:, influence_count - 1] = (
             np.int16(255) - stored_units
         ).astype(np.float32) / 255.0

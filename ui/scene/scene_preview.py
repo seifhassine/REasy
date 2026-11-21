@@ -191,6 +191,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._selection_keys: set[str] = set()
         self._selection_center: np.ndarray | None = None
         self._selection_extent = 1.0
+        self._gizmo_axes = GIZMO_AXES
         self._gizmo_hover_axis: int | None = None
         self._gizmo_drag = None
         self._gizmo_projection = None
@@ -1324,8 +1325,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
 
     def _refresh_selection_bounds(self) -> None:
         held = self._tool_gizmo()
+        self._gizmo_axes = GIZMO_AXES if held is None or len(held) < 3 else np.asarray(held[2], np.float32)
         if held is not None:
-            self._selection_center, self._selection_extent = held
+            self._selection_center, self._selection_extent = held[:2]
             return
         meshes = [mesh for mesh in self._meshes if mesh.key in self._selection_keys and mesh.key not in self._hidden_keys]
         chunks = []
@@ -1436,7 +1438,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                 return None
             if self._gizmo_mode == "position":
                 for a, b, _color in GIZMO_PLANES:
-                    screen = [self._project_gizmo_point(point) for point in gizmo_plane_corners(center, size, a, b)]
+                    screen = [self._project_gizmo_point(point)
+                              for point in gizmo_plane_corners(center, size, a, b, self._gizmo_axes)]
                     if all(point is not None for point in screen) and (
                         self._screen_triangle_contains(pos, screen[0], screen[1], screen[2])
                         or self._screen_triangle_contains(pos, screen[0], screen[2], screen[3])
@@ -1444,13 +1447,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                         return a, b
             hits = [
                 (self._screen_segment_distance(pos, origin, end), axis_index)
-                for axis_index, axis in enumerate(GIZMO_AXES)
+                for axis_index, axis in enumerate(self._gizmo_axes)
                 for end in [self._project_gizmo_point(center + axis * size)]
                 if end is not None
             ]
         else:
             hits = []
-            for axis_index, points in enumerate(gizmo_circle_points(center, size)):
+            for axis_index, points in enumerate(gizmo_circle_points(center, size, self._gizmo_axes)):
                 screen = [self._project_gizmo_point(point) for point in points]
                 screen = [point for point in screen if point is not None]
                 hits.extend((self._screen_segment_distance(pos, a, b), axis_index) for a, b in zip(screen, screen[1:]))
@@ -1475,7 +1478,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if origin is None:
             return False
         if isinstance(handle, tuple):
-            ends = [self._project_gizmo_point(self._selection_center + GIZMO_AXES[axis] * self._gizmo_size()) for axis in handle]
+            ends = [self._project_gizmo_point(self._selection_center + self._gizmo_axes[axis] * self._gizmo_size())
+                    for axis in handle]
             if self._gizmo_mode != "position" or any(end is None for end in ends):
                 return False
             basis = np.column_stack([end - origin for end in ends]).astype(np.float32)
@@ -1483,7 +1487,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                 return False
             screen_axis = None
         else:
-            end = self._project_gizmo_point(self._selection_center + GIZMO_AXES[handle] * self._gizmo_size())
+            end = self._project_gizmo_point(self._selection_center + self._gizmo_axes[handle] * self._gizmo_size())
             if end is None:
                 return False
             screen_axis = end - origin
@@ -1496,6 +1500,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             "tool": tool,
             "mode": self._gizmo_mode,
             "axis": handle,
+            "axes": self._gizmo_axes,
             "start": self._screen_pos(event),
             "center": self._selection_center.copy(),
             "size": self._gizmo_size(),
@@ -1528,17 +1533,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         delta = self._screen_pos(event) - drag["start"]
         if "plane_axes" in drag:
             coeff = drag["screen_basis_inv"] @ delta
-            axes = drag["plane_axes"]
-            matrix = self._translation_matrix((GIZMO_AXES[axes[0]] * coeff[0] + GIZMO_AXES[axes[1]] * coeff[1]) * drag["size"])
+            first, second = (drag["axes"][axis] for axis in drag["plane_axes"])
+            matrix = self._translation_matrix((first * coeff[0] + second * coeff[1]) * drag["size"])
         else:
-            axis = GIZMO_AXES[drag["axis"]]
+            axis = drag["axes"][drag["axis"]]
             amount = float(delta @ drag["screen_axis"]) / 120.0 * drag["size"]
             if drag["mode"] == "position":
                 matrix = self._translation_matrix(axis * amount)
             elif drag["mode"] == "scale":
                 scale = np.ones(3, dtype=np.float32)
                 scale[drag["axis"]] = max(0.05, 1.0 + amount / drag["extent"])
-                matrix = self._around_pivot(drag["center"], self._scale_matrix(scale))
+                matrix = self._around_pivot(drag["center"], self._scale_matrix(scale, drag["axes"]))
             else:
                 matrix = self._around_pivot(drag["center"], self._rotation_matrix(axis, np.deg2rad(float(delta @ drag["screen_axis"]) * 0.8)))
         matrix = matrix.astype(np.float32, copy=False)
@@ -1616,9 +1621,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         return matrix
 
     @staticmethod
-    def _scale_matrix(scale: np.ndarray) -> np.ndarray:
+    def _scale_matrix(scale: np.ndarray, axes: np.ndarray) -> np.ndarray:
         matrix = np.identity(4, dtype=np.float32)
-        matrix[0, 0], matrix[1, 1], matrix[2, 2] = float(scale[0]), float(scale[1]), float(scale[2])
+        matrix[:3, :3] = axes.T * scale @ axes
         return matrix
 
     @staticmethod
@@ -1641,7 +1646,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def _gizmo_marks(self) -> tuple:
         if self._controls == "mesh" or self._selection_center is None:
             return ()
-        return gizmo_marks(self._gizmo_mode, self._selection_center, self._gizmo_size(), self._gizmo_active_axis())
+        return gizmo_marks(self._gizmo_mode, self._selection_center, self._gizmo_size(), self._gizmo_active_axis(),
+                           self._gizmo_axes)
 
     def _probe_viz_candidate_indices(self, instance: SceneLightProbeInstance) -> np.ndarray:
         probe_set = instance.probe_set
@@ -1864,7 +1870,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         keys = frozenset(self._selection_keys | self._preferred_selection_keys)
         # ``id(points)`` suffices: probe points are cached while unchanged.
         made = (background, scene, self._gizmo_mode, None if self._selection_center is None else (
-            np.asarray(self._selection_center).tobytes(), self._gizmo_size(), self._gizmo_active_axis()),
+            np.asarray(self._selection_center).tobytes(), self._gizmo_size(), self._gizmo_active_axis(),
+            self._gizmo_axes.tobytes()),
             tuple((key, np.asarray(box.corners(), np.float64).tobytes()) for key, box in boxes),
             keys, id(points) if len(points) else None,
             tuple((minimum.tobytes(), maximum.tobytes(), colour) for minimum, maximum, colour in self.strands_boxes),
@@ -2025,7 +2032,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
 
     def set_edit_tool(self, tool) -> None:
         """``tool``'s handlers return True when they take the event; it gives ``marks()`` and, while ``gizmo()`` returns
-        (centre, extent), owns the gizmo."""
+        (centre, extent) or (centre, extent, the handles' axes as rows), owns the gizmo."""
         if self._gizmo_drag is not None:
             self._finish_gizmo_drag(commit=False)
         self.edit_tool = tool
