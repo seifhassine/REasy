@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 lazy import numpy as np
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 lazy from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox,
@@ -15,8 +15,9 @@ lazy from ui.scene.mesh_scene import build_mesh_scene
 lazy from ui.scene.scene_model import SceneDrawMesh
 lazy from ui.scene.scene_preview import ScenePreviewWidget
 lazy from utils.resource_file_utils import resource_context_for_handler
+lazy from ui.editor_widgets import FitImage
 lazy from ui.icons import line_icon
-lazy from ui.styles import current_colors, set_style_role
+lazy from ui.styles import set_style_role
 
 lazy from .geometry import (BakeCancelled, Grid, bake_levels, covering_grid,
                        geometry_bounds_at_native_center, mesh_bounds, surface_mesh)
@@ -33,41 +34,6 @@ def _signed_rgb(samples, scale: float):
 def _legend_ramp(width: int = 120, height: int = 10) -> QPixmap:
     rgb = np.repeat(_signed_rgb(np.linspace(-1.0, 1.0, width), 1.0)[None], height, axis=0)
     return QPixmap.fromImage(QImage(rgb.data, width, height, rgb.strides[0], QImage.Format_RGB888).copy())
-
-
-class _SliceImage(QLabel):
-    sample_selected = Signal(int, int)
-
-    def __init__(self):
-        super().__init__()
-        self.setAlignment(Qt.AlignCenter)
-        self.setMinimumSize(220, 220)
-        colors = current_colors()
-        self.setStyleSheet(f"QLabel {{ background: {colors['canvas_bg']}; border: 1px solid {colors['border_subtle']};"
-                           " border-radius: 3px; }")
-        self._source = QPixmap()
-        self.setMouseTracking(True)
-
-    def set_image(self, image):
-        self._source = QPixmap.fromImage(image)
-        self._scale()
-
-    def _scale(self):
-        if not self._source.isNull():
-            self.setPixmap(self._source.scaled(self.size(), Qt.KeepAspectRatio, Qt.FastTransformation))
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self._scale()
-
-    def mouseMoveEvent(self, event):
-        pixmap = self.pixmap()
-        if pixmap is not None and not pixmap.isNull():
-            x = event.position().x()-(self.width()-pixmap.width())/2
-            y = event.position().y()-(self.height()-pixmap.height())/2
-            if 0 <= x < pixmap.width() and 0 <= y < pixmap.height():
-                self.sample_selected.emit(int(x*self._source.width()/pixmap.width()),
-                                          int(y*self._source.height()/pixmap.height()))
 
 
 class DistanceFieldViewer(QWidget):
@@ -110,7 +76,7 @@ class DistanceFieldViewer(QWidget):
         self.slice_label = QLabel()
         row.addWidget(self.slice_label)
         slices.addLayout(row)
-        self.image = _SliceImage()
+        self.image = FitImage()
         self.image.sample_selected.connect(self._sample_selected)
         slices.addWidget(self.image, 1)
         self.sample_label = QLabel(self.tr("Move over the slice to inspect exact decoded samples."))
