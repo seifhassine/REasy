@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QPoint, QSize, Qt
-from PySide6.QtGui import QPainter
+from PySide6.QtCore import QEvent, QPoint, QSize, Qt, Signal
+from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -138,6 +138,41 @@ class ElidedLabel(QLabel):
         text = self.fontMetrics().elidedText(self.text(), self._mode, rect.width())
         self.style().drawItemText(painter, rect, Qt.AlignLeft | Qt.AlignVCenter, self.palette(),
                                   self.isEnabled(), text, self.foregroundRole())
+
+
+class FitImage(QLabel):
+    sample_selected = Signal(int, int)
+
+    def __init__(self):
+        super().__init__()
+        self.setAlignment(Qt.AlignCenter)
+        self.setMinimumSize(220, 220)
+        colors = current_colors()
+        self.setStyleSheet(f"QLabel {{ background: {colors['canvas_bg']}; border: 1px solid {colors['border_subtle']};"
+                           " border-radius: 3px; }")
+        self._source = QPixmap()
+        self.setMouseTracking(True)
+
+    def set_image(self, image):
+        self._source = QPixmap.fromImage(image)
+        self._scale()
+
+    def _scale(self):
+        self.setPixmap(self._source if self._source.isNull() else
+                       self._source.scaled(self.size(), Qt.KeepAspectRatio, Qt.FastTransformation))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._scale()
+
+    def mouseMoveEvent(self, event):
+        pixmap = self.pixmap()
+        if pixmap is not None and not pixmap.isNull():
+            x = event.position().x()-(self.width()-pixmap.width())/2
+            y = event.position().y()-(self.height()-pixmap.height())/2
+            if 0 <= x < pixmap.width() and 0 <= y < pixmap.height():
+                self.sample_selected.emit(int(x*self._source.width()/pixmap.width()),
+                                          int(y*self._source.height()/pixmap.height()))
 
 
 class EmbeddedPopupComboBox(QComboBox):
