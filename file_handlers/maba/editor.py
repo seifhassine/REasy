@@ -284,7 +284,7 @@ class MabaEditor(QWidget):
                  for motion in held.ranges]
         chosen = [every[row] for row in self.range_section.rows()]
         return [(self.tr("Selected frames ({0})").format(len(frames)),
-                 [(database, self.rows.owner[1], frames, range(len(database.keys)))] if frames else []),
+                 [(*self.rows.owner, frames, range(len(self.rows.owner[0].keys)))] if frames else []),
                 (self.tr("Selected motions ({0})").format(len(chosen)), chosen),
                 (self.tr("Selected keys, in every motion of the database ({0})").format(len(picked)),
                  [(database, motion, rows, picked) for _database, motion, rows, _keys in every] if picked else []),
