@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 lazy from i18n.catalog import validate_catalog
 from i18n.language_manager import LanguageManager
 from settings import load_settings
+lazy from ui.discord_presence import DiscordPresence
 from ui.styles import ReasyStyle
 from utils.app_paths import application_root
 from utils.garbage_collection import configure_garbage_collector
@@ -62,6 +63,7 @@ def main(argv=None) -> int:
     LanguageManager.instance().initialize(settings)
 
     window = REasyEditorApp()
+    DiscordPresence(window)
     if len(argv) > 1 and not str(argv[1]).startswith("-"):
         filename = argv[1]
         try:

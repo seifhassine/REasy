@@ -43,6 +43,7 @@ DEFAULT_SETTINGS = {
     "ui_language": "system",
     "translation_target_language": "en",
     "tree_highlight_color": "#00aaff",
+    "discord_presence": True,
     "vgmstream_cli_path": "",
     "blender_path": "",
     "wwise_install_paths": {},

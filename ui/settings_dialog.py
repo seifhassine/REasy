@@ -177,6 +177,10 @@ class SettingsDialog(QDialog):
         self.debug_box.setChecked(self.settings.get("show_debug_console", False))
         interface_form.addRow(self.debug_box)
 
+        self.discord_box = QCheckBox(self.tr("Show activity in Discord"))
+        self.discord_box.setChecked(self.settings["discord_presence"])
+        interface_form.addRow(self.discord_box)
+
         editor_form = self._add_section(general_layout, self.tr("Editor"))
         self.rsz_advanced_box = QCheckBox(
             self.tr("Show advanced settings for RSZ files (Reload Required)")
@@ -473,6 +477,7 @@ class SettingsDialog(QDialog):
             game: path for game, path in self._wwise_paths.items() if path
         }
         self.settings["show_debug_console"] = self.debug_box.isChecked()
+        self.settings["discord_presence"] = self.discord_box.isChecked()
         self.settings["show_rsz_advanced"] = self.rsz_advanced_box.isChecked()
         self.settings["backup_on_save"] = self.backup_box.isChecked()
         self.settings["save_workspace_on_close"] = self.save_workspace_box.isChecked()
