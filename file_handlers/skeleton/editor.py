@@ -100,9 +100,9 @@ class SkeletonEditor(QWidget):
         self.tool.mode_keyed.connect(self._set_mode)
         self.preview.placed.connect(self._placed)
         self.preview.shown.played.connect(self._played)
-        self.preview.viewport().gizmo_mode_combo.currentIndexChanged.connect(self._mode_changed)
+        self.preview.viewport().gizmo_mode_changed.connect(self._mode_changed)
         self.preview.viewport().set_edit_tool(self.tool)
-        self._mode_changed()
+        self._mode_changed(self.preview.viewport().gizmo_mode)
         self._played()
         self._restore()
         self._show_problems()
@@ -126,11 +126,11 @@ class SkeletonEditor(QWidget):
         stack.canUndoChanged.connect(undo.setEnabled)
         stack.canRedoChanged.connect(redo.setEnabled)
         self.modes = QButtonGroup(self)
-        for number, (icon, text, tip) in enumerate((
-                ("move", self.tr("Move"), self.tr("Move the selected joints in the view (1)")),
-                ("refresh", self.tr("Rotate"), self.tr("Turn the selected joints in the view (2)")),
-                ("scale", self.tr("Scale"), self.tr("Scale the selected joints on their own axes in the view (3)")))):
-            self.modes.addButton(tool_button(icon, tip, text=text), number)
+        for number, (text, tip) in enumerate((
+                (self.tr("Move"), self.tr("Move the selected joints in the view (1)")),
+                (self.tr("Rotate"), self.tr("Turn the selected joints in the view (2)")),
+                (self.tr("Scale"), self.tr("Scale the selected joints on their own axes in the view (3)")))):
+            self.modes.addButton(tool_button(f"gizmo_{MODES[number]}", tip, text=text), number)
         self.modes.idClicked.connect(self._set_mode)
         toggles = [
             (tool_button("axes", self.tr("Move and turn along the last selected joint's own axes; off: along the "
@@ -219,11 +219,9 @@ class SkeletonEditor(QWidget):
             self._show_problems()
 
     def _set_mode(self, number: int) -> None:
-        combo = self.preview.viewport().gizmo_mode_combo
-        combo.setCurrentIndex(combo.findData(MODES[number]))
+        self.preview.viewport().set_gizmo_mode(MODES[number])
 
-    def _mode_changed(self, *_) -> None:
-        mode = self.preview.viewport().gizmo_mode_combo.currentData()
+    def _mode_changed(self, mode: str) -> None:
         self.modes.button(MODES.index(mode)).setChecked(True)
         self.tool.set_options(mode=mode)
 

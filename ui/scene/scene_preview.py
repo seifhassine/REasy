@@ -9,6 +9,7 @@ import numpy as np
 from PySide6.QtCore import QElapsedTimer, QEvent, QSize, QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QPainter
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QDoubleSpinBox,
     QFrame,
@@ -94,6 +95,7 @@ HOVER_DETECT_KEY = Qt.Key_H
 class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     object_clicked = Signal(str)
     gizmo_transform_committed = Signal(object)
+    gizmo_mode_changed = Signal(str)
     texture_quality_changed = Signal(str)
     # (SceneView, overlays), or (refusal string, None).
     device_view_changed = Signal(object, object)
@@ -127,6 +129,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     }
     # Edge modes: none, visible edges alone, visible edges over meshes, all edges over meshes.
     WIREFRAME_MODES = ("off", "wire", "hybrid", "xray")
+    GIZMO_MODES = ("position", "rotation", "scale")
     _WIREFRAME_RENAMED = {"polygon": "wire", "lines_depth": "hybrid", "lines_overlay": "xray", "solid": "off"}
     LIGHTING_MODES = ("off", "fixed", "software", "probes", "game")
     PROBE_VIZ_MODES = ("off", "volumes", "points", "all")
@@ -209,7 +212,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         wireframe = str(self._setting_value(self._wireframe_key))
         wireframe = self._WIREFRAME_RENAMED.get(wireframe, wireframe)
         self.wireframe_mode = wireframe if wireframe in self.WIREFRAME_MODES else "off"
-        self._gizmo_mode = self._setting_choice("scene_gizmo_mode", ("position", "rotation", "scale"))
+        self._gizmo_mode = self._setting_choice("scene_gizmo_mode", self.GIZMO_MODES)
         self.show_only_highlighted = self._setting_bool("scene_show_only_highlighted")
         self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 0, LIMIT_MOST)
         self.texture_quality = self._setting_choice("renderer_texture_quality", tuple(TEXTURE_QUALITY_PROFILES))
@@ -313,10 +316,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self.overlay.adjustSize()
         self.place_viewport_overlays()
 
-    def _overlay_button(self, icon: str, tip: str, slot=None) -> QToolButton:
+    def _overlay_button(self, icon: str, tip: str, slot=None, size: int = 14) -> QToolButton:
         button = tool_button(icon, tip, slot, parent=self.overlay)
-        button.setIconSize(QSize(14, 14))
-        button.setFixedSize(20, 20)
+        button.setIconSize(QSize(size, size))
+        button.setFixedSize(size + 6, size + 6)
         button.setFocusPolicy(Qt.NoFocus)
         return button
 
@@ -478,16 +481,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         layout.addWidget(self.probe_status_label)
         self._refresh_probe_status_label()
         self._add_separator(layout)
-        self.gizmo_mode_combo = self._data_combo(
-            (
-                (self.tr("Position"), "position"),
-                (self.tr("Rotation"), "rotation"),
-                (self.tr("Scale"), "scale"),
-            ),
-            self.set_gizmo_mode,
-            self._gizmo_mode,
-        )
-        self._add_control_row(layout, self.tr("Gizmo"), self.gizmo_mode_combo)
+        self.gizmo_mode_buttons = QButtonGroup(self.overlay)
+        for number, tip in enumerate((self.tr("Position"), self.tr("Rotation"), self.tr("Scale"))):
+            button = self._overlay_button(f"gizmo_{self.GIZMO_MODES[number]}", tip, size=16)
+            button.setCheckable(True)
+            button.setChecked(self.GIZMO_MODES[number] == self._gizmo_mode)
+            self.gizmo_mode_buttons.addButton(button, number)
+        self.gizmo_mode_buttons.idClicked.connect(lambda number: self.set_gizmo_mode(self.GIZMO_MODES[number]))
+        self._add_control_row(layout, self.tr("Gizmo"), *self.gizmo_mode_buttons.buttons()).addStretch(1)
         self._add_highlight_filter_control(layout)
 
     def _add_light_control(self, layout: QVBoxLayout):
@@ -984,9 +985,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._refresh_selection_bounds()
         self.update()
 
+    @property
+    def gizmo_mode(self) -> str:
+        return self._gizmo_mode
+
     def set_gizmo_mode(self, mode: str) -> None:
-        self._gizmo_mode = mode if mode in {"position", "rotation", "scale"} else "position"
+        if mode == self._gizmo_mode:
+            return
+        self._gizmo_mode = mode if mode in self.GIZMO_MODES else "position"
         self._save_view_setting("scene_gizmo_mode", self._gizmo_mode)
+        self.gizmo_mode_buttons.button(self.GIZMO_MODES.index(self._gizmo_mode)).setChecked(True)
+        self.gizmo_mode_changed.emit(self._gizmo_mode)
         self.update()
 
     def focus_selection(self) -> None:
