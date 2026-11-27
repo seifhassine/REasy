@@ -3,16 +3,10 @@
 from __future__ import annotations
 
 import hashlib
-import os
-import shutil
 import struct
-lazy import subprocess
-import tempfile
 import threading
-import time
 lazy from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, replace
-from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 
@@ -22,11 +16,13 @@ from file_handlers.sound.bnk_parser import (
     extract_embedded_wem,
     parse_soundbank,
 )
+lazy from file_handlers.sound.pcm import Pcm
 from file_handlers.sound.sound_metadata import MessageSoundReference, SoundMetadata
 from file_handlers.sound.sound_resources import read_sound_resource, resource_key
+lazy from file_handlers.sound.wem_decoder import decode_wem
 from file_handlers.sound.sound_waveform import (
     analyze_wave_activity,
-    write_wave_segment,
+    wave_segment,
 )
 lazy from file_handlers.sound.runtime_sound_index import (
     request_runtime_sound_index,
@@ -112,13 +108,9 @@ class MsgSoundPreviewSession(QObject):
         self._scan_token = 0
         self._play_token = 0
         self._resources: dict[str, _CachedResource] = {}
-        self._decoded: dict[
-            tuple[int, str], tuple[SoundPreviewCandidate, str]
-        ] = {}
-        self._prepared: dict[
-            tuple[int, str, int, int], tuple[SoundPreviewCandidate, str, object]
-        ] = {}
-        self._temp_dir = tempfile.mkdtemp(prefix="reasy_msg_sound_")
+        self._decoded: tuple[
+            tuple[int, str] | None, SoundPreviewCandidate | None, Pcm | None
+        ] = (None, None, None)
 
         self._player = AudioPlayer(self)
         self._player.setVolume(0.7)
@@ -167,7 +159,6 @@ class MsgSoundPreviewSession(QObject):
         self,
         message_id: str,
         candidate: SoundPreviewCandidate,
-        executable: str,
         waveform_width: int,
     ) -> None:
         self.stop()
@@ -184,7 +175,6 @@ class MsgSoundPreviewSession(QObject):
             self._prepare_worker,
             token,
             candidate,
-            executable,
             max(300, min(int(waveform_width), 1200)),
         )
 
@@ -426,24 +416,12 @@ class MsgSoundPreviewSession(QObject):
         self,
         token: int,
         candidate: SoundPreviewCandidate,
-        executable: str,
         waveform_width: int,
-    ) -> tuple[SoundPreviewCandidate, str, object]:
+    ) -> tuple[SoundPreviewCandidate, Pcm, object]:
         if not self._play_is_current(token):
             raise ValueError("Sound preview was cancelled.")
-        prepared_key = (
-            candidate.source_id,
-            candidate.payload_hash,
-            candidate.start_ms,
-            candidate.end_ms,
-        )
-        prepared = self._prepared.get(prepared_key)
-        if prepared is not None:
-            return prepared
-
         decoded_key = candidate.source_id, candidate.payload_hash
-        cached = self._decoded.get(decoded_key)
-        if cached is None:
+        if self._decoded[0] != decoded_key:
             wem = b""
             selected = candidate
             for path in candidate.paths:
@@ -470,113 +448,22 @@ class MsgSoundPreviewSession(QObject):
                 raise ValueError(
                     f"Source {candidate.source_id} is no longer available in its referenced media."
                 )
-            wav_path = self._decode_wem(token, selected, wem, executable)
-            self._decoded[decoded_key] = selected, wav_path
-        else:
-            decoded, wav_path = cached
-            selected = SoundPreviewCandidate(
-                decoded.source_id,
-                decoded.paths,
-                decoded.payload_hash,
-                candidate.start_ms,
-                candidate.end_ms,
-            )
+            self._decoded = decoded_key, selected, decode_wem(wem)
+        _, decoded, audio = self._decoded
+        selected = replace(decoded, start_ms=candidate.start_ms, end_ms=candidate.end_ms)
         if not self._play_is_current(token):
             raise ValueError("Sound preview was cancelled.")
 
-        playback_path = wav_path
         if selected.is_segment:
-            stem = (
-                f"{selected.source_id}_{selected.payload_hash}_"
-                f"{selected.start_ms}_{selected.end_ms}"
-            )
-            playback_path = str(Path(self._temp_dir, f"{stem}.wav"))
-            if not Path(playback_path).is_file():
-                write_wave_segment(
-                    wav_path,
-                    playback_path,
-                    selected.start_ms,
-                    selected.end_ms,
-                )
-        waveform = analyze_wave_activity(playback_path, waveform_width)
+            audio = wave_segment(audio, selected.start_ms, selected.end_ms)
+        waveform = analyze_wave_activity(audio, waveform_width)
         if not self._play_is_current(token):
             raise ValueError("Sound preview was cancelled.")
-        result = selected, playback_path, waveform
-        self._prepared[prepared_key] = result
-        return result
-
-    def _decode_wem(
-        self,
-        token: int,
-        candidate: SoundPreviewCandidate,
-        wem: bytes,
-        executable: str,
-    ) -> str:
-        stem = f"{candidate.source_id}_{candidate.payload_hash}"
-        wem_path = Path(self._temp_dir, f"{stem}.wem")
-        wav_path = Path(self._temp_dir, f"{stem}.wav")
-        wav_path.unlink(missing_ok=True)
-        wem_path.write_bytes(wem)
-        kwargs = {
-            "stdout": subprocess.PIPE,
-            "stderr": subprocess.PIPE,
-            "encoding": "utf-8",
-            "errors": "replace",
-        }
-        if os.name == "nt":
-            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        try:
-            process = subprocess.Popen(
-                [executable, "-i", "-o", str(wav_path), str(wem_path)],
-                **kwargs,
-            )
-        except OSError as exc:
-            raise ValueError(f"Could not start VGMStream: {exc}") from exc
-
-        try:
-            output = error = ""
-            while True:
-                try:
-                    output, error = process.communicate(timeout=0.1)
-                    break
-                except subprocess.TimeoutExpired:
-                    if not self._play_is_current(token):
-                        process.terminate()
-                        try:
-                            process.wait(timeout=1)
-                        except subprocess.TimeoutExpired:
-                            process.kill()
-                            process.wait()
-                        raise ValueError("Sound preview was cancelled.")
-        finally:
-            try:
-                wem_path.unlink(missing_ok=True)
-            except OSError:
-                pass
-        if process.returncode or not wav_path.is_file() or not wav_path.stat().st_size:
-            try:
-                wav_path.unlink(missing_ok=True)
-            except OSError:
-                pass
-            detail = (
-                error or output or "VGMStream could not decode this WEM."
-            ).strip()
-            raise ValueError(detail)
-        return str(wav_path)
+        return selected, audio, waveform
 
     def _cleanup_worker(self) -> None:
         self._resources.clear()
-        self._decoded.clear()
-        self._prepared.clear()
-        for attempt in range(20):
-            try:
-                shutil.rmtree(self._temp_dir)
-                return
-            except FileNotFoundError:
-                return
-            except OSError:
-                if attempt < 19:
-                    time.sleep(0.1)
+        self._decoded = (None, None, None)
 
     # Worker-to-GUI delivery -------------------------------------------
 
@@ -625,12 +512,12 @@ class MsgSoundPreviewSession(QObject):
             self._active_message_id = ""
             self.playback_failed.emit(error)
             return
-        candidate, wav_path, waveform = result
+        candidate, audio, waveform = result
         if reason := playback_unavailable():
             self._active_message_id = ""
             self.playback_failed.emit(reason)
             return
-        self._player.setSource(wav_path)
+        self._player.setSource(audio)
         self._player.play()
         self.waveform_ready.emit(waveform)
         self.playback_started.emit(candidate)

@@ -1,3 +1,4 @@
+import glob
 import os
 from setuptools import setup, Extension
 
@@ -19,6 +20,15 @@ for module_name in ('fast_pakresolve', 'fast_path_search', 'fast_string_scan', '
 
 if os.name == 'nt':
     ext_modules.append(Extension('fastaudio', sources=['native/fastaudio.c'], extra_compile_args=['/O2']))
+    ext_modules.append(
+        Extension(
+            'fastwem',
+            sources=['native/fastwem.c', *sorted(glob.glob('native/third_party/opus/*/*.c'))],
+            include_dirs=[f'native/third_party/opus/{name}' for name in ('include', 'celt', 'silk')],
+            define_macros=[('OPUS_BUILD', None), ('USE_ALLOCA', None), ('HAVE_LRINT', None), ('HAVE_LRINTF', None)],
+            extra_compile_args=['/O2'],
+        )
+    )
     ext_modules.append(
         Extension(
             'fastmatpreview',

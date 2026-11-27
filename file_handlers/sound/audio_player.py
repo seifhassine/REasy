@@ -55,14 +55,14 @@ class AudioPlayer(QObject):
     def source(self):
         return self._source
 
-    def setSource(self, path):
+    def setSource(self, audio):
         self.stop()
         self._sound.clear()
-        self._source = path or None
-        if not path:
+        self._source = audio
+        if audio is None:
             return
         try:
-            self._sound.append(ensure_fastaudio().load(str(path)))
+            self._sound.append(ensure_fastaudio().load(audio.samples, audio.rate))
         except OSError as exc:
             self.errorOccurred.emit(str(exc))
             return

@@ -72,6 +72,12 @@ _WEM_CODEC_NAMES = {
     0xFFFE: "Wwise PCM",
     0xFFFF: "Wwise Vorbis",
 }
+_WEM_BLOCK_FRAMES = {
+    0x0001: lambda size: 1,
+    0x0002: lambda size: 64,
+    0x8311: lambda size: 2 * size - 8,
+    0xFFFE: lambda size: 1,
+}
 
 # Buses, devices, ShareSets and modulators Wwise often keeps in another bank (init), and music
 # switch and dialogue event leaves in other banks, so a bank may reference them without resolving them locally.
@@ -942,8 +948,12 @@ def parse_wem_metadata(
         pos = end + (chunk_size & 1)
     if not fmt_chunk or len(fmt_chunk) < 16:
         return unknown
-    tag, channels, sample_rate, average_bps = struct.unpack_from("<HHII", fmt_chunk, 0)
-    duration = (data_size / average_bps) if data_size and average_bps else None
+    tag, channels, sample_rate, _, block_align = struct.unpack_from("<HHIIH", fmt_chunk, 0)
+    frames = 0
+    if tag in (0x3041, 0xFFFF) and len(fmt_chunk) >= 0x1C:
+        frames = struct.unpack_from("<I", fmt_chunk, 0x18)[0]
+    elif tag in _WEM_BLOCK_FRAMES and data_size and block_align and channels:
+        frames = data_size // block_align * _WEM_BLOCK_FRAMES[tag](block_align // channels)
     return WemMetadata(
         codec=(
             _WEM_CODEC_NAMES.get(tag)
@@ -952,7 +962,7 @@ def parse_wem_metadata(
         ),
         channels=channels or None,
         sample_rate=sample_rate or None,
-        duration_seconds=duration,
+        duration_seconds=frames / sample_rate if frames > 0 and sample_rate else None,
         media_kind=kind,
     )
 

@@ -42,7 +42,7 @@ function Fresh($stamp, $inputs, $outputs) {
 }
 function Prep {
     $native = @("setup.py", "native\*.c", "native\*.cpp")
-    $pyds = @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fastdxiltext*.pyd", "fastsurface*.pyd", "fastgraph*.pyd", "fastjcns*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "fastkey*.pyd", "fastaudio*.pyd", "fasttexenc*.pyd")
+    $pyds = @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fastdxiltext*.pyd", "fastsurface*.pyd", "fastgraph*.pyd", "fastjcns*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "fastkey*.pyd", "fastaudio*.pyd", "fastwem*.pyd", "fasttexenc*.pyd")
     if (-not $UseCurrentPython -and (Fresh $pyStamp ($native + @("requirements.txt", "scripts\compile_qm.py", "resources\i18n\*.ts")) ($pyds + "resources\i18n\*.qm"))) { return $true }
     $deps = $UseCurrentPython -or (Fresh $pyStamp @("requirements.txt") @())
     if (-not $deps -and -not (OK $py @("-m", "ensurepip", "--upgrade"))) { return $false }

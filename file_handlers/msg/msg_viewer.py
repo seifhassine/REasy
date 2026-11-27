@@ -18,7 +18,6 @@ lazy from utils.number_format import format_full_float
 lazy from file_handlers.sound.sound_waveform import WaveformWidget
 lazy from file_handlers.sound import sound_profile_for_handler
 lazy from file_handlers.msg.msg_sound_player import MsgSoundPreviewSession
-lazy from file_handlers.sound.vgmstream import ensure_vgmstream
 
 
 CHAR_COUNT_TEXT = QT_TRANSLATE_NOOP("MsgViewer", "{count} chars")
@@ -1229,12 +1228,7 @@ class MsgViewer(QWidget):
     def _play_sound(self, message_id, candidate) -> None:
         if self._sound_session is None:
             return
-        executable = ensure_vgmstream(self, self.handler.app)
-        if not executable:
-            return
-        self._sound_session.play(
-            message_id, candidate, executable, self.msg_waveform.width()
-        )
+        self._sound_session.play(message_id, candidate, self.msg_waveform.width())
 
     def _on_sound_preparing(self, candidate) -> None:
         self.msg_waveform.clear()
@@ -1263,8 +1257,7 @@ class MsgViewer(QWidget):
         self._refresh_sound_column()
 
     def _on_sound_waveform_ready(self, payload) -> None:
-        if payload is not None:
-            self.msg_waveform.set_data(payload["peaks"], payload["ranges"])
+        self.msg_waveform.set_data(payload["peaks"], payload["ranges"])
 
     def _on_sound_failed(self, message: str) -> None:
         self.msg_waveform.clear()

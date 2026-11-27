@@ -9,6 +9,10 @@ import wave
 from dataclasses import dataclass
 from enum import Enum
 
+lazy import numpy as np
+
+from .pcm import Pcm
+
 
 WWISE_MIDI_PLUGIN_ID = 0x00100001
 IZOTOPE_HYBRID_REVERB_PLUGIN_ID = 0x00021033
@@ -395,6 +399,12 @@ def hybrid_reverb_to_wav(data: bytes, sample_rate: int = 48_000) -> bytes:
     return output.getvalue()
 
 
+def hybrid_reverb_pcm(data: bytes, sample_rate: int = 48_000) -> Pcm:
+    media = parse_hybrid_reverb_media(data)
+    samples = np.array(media.samples, np.float32).reshape(media.channels, -1).T
+    return Pcm(np.ascontiguousarray(samples.clip(-1.0, 1.0)), sample_rate)
+
+
 def parse_convolution_reverb_media(data: bytes) -> ConvolutionReverbMedia:
     """Parse Wwise's compiled Convolution Reverb header and float IR layout."""
 
@@ -447,6 +457,12 @@ def convolution_reverb_to_wav(data: bytes) -> bytes:
     return output.getvalue()
 
 
+def convolution_reverb_pcm(data: bytes) -> Pcm:
+    media = parse_convolution_reverb_media(data)
+    samples = np.frombuffer(data, "<f4", offset=media.data_offset).reshape(-1, media.channels)
+    return Pcm(samples.clip(-1.0, 1.0), media.sample_rate)
+
+
 def detect_media_kind(data: bytes = b"", plugin_id: int | None = None) -> WwiseMediaKind:
     """Classify media without treating arbitrary non-RIFF data as audio."""
 
@@ -493,8 +509,10 @@ __all__ = [
     "WWISE_MIDI_PLUGIN_ID",
     "WwiseMediaKind",
     "WwiseMidi",
+    "convolution_reverb_pcm",
     "convolution_reverb_to_wav",
     "detect_media_kind",
+    "hybrid_reverb_pcm",
     "hybrid_reverb_to_wav",
     "midi_to_wwise",
     "parse_convolution_reverb_media",

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import wave
-
 lazy import numpy as np
 from PySide6.QtCore import QPoint, Qt, Signal
 lazy from PySide6.QtGui import QColor, QPainter, QPen
@@ -11,27 +9,15 @@ from PySide6.QtWidgets import QSizePolicy, QWidget
 
 lazy from ui.styles import current_colors
 
+from .pcm import Pcm
 
-def analyze_wave_activity(wav_path, width, sensitivity=0.52):
-    """Return normalized peaks and merged activity ranges for PCM16 WAV audio."""
 
-    try:
-        with wave.open(str(wav_path), "rb") as source:
-            channels, rate, frames = (
-                source.getnchannels(),
-                source.getframerate(),
-                source.getnframes(),
-            )
-            if source.getsampwidth() != 2 or min(channels, rate, frames) <= 0:
-                return None
-            pcm = np.frombuffer(source.readframes(frames), dtype=np.int16)
-    except (OSError, wave.Error):
-        return None
+def analyze_wave_activity(audio, width, sensitivity=0.52):
+    """Return normalized peaks and merged activity ranges for decoded audio."""
 
-    pcm = pcm[: pcm.size // channels * channels]
-    if not pcm.size:
-        return None
-    mono = np.abs(pcm.reshape(-1, channels).astype(np.float32)).mean(axis=1) / 32768.0
+    rate = audio.rate
+    full_scale = 32768.0 if audio.samples.dtype == np.int16 else 1.0
+    mono = np.abs(audio.samples.astype(np.float32)).mean(axis=1) / full_scale
     frame_count = mono.size
 
     peak_step = max(1, (frame_count + max(1, width) - 1) // max(1, width))
@@ -78,87 +64,51 @@ def analyze_wave_activity(wav_path, width, sensitivity=0.52):
     }
 
 
-def write_wave_preview(source_path, output_path, channel=-1, normalize=False):
-    """Write one zero-based channel (all when negative) of a PCM16 WAV, optionally
-    peak-normalized; return the applied gain factor."""
+def wave_preview(audio, channel=-1, normalize=False):
+    """Return one zero-based channel (all when negative), optionally peak-normalized,
+    and the applied gain factor."""
 
-    with wave.open(str(source_path), "rb") as source:
-        params = source.getparams()
-        if params.sampwidth != 2 or channel >= params.nchannels:
-            raise ValueError("Decoded WAV has an unsupported channel layout.")
-        samples = np.frombuffer(source.readframes(params.nframes), dtype="<i2")
-    samples = samples.reshape(-1, params.nchannels)
-    if channel >= 0:
-        samples = samples[:, channel:channel + 1]
-    peak = int(np.abs(samples.astype(np.int32)).max(initial=0))
-    gain = 32767 / peak if normalize and peak else 1.0
+    samples = audio.samples if channel < 0 else audio.samples[:, [channel]]
+    integer = samples.dtype == np.int16
+    peak = max(float(samples.max()), -float(samples.min()))
+    gain = (32767 if integer else 1.0) / peak if normalize and peak else 1.0
     if gain != 1:
-        samples = np.round(samples * gain).clip(-32768, 32767).astype("<i2")
-    with wave.open(str(output_path), "wb") as output:
-        output.setparams(params._replace(nchannels=samples.shape[1]))
-        output.writeframes(np.ascontiguousarray(samples).tobytes())
-    return gain
+        scaled = samples * gain
+        samples = (np.round(scaled).clip(-32768, 32767) if integer else scaled).astype(samples.dtype, copy=False)
+    return Pcm(samples, audio.rate), gain
 
 
-def write_wave_segment(source_path, output_path, start_ms, end_ms):
-    """Copy one time interval from a decoded PCM WAV without reencoding it."""
+def wave_segment(audio, start_ms, end_ms):
+    """Return one time interval of decoded audio."""
 
-    with wave.open(str(source_path), "rb") as source:
-        channels, sample_width, rate, frames = (
-            source.getnchannels(),
-            source.getsampwidth(),
-            source.getframerate(),
-            source.getnframes(),
+    frames = len(audio.samples)
+    start = max(0, min(frames, round(int(start_ms) * audio.rate / 1000)))
+    end = max(start, min(frames, round(int(end_ms) * audio.rate / 1000)))
+    if end <= start:
+        raise ValueError(
+            "The referenced message interval is outside the decoded audio."
         )
-        start = max(0, min(frames, round(int(start_ms) * rate / 1000)))
-        end = max(start, min(frames, round(int(end_ms) * rate / 1000)))
-        if end <= start:
-            raise ValueError(
-                "The referenced message interval is outside the decoded audio."
-            )
-        source.setpos(start)
-        payload = source.readframes(end - start)
-        compression = source.getcomptype(), source.getcompname()
-    with wave.open(str(output_path), "wb") as output:
-        output.setparams(
-            (
-                channels,
-                sample_width,
-                rate,
-                end - start,
-                compression[0],
-                compression[1],
-            )
-        )
-        output.writeframes(payload)
+    return Pcm(audio.samples[start:end], audio.rate)
 
 
 _WAVE_EDITS = {
-    "silence": lambda data, first, last: data[:first] + bytes(last - first) + data[last:],
-    "trim": lambda data, first, last: data[:first] + data[last:],
-    "crop": lambda data, first, last: data[first:last],
+    "silence": lambda samples, first, last: np.concatenate(
+        (samples[:first], np.zeros_like(samples[first:last]), samples[last:])
+    ),
+    "trim": lambda samples, first, last: np.concatenate((samples[:first], samples[last:])),
+    "crop": lambda samples, first, last: samples[first:last],
 }
 
 
-def write_wave_edit(source_path, output_path, operation, start, end):
-    
-    with wave.open(str(source_path), "rb") as source:
-        params = source.getparams()
-        payload = source.readframes(params.nframes)
-    if params.sampwidth < 2:
-        raise ValueError("Only 16-bit or wider PCM can be edited.")
-    frame = params.nchannels * params.sampwidth
-    first, last = (
-        round(max(0.0, min(1.0, value)) * params.nframes) * frame for value in (start, end)
-    )
+def wave_edit(audio, operation, start, end):
+    frames = len(audio.samples)
+    first, last = (round(max(0.0, min(1.0, value)) * frames) for value in (start, end))
     if last <= first:
         raise ValueError("Select part of the waveform first.")
-    payload = _WAVE_EDITS[operation](payload, first, last)
-    if not payload:
+    samples = _WAVE_EDITS[operation](audio.samples, first, last)
+    if not len(samples):
         raise ValueError("The edit would remove all audio.")
-    with wave.open(str(output_path), "wb") as output:
-        output.setparams(params)
-        output.writeframes(payload)
+    return Pcm(samples, audio.rate)
 
 
 class WaveformWidget(QWidget):

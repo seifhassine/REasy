@@ -117,12 +117,6 @@ class SettingsDialog(QDialog):
         self._on_wwise_game_changed(self.game_version_combo.currentText())
 
         tools_form = self._add_section(general_layout, self.tr("Tools"))
-        self.vgmstream_entry = QLineEdit(self.settings.get("vgmstream_cli_path", ""))
-        self.vgmstream_browse_button = self._browse_button()
-        add_row(
-            tools_form, self.tr("VGMStream CLI Path:"),
-            self._path_row(self.vgmstream_entry, self.vgmstream_browse_button),
-        )
         self.blender_entry = QLineEdit(self.settings.get("blender_path", ""))
         self.blender_entry.setPlaceholderText(self.tr("Found automatically when installed"))
         self.blender_browse_button = self._browse_button()
@@ -258,7 +252,6 @@ class SettingsDialog(QDialog):
         buttons.accepted.connect(self._apply_and_accept)
         buttons.rejected.connect(self.reject)
         self.json_browse_button.clicked.connect(self._browse_json)
-        self.vgmstream_browse_button.clicked.connect(self._browse_vgmstream)
         self.blender_browse_button.clicked.connect(self._browse_blender)
         self.wwise_browse_button.clicked.connect(self._browse_wwise)
         self.game_version_combo.currentTextChanged.connect(
@@ -334,16 +327,6 @@ class SettingsDialog(QDialog):
         )
         if file_path:
             self.json_entry.setText(file_path)
-
-    def _browse_vgmstream(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            self.tr("Select VGMStream CLI"),
-            os.path.dirname(self.vgmstream_entry.text()) if self.vgmstream_entry.text() else "",
-            self.tr("Executable Files (*)"),
-        )
-        if file_path:
-            self.vgmstream_entry.setText(file_path)
 
     def _browse_blender(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -456,7 +439,6 @@ class SettingsDialog(QDialog):
 
         app = self.app_window
         app.set_rsz_json_path(new_json_path, save=False)
-        self.settings["vgmstream_cli_path"] = self.vgmstream_entry.text().strip()
         self.settings["blender_path"] = self.blender_entry.text().strip()
         self._remember_wwise_path()
         for game, path in tuple(self._wwise_paths.items()):

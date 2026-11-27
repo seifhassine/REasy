@@ -13,6 +13,7 @@ from PySide6.QtGui import QIcon
 
 lazy from app_config import CURRENT_VERSION
 lazy from file_handlers.sound.audio_player import AudioPlayer
+lazy from file_handlers.sound.pcm import read_wav
 lazy from ui.editor_widgets import styled_label
 lazy from ui.icons import line_icon
 lazy from utils.app_paths import resource_path
@@ -59,7 +60,7 @@ class AboutDialog(QDialog):
         layout.addLayout(header)
 
         theme = AudioPlayer(self)
-        theme.setSource(resource_path("resources/audio/credits.wav"))
+        theme.setSource(read_wav(resource_path("resources/audio/credits.wav")))
         theme.setLoops(True)
 
         footer = QHBoxLayout()

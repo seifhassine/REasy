@@ -13,7 +13,7 @@ binaries = [('.cache/gdeflate/libGDeflate.dll', 'tools/runtimes/win-x64/native')
             ('.cache/dxc/dxcompiler.dll', '.')]
 hiddenimports = ['fast_pakresolve', 'fast_path_search', 'fast_string_scan', 'fastmesh', 'fastsdftex',
                  'fastmatpreview', 'fastdxil', 'fastdxiltext', 'fastsurface', 'fastgraph', 'fastjcns', 'fastkey',
-                 'fastaudio', 'fasttexenc', 'texture2ddecoder']
+                 'fastaudio', 'fastwem', 'fasttexenc', 'texture2ddecoder']
 hiddenimports += collect_submodules('file_handlers')
 texture_datas, texture_binaries, texture_imports = collect_all('texture2ddecoder')
 datas += texture_datas

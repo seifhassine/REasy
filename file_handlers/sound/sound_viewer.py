@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
+import io
 import math
-import os
-import shutil
-lazy import subprocess
 import tempfile
 import threading
-import wave
 from collections import Counter
 from contextlib import suppress
 from dataclasses import replace
@@ -124,11 +121,12 @@ lazy from .sound_resources import (
     resource_key,
 )
 lazy from .audio_player import AudioPlayer, PlaybackState, playback_unavailable, wake_output
+lazy from .pcm import Pcm, write_wav
 lazy from .sound_waveform import (
     WaveformWidget,
     analyze_wave_activity,
-    write_wave_preview,
-    write_wave_edit,
+    wave_edit,
+    wave_preview,
 )
 from .wwise_schema import STRUCTURED_BANK_VERSIONS, _hirc_type_name, is_hirc_bus, is_hirc_plugin
 from .wwise_v132 import (
@@ -137,8 +135,10 @@ from .wwise_v132 import (
 )
 lazy from .wwise_media import (
     WwiseMediaKind,
+    convolution_reverb_pcm,
     convolution_reverb_to_wav,
     detect_media_kind,
+    hybrid_reverb_pcm,
     hybrid_reverb_to_wav,
     midi_to_wwise,
     parse_convolution_reverb_media,
@@ -147,7 +147,7 @@ lazy from .wwise_media import (
     validate_crankcase_rev_model,
     wwise_to_midi,
 )
-lazy from .vgmstream import ensure_vgmstream
+lazy from .wem_decoder import decode_wem
 
 
 _COLUMNS = [
@@ -385,14 +385,11 @@ class SoundViewer(QWidget):
         self._active_event_id = None
         self._selected_flow_node = (None, None)
         self._event_filter_initialized = False
-        self._temp_dir = tempfile.mkdtemp(prefix="reasy_sound_")
         self._rep_settings_host = QWidget()
         self._settings_dialog = None
-        self._current_audio: tuple[str | None, str | None] = (None, None)
-        self._decoded_cache: dict[int, tuple] = {}
-        self._wave_edits: dict[int, list[str]] = {}
-        self._preview_audio_path = None
-        self._derived_audio_path = None
+        self._current_audio: Pcm | None = None
+        self._decoded: tuple[int | None, Pcm | None] = (None, None)
+        self._wave_edits: dict[int, list[tuple[str, float, float]]] = {}
         self._preview_source_id = None
         self._resume_position_ms = 0
         self._stopped_source_id = None
@@ -405,9 +402,6 @@ class SoundViewer(QWidget):
         self._update_profile_text()
         self._start_wwise_project_warmup()
         self.waveform_ready.connect(self._on_waveform_ready)
-        self.destroyed.connect(
-            lambda *_args, path=self._temp_dir: shutil.rmtree(path, ignore_errors=True)
-        )
         call_later(self, 0, self._on_analyze)
 
     @property
@@ -624,7 +618,7 @@ class SoundViewer(QWidget):
         self.event_graph.cleanup()
         self.bank_graph.cleanup()
         self._cleanup_audio()
-        shutil.rmtree(self._temp_dir, ignore_errors=True)
+        self._purge_decoded_cache()
 
     def _make_btn(self, text, icon, callback, *, enabled=True, compact=False, variant=None):
         button = QPushButton(text)
@@ -1423,14 +1417,6 @@ class SoundViewer(QWidget):
         if self.play_btn.isEnabled():
             self._on_play()
 
-    @staticmethod
-    def _remove_file(path):
-        try:
-            if path:
-                os.remove(path)
-        except OSError:
-            pass
-
     def _cleanup_audio(self):
         self._waveform_job += 1
         self._active_ms = []
@@ -1441,12 +1427,7 @@ class SoundViewer(QWidget):
             self.player.setSource(None)
         except RuntimeError:
             pass
-        # Decoded media lives in _decoded_cache until the file is re-parsed or
-        # the viewer closes, so replays never re-run vgmstream.
-        self._remove_file(self._derived_audio_path)
-        self._current_audio = (None, None)
-        self._preview_audio_path = None
-        self._derived_audio_path = None
+        self._current_audio = None
         self._preview_source_id = None
         self.normalize_check.setText(self.tr("Normalize"))
         self.channel_combo.blockSignals(True)
@@ -1455,16 +1436,6 @@ class SoundViewer(QWidget):
         self.channel_combo.setEnabled(False)
         self.channel_combo.blockSignals(False)
         self._update_wave_edit_buttons()
-
-    @staticmethod
-    def _run_vgmstream(arguments):
-        kwargs = {"check": False, "capture_output": True, "encoding": "utf-8", "errors": "replace"}
-        if os.name == "nt":
-            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        try:
-            return subprocess.run(arguments, **kwargs)
-        except OSError as exc:
-            return subprocess.CompletedProcess(arguments, 1, stderr=str(exc))
 
     def _media_kind(self, track, payload=b""):
         kind = getattr(track, "media_kind", WwiseMediaKind.UNKNOWN)
@@ -1503,50 +1474,15 @@ class SoundViewer(QWidget):
     def _decode_track(self, track):
         media = self._complete_media(track)
         kind = self._media_kind(track, media)
-        ir_exporters = {
-            WwiseMediaKind.HYBRID_REVERB_IR: lambda: hybrid_reverb_to_wav(
-                media, self._media_sample_rate()
-            ),
-            WwiseMediaKind.CONVOLUTION_REVERB_IR: lambda: convolution_reverb_to_wav(media),
-        }
-        if kind in ir_exporters:
-            descriptor, wav_path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wav")
-            os.close(descriptor)
-            try:
-                Path(wav_path).write_bytes(ir_exporters[kind]())
-            except (OSError, ValueError):
-                self._remove_file(wav_path)
-                raise
-            return None, wav_path
-        if kind != WwiseMediaKind.AUDIO:
-            return None, None
-        return self._decode_wem(media)
+        if kind == WwiseMediaKind.AUDIO:
+            return decode_wem(media)
+        if kind == WwiseMediaKind.HYBRID_REVERB_IR:
+            return hybrid_reverb_pcm(media, self._media_sample_rate())
+        if kind == WwiseMediaKind.CONVOLUTION_REVERB_IR:
+            return convolution_reverb_pcm(media)
+        return None
 
-    def _decode_wem(self, wem_data):
-        executable = ensure_vgmstream(self, self.handler.app)
-        if not wem_data or not executable:
-            return None, None
-        wem_fd, wem_path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wem")
-        wav_fd, wav_path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wav")
-        os.close(wem_fd)
-        os.close(wav_fd)
-        Path(wem_path).write_bytes(wem_data)
-        # vgmstream otherwise renders looped WEMs multiple times and appends a
-        # synthetic fade. Preview and activity analysis need one native pass.
-        result = self._run_vgmstream([executable, "-i", "-o", wav_path, wem_path])
-        if result.returncode or not Path(wav_path).stat().st_size:
-            self._remove_file(wem_path)
-            self._remove_file(wav_path)
-            QMessageBox.warning(self, self.tr("Decode Error"), (result.stderr or result.stdout or self.tr("VGMStream could not decode this WEM.")).strip())
-            return None, None
-        return wem_path, wav_path
-
-    def _configure_channels(self, wav_path):
-        try:
-            with wave.open(str(wav_path), "rb") as source:
-                channels = source.getnchannels()
-        except (OSError, wave.Error):
-            channels = 1
+    def _configure_channels(self, channels):
         self.channel_combo.blockSignals(True)
         self.channel_combo.clear()
         self.channel_combo.addItem(
@@ -1560,16 +1496,15 @@ class SoundViewer(QWidget):
         self.channel_combo.setEnabled(channels > 1)
         self.channel_combo.blockSignals(False)
 
-    def _start_preview(self, wav_path, *, start_ms=0):
-        self._preview_audio_path = wav_path
+    def _start_preview(self, audio, *, start_ms=0):
         if reason := playback_unavailable():
-            self._queue_waveform(wav_path)
+            self._queue_waveform(audio)
             QMessageBox.warning(self, self.tr("Playback"), reason)
             return
-        self.player.setSource(wav_path)
+        self.player.setSource(audio)
         self.player.setPosition(start_ms)
         self.player.play()
-        self._queue_waveform(wav_path)
+        self._queue_waveform(audio)
         self.status.setText(
             self.tr("Playing source {id} — {channels}; analyzing activity…").format(
                 id=self._preview_source_id,
@@ -1578,41 +1513,34 @@ class SoundViewer(QWidget):
         )
 
     def _on_preview_option_changed(self, _value=None):
-        if self._current_audio[1] and self.channel_combo.currentIndex() >= 0:
+        if self._current_audio and self.channel_combo.currentIndex() >= 0:
             self._refresh_preview(start_ms=self.player.position())
 
     def _refresh_preview(self, *, start_ms):
-        mix_path, old_path = self._current_audio[1], self._derived_audio_path
-        channel = int(self.channel_combo.currentData())
         normalize = self.normalize_check.isChecked()
-        path, gain = mix_path, 1.0
-        if channel >= 0 or normalize:
-            descriptor, path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wav")
-            os.close(descriptor)
-            try:
-                gain = write_wave_preview(mix_path, path, channel, normalize)
-            except (OSError, ValueError, wave.Error) as exc:
-                self._remove_file(path)
-                QMessageBox.warning(self, self.tr("Preview"), str(exc))
-                return
-        self._derived_audio_path = path if path != mix_path else None
+        audio, gain = wave_preview(self._current_audio, int(self.channel_combo.currentData()), normalize)
         self.normalize_check.setText(
             self.tr("Normalize ({gain:+.1f} dB)").format(gain=20 * math.log10(gain))
             if normalize else self.tr("Normalize")
         )
-        self._start_preview(path, start_ms=start_ms)
-        self._remove_file(old_path)
+        self._start_preview(audio, start_ms=start_ms)
 
     def _cached_audio(self, track):
-        """Return the cached decoded pair for ``track``, decoding once on demand."""
+        """Return the decoded audio of ``track``, kept for the last decoded source."""
 
-        if track.source_id not in self._decoded_cache:
+        if self._decoded[0] != track.source_id:
             try:
-                self._decoded_cache[track.source_id] = self._decode_track(track)
+                self._decoded = track.source_id, self._decode_track(track)
             except (OSError, ValueError) as exc:
                 QMessageBox.warning(self, self.tr("Preview Error"), str(exc))
-                self._decoded_cache[track.source_id] = (None, None)
-        return self._decoded_cache[track.source_id]
+                return None
+        return self._decoded[1]
+
+    def _edited_audio(self, track):
+        audio = self._cached_audio(track)
+        for edit in self._wave_edits.get(track.source_id, ()):
+            audio = wave_edit(audio, *edit)
+        return audio
 
     def _on_play(self):
         selected = self._require_track(self.tr("Playback"))
@@ -1630,46 +1558,40 @@ class SoundViewer(QWidget):
                 self._resume_position_ms = 0
         self._stopped_source_id = None
         self.status.setText(self.tr("Decoding source {id}…").format(id=track.source_id))
-        wem_path, wav_path = self._cached_audio(track)
-        if not wav_path:
+        audio = self._edited_audio(track)
+        if audio is None:
             self.status.setText(self.tr("Decode failed."))
             return
         self._preview_source_id = track.source_id
-        self._current_audio = (wem_path, wav_path)
-        self._play_wave_version(start_ms=self._resume_position_ms)
+        self._play_wave_version(audio, start_ms=self._resume_position_ms)
         self._resume_position_ms = 0
 
-    def _play_wave_version(self, *, start_ms=0):
-        """Preview the newest edit of the current source, or its decoded audio."""
+    def _play_wave_version(self, audio, *, start_ms=0):
+        """Preview ``audio``: the current source's decoded audio with its edits."""
 
-        edits = self._wave_edits.get(self._preview_source_id)
-        mix_path = edits[-1] if edits else self._decoded_cache[self._preview_source_id][1]
-        self._current_audio = (self._current_audio[0], mix_path)
+        self._current_audio = audio
         self.waveform.clear()
-        self._configure_channels(mix_path)
+        self._configure_channels(audio.samples.shape[1])
         self._refresh_preview(start_ms=start_ms)
         self._update_wave_edit_buttons()
 
-    def _queue_waveform(self, wav_path):
+    def _queue_waveform(self, audio):
         self._waveform_job += 1
         job = self._waveform_job
         width = max(300, self.waveform.width())
 
         def analyze():
-            payload = analyze_wave_activity(wav_path, width)
+            payload = analyze_wave_activity(audio, width)
             with suppress(RuntimeError):
-                self.waveform_ready.emit((job, wav_path, payload))
+                self.waveform_ready.emit((job, payload))
 
         threading.Thread(target=analyze, daemon=True).start()
 
     def _on_waveform_ready(self, result):
         if self._cleanup_done:
             return
-        job, wav_path, payload = result
-        if job != self._waveform_job or wav_path != self._preview_audio_path:
-            return
-        if payload is None:
-            self.status.setText(self.tr("Playing audio; waveform analysis is unavailable."))
+        job, payload = result
+        if job != self._waveform_job:
             return
         self._active_ms = payload["active_ms"]
         skippable = len(self._active_ms) > 1 or any(start > 250 for start, _end in self._active_ms)
@@ -1699,10 +1621,7 @@ class SoundViewer(QWidget):
         self.status.clear()
 
     def _purge_decoded_cache(self):
-        for paths in (*self._decoded_cache.values(), *self._wave_edits.values()):
-            for path in paths:
-                self._remove_file(path)
-        self._decoded_cache.clear()
+        self._decoded = (None, None)
         self._wave_edits.clear()
         self._stopped_source_id = None
 
@@ -1726,19 +1645,14 @@ class SoundViewer(QWidget):
         source_id, selection = self._preview_source_id, self.waveform.selection()
         if source_id is None or selection is None:
             return
-        descriptor, output = tempfile.mkstemp(
-            dir=self._temp_dir, prefix=f"{source_id}_edit_", suffix=".wav"
-        )
-        os.close(descriptor)
         try:
-            write_wave_edit(self._current_audio[1], output, operation, *selection)
-        except (OSError, ValueError, wave.Error) as exc:
-            self._remove_file(output)
+            audio = wave_edit(self._current_audio, operation, *selection)
+        except ValueError as exc:
             QMessageBox.warning(self, self.tr("Edit Audio"), str(exc))
             return
-        self._wave_edits.setdefault(source_id, []).append(output)
+        self._wave_edits.setdefault(source_id, []).append((operation, *selection))
         start = 0.0 if operation == "crop" else selection[0]
-        self._play_wave_version(start_ms=round(start * self._duration_ms))
+        self._play_wave_version(audio, start_ms=round(start * self._duration_ms))
 
     def _drop_wave_edits(self, _checked=False, *, start):
         """Delete the selected source's edits from index ``start`` on (undo: -1, discard: 0)."""
@@ -1747,15 +1661,11 @@ class SoundViewer(QWidget):
         edits = self._wave_edits.get(track.source_id) if track else None
         if not edits:
             return
-        dropped = edits[start:]
         del edits[start:]
         if track.source_id == self._preview_source_id:
-            self._play_wave_version(start_ms=self.player.position())
+            self._play_wave_version(self._edited_audio(track), start_ms=self.player.position())
         else:
             self._update_wave_edit_buttons()
-        # Removed only once the preview has moved off them.
-        for path in dropped:
-            self._remove_file(path)
 
     def _on_apply_wave_edits(self):
         action = self.tr("Apply Edits")
@@ -1775,17 +1685,16 @@ class SoundViewer(QWidget):
             return
         if not self._confirm_replacement_plans((plan,)):
             return
-        edited = edits[-1]
-        with (
-            wave.open(edited, "rb") as result,
-            wave.open(self._decoded_cache[track.source_id][1], "rb") as original,
-        ):
-            retimed = result.getnframes() != original.getnframes()
         self._cleanup_audio()
-        self._replace_source_with(
-            track, plan, WwiseMediaKind.AUDIO, edited,
-            inherit_metadata=not retimed, quality_preset="maximum",
-        )
+        edited = self._edited_audio(track)
+        retimed = len(edited.samples) != len(self._cached_audio(track).samples)
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
+            path = Path(folder, f"{track.source_id}.wav")
+            write_wav(edited, path)
+            self._replace_source_with(
+                track, plan, WwiseMediaKind.AUDIO, path,
+                inherit_metadata=not retimed, quality_preset="maximum",
+            )
 
     @staticmethod
     def _save_path(parent, title, default, extension, file_filter):
@@ -1909,17 +1818,11 @@ class SoundViewer(QWidget):
         path = self._save_path(self, self.tr("Export WAV"), f"{track.source_id}.wav", ".wav", "WAV Files (*.wav)")
         if not path:
             return
-        temporary = self._decode_track(track)
         try:
-            if not temporary[1]:
-                return
-            shutil.copyfile(temporary[1], path)
+            write_wav(self._decode_track(track), path)
             self.status.setText(self.tr("WAV exported to {path}").format(path=path))
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Export Error"), str(exc))
-        finally:
-            for value in temporary:
-                self._remove_file(value)
 
     def _ensure_modding_allowed(self, action):
         """Block sound modding outside a project with the PAK directory configured."""
@@ -1975,20 +1878,20 @@ class SoundViewer(QWidget):
             return
         if not self._confirm_replacement_plans((plan,)):
             return
-        temporary = self._decode_wem(plan.original_wem)
         try:
-            if not temporary[1]:
-                return
-            wav_path = Path(temporary[1])
-            edited_wav = write_riff_metadata(wav_path.read_bytes(), edited)
-            wav_path.write_bytes(edited_wav)
-            authored = convert_file_to_wwise_wem(
-                wav_path,
-                game=installation.profile.game,
-                installation=installation,
-                preserve_metadata_from=edited_wav,
-                match_codec_from=plan.original_wem,
-            )
+            wav = io.BytesIO()
+            write_wav(decode_wem(plan.original_wem), wav)
+            edited_wav = write_riff_metadata(wav.getvalue(), edited)
+            with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
+                wav_path = Path(folder, f"{track.source_id}.wav")
+                wav_path.write_bytes(edited_wav)
+                authored = convert_file_to_wwise_wem(
+                    wav_path,
+                    game=installation.profile.game,
+                    installation=installation,
+                    preserve_metadata_from=edited_wav,
+                    match_codec_from=plan.original_wem,
+                )
             verified = read_riff_metadata(authored)
             if verified.loops != edited.loops or verified.markers != edited.markers:
                 raise ValueError(self.tr("Wwise did not preserve the requested loop/cue metadata."))
@@ -2005,9 +1908,6 @@ class SoundViewer(QWidget):
             )
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Loop / Markers"), str(exc))
-        finally:
-            for value in temporary:
-                self._remove_file(value)
 
     def _on_export_all(self):
         tracks = [track for track in self._parsed_tracks if track.available and track.payload_complete]
@@ -2057,7 +1957,6 @@ class SoundViewer(QWidget):
                     WwiseMediaKind.CRANKCASE_REV_MODEL: ".model",
                 }.get(kind, ".wav")
                 target = Path(directory, f"{track.source_id}{extension}")
-                temporary = (None, None)
                 try:
                     if kind == WwiseMediaKind.MIDI:
                         target.write_bytes(wwise_to_midi(media))
@@ -2071,17 +1970,11 @@ class SoundViewer(QWidget):
                         validate_crankcase_rev_model(media)
                         target.write_bytes(media)
                     elif kind == WwiseMediaKind.AUDIO:
-                        temporary = self._decode_track(track)
-                        if not temporary[1]:
-                            raise OSError("decode failed")
-                        shutil.copyfile(temporary[1], target)
+                        write_wav(self._decode_track(track), target)
                     else:
                         raise ValueError("unknown media")
                 except (OSError, ValueError):
                     failures.append(target.name)
-                finally:
-                    for value in temporary:
-                        self._remove_file(value)
         progress.setValue(len(tracks))
         self.status.setText(self.tr("Export finished: {count} source(s), {failed} failure(s).").format(count=len(tracks), failed=len(failures)))
         if failures:
@@ -4772,28 +4665,14 @@ class SoundViewer(QWidget):
             ):
                 continue
             split_prefetch = self._is_split_prefetch(track)
-            wem = (
-                embedded_wem_view(self.handler.raw_data, track)
-                if track.available and not split_prefetch else b""
-            )
+            wem = embedded_wem_view(self.handler.raw_data, track)
             metadata = (
                 parse_wem_metadata(wem, track.plugin_id, track.media_kind)
                 if wem else None
             )
             location, guidance = self._track_status(track)
             duration, duration_key = (self.tr("Partial") if track.available else "—"), float("inf")
-            if split_prefetch:
-                # The event bank holds only a prefetch stub; measure the full
-                # streamed media instead of showing a placeholder.
-                try:
-                    full = parse_wem_metadata(self._complete_media(track), track.plugin_id, track.media_kind)
-                except Exception:
-                    full = None
-                if full and full.duration_seconds is not None:
-                    duration, duration_key = self._fmt_duration(full.duration_seconds), full.duration_seconds
-                else:
-                    duration = self.tr("Full media in PCK")
-            elif metadata and track.payload_complete:
+            if metadata and track.payload_complete:
                 duration = self._fmt_duration(metadata.duration_seconds)
                 if metadata.duration_seconds is not None:
                     duration_key = metadata.duration_seconds

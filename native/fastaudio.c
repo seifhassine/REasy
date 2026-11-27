@@ -2,9 +2,8 @@
 #include <Python.h>
 
 #define MINIAUDIO_IMPLEMENTATION
+#define MA_NO_DECODING
 #define MA_NO_ENCODING
-#define MA_NO_FLAC
-#define MA_NO_MP3
 #define MA_NO_GENERATION
 #define MA_ENABLE_ONLY_SPECIFIC_BACKENDS
 #define MA_ENABLE_WASAPI
@@ -16,7 +15,9 @@
 
 typedef struct Sound {
     ma_sound sound;
+    ma_audio_buffer buffer;
     struct Sound *prev, *next;
+    float frames[];
 } Sound;
 
 static ma_device device;
@@ -90,16 +91,8 @@ static int started(Sound *entry)
     return ma_node_get_state(&entry->sound) == ma_node_state_started;
 }
 
-static ma_uint32 rate_of(Sound *entry)
+static void destroy(Sound *entry)
 {
-    ma_uint32 rate = 0;
-    ma_sound_get_data_format(&entry->sound, NULL, NULL, &rate, NULL, 0);
-    return rate;
-}
-
-static void release(PyObject *capsule)
-{
-    Sound *entry = sound_of(capsule);
     if (entry->prev) {
         entry->prev->next = entry->next;
     } else {
@@ -109,7 +102,13 @@ static void release(PyObject *capsule)
         entry->next->prev = entry->prev;
     }
     ma_sound_uninit(&entry->sound);
+    ma_audio_buffer_uninit(&entry->buffer);
     PyMem_RawFree(entry);
+}
+
+static void release(PyObject *capsule)
+{
+    destroy(sound_of(capsule));
 }
 
 static PyObject *available(PyObject *module, PyObject *unused)
@@ -117,44 +116,62 @@ static PyObject *available(PyObject *module, PyObject *unused)
     return PyBool_FromLong(prepare());
 }
 
-static PyObject *load(PyObject *module, PyObject *path)
+static PyObject *load(PyObject *module, PyObject *args)
 {
-    wchar_t *wide;
-    Sound *entry;
+    PyObject *samples, *capsule;
+    unsigned int rate;
+    Py_buffer view;
+    ma_format format;
+    ma_uint32 channels;
+    ma_uint64 frames;
+    ma_audio_buffer_config config;
     ma_result result;
-    PyObject *capsule;
+    Sound *entry;
+    if (!PyArg_ParseTuple(args, "OI", &samples, &rate)) {
+        return NULL;
+    }
     if (!prepare()) {
         return PyErr_Format(PyExc_OSError, "no audio output device could be opened");
     }
-    wide = PyUnicode_AsWideCharString(path, NULL);
-    if (wide == NULL) {
+    if (PyObject_GetBuffer(samples, &view, PyBUF_C_CONTIGUOUS | PyBUF_FORMAT) < 0) {
         return NULL;
     }
-    entry = (Sound *)PyMem_RawCalloc(1, sizeof(Sound));
+    format = strcmp(view.format, "h") == 0 ? ma_format_s16 : strcmp(view.format, "f") == 0 ? ma_format_f32 : ma_format_unknown;
+    if (format == ma_format_unknown || view.ndim != 2 || view.len == 0 || view.shape[1] > MA_MAX_CHANNELS || rate == 0) {
+        PyBuffer_Release(&view);
+        return PyErr_Format(PyExc_ValueError, "a sound is a frames x channels array of int16 or float32 samples and its rate");
+    }
+    channels = (ma_uint32)view.shape[1];
+    frames = ma_convert_frames(NULL, 0, ma_format_f32, channels, device.sampleRate, view.buf, view.shape[0], format, channels, rate);
+    entry = (Sound *)PyMem_RawMalloc(sizeof(Sound) + (size_t)frames * channels * sizeof(float));
     if (entry == NULL) {
-        PyMem_Free(wide);
+        PyBuffer_Release(&view);
         return PyErr_NoMemory();
     }
     Py_BEGIN_ALLOW_THREADS
-    result = ma_sound_init_from_file_w(&engine, wide, MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_NO_SPATIALIZATION, NULL, NULL,
-                                       &entry->sound);
+    frames = ma_convert_frames(entry->frames, frames, ma_format_f32, channels, device.sampleRate, view.buf, view.shape[0], format, channels, rate);
     Py_END_ALLOW_THREADS
-    PyMem_Free(wide);
+    PyBuffer_Release(&view);
+    config = ma_audio_buffer_config_init(ma_format_f32, channels, frames, entry->frames, NULL);
+    config.sampleRate = device.sampleRate;
+    result = ma_audio_buffer_init(&config, &entry->buffer);
+    if (result == MA_SUCCESS) {
+        result = ma_sound_init_from_data_source(&engine, &entry->buffer, MA_SOUND_FLAG_NO_SPATIALIZATION, NULL, &entry->sound);
+    }
     if (result != MA_SUCCESS) {
         PyMem_RawFree(entry);
-        return PyErr_Format(PyExc_OSError, "could not load %U: %s", path, ma_result_description(result));
+        return PyErr_Format(PyExc_OSError, "could not load the sound: %s", ma_result_description(result));
     }
-    capsule = PyCapsule_New(entry, "fastaudio.Sound", release);
-    if (capsule == NULL) {
-        ma_sound_uninit(&entry->sound);
-        PyMem_RawFree(entry);
-        return NULL;
-    }
+    entry->prev = NULL;
     entry->next = sounds;
     if (sounds) {
         sounds->prev = entry;
     }
     sounds = entry;
+    capsule = PyCapsule_New(entry, "fastaudio.Sound", release);
+    if (capsule == NULL) {
+        destroy(entry);
+    }
     return capsule;
 }
 
@@ -203,7 +220,7 @@ static PyObject *seek(PyObject *module, PyObject *args)
     if (!PyArg_ParseTuple(args, "Od", &capsule, &ms) || (entry = sound_of(capsule)) == NULL) {
         return NULL;
     }
-    ma_sound_seek_to_pcm_frame(&entry->sound, (ma_uint64)(ms > 0 ? ms * rate_of(entry) / 1000 : 0));
+    ma_sound_seek_to_pcm_frame(&entry->sound, (ma_uint64)(ms > 0 ? ms * device.sampleRate / 1000 : 0));
     Py_RETURN_NONE;
 }
 
@@ -215,7 +232,7 @@ static PyObject *position(PyObject *module, PyObject *capsule)
         return NULL;
     }
     ma_sound_get_cursor_in_pcm_frames(&entry->sound, &cursor);
-    return PyFloat_FromDouble((double)cursor * 1000 / rate_of(entry));
+    return PyFloat_FromDouble((double)cursor * 1000 / device.sampleRate);
 }
 
 static PyObject *duration(PyObject *module, PyObject *capsule)
@@ -226,7 +243,7 @@ static PyObject *duration(PyObject *module, PyObject *capsule)
         return NULL;
     }
     ma_sound_get_length_in_pcm_frames(&entry->sound, &length);
-    return PyFloat_FromDouble((double)length * 1000 / rate_of(entry));
+    return PyFloat_FromDouble((double)length * 1000 / device.sampleRate);
 }
 
 static PyObject *playing(PyObject *module, PyObject *capsule)
@@ -279,7 +296,7 @@ static PyObject *suspend_if_idle(PyObject *module, PyObject *arg)
 
 static PyMethodDef methods[] = {
     {"available", available, METH_NOARGS, NULL},
-    {"load", load, METH_O, NULL},
+    {"load", load, METH_VARARGS, NULL},
     {"play", play, METH_VARARGS, NULL},
     {"wake", wake, METH_NOARGS, NULL},
     {"pause", pause, METH_O, NULL},
