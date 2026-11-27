@@ -34,6 +34,8 @@ lazy from tools.wwise_toolchain import (
 )
 lazy from ui.editor_widgets import styled_label
 lazy from ui.keyboard_shortcuts import create_shortcuts_tab
+lazy from ui.project_manager.project_library import ProjectLibrary, default_projects_dir
+lazy from ui.project_manager.project_sessions import ProjectSessionManager
 lazy from ui.styles import current_colors
 
 
@@ -115,6 +117,17 @@ class SettingsDialog(QDialog):
         self.wwise_browse_button = self._browse_button()
         game_form.addRow(self.wwise_label, self._path_row(self.wwise_entry, self.wwise_browse_button))
         self._on_wwise_game_changed(self.game_version_combo.currentText())
+
+        projects_form = self._add_section(general_layout, self.tr("Projects"))
+        self.projects_entry = QLineEdit(self.settings["projects_dir"])
+        self.projects_entry.setPlaceholderText(str(default_projects_dir()))
+        self.projects_entry.setToolTip(self.tr("New projects are created here, in a folder per game"))
+        self.projects_browse_button = self._browse_button()
+        self.projects_browse_button.clicked.connect(self._browse_projects)
+        add_row(
+            projects_form, self.tr("Projects Folder:"),
+            self._path_row(self.projects_entry, self.projects_browse_button),
+        )
 
         tools_form = self._add_section(general_layout, self.tr("Tools"))
         self.blender_entry = QLineEdit(self.settings.get("blender_path", ""))
@@ -338,6 +351,36 @@ class SettingsDialog(QDialog):
         if file_path:
             self.blender_entry.setText(file_path)
 
+    def _browse_projects(self):
+        folder = QFileDialog.getExistingDirectory(
+            self, self.tr("Select Projects Folder"),
+            self.projects_entry.text().strip() or str(default_projects_dir()), QFileDialog.Option.ShowDirsOnly)
+        if folder:
+            self.projects_entry.setText(os.path.normpath(folder))
+
+    def _apply_projects_folder(self) -> bool:
+        folder = self.projects_entry.text().strip()
+        folder = os.path.abspath(folder) if folder else ""
+        library = ProjectLibrary(self.settings)
+        key = ProjectSessionManager.key_for
+        if key(folder or default_projects_dir()) == key(library.root):
+            return True
+        kept = [entry.path for entry in library.entries() if not entry.external]
+        answer = QMessageBox.question(
+            self,
+            self.tr("Projects Folder"),
+            self.tr("Projects in the current folder:\n{}\n\nKeep them in the Project Library?").format(library.root),
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+            QMessageBox.Yes,
+        ) if kept else QMessageBox.No
+        if answer == QMessageBox.Cancel:
+            return False
+        self.settings["projects_dir"] = folder
+        if answer == QMessageBox.Yes:
+            for path in kept:
+                library.add(path)
+        return True
+
     def _remember_wwise_path(self):
         if not self.wwise_game:
             return
@@ -437,6 +480,8 @@ class SettingsDialog(QDialog):
             )
             return
 
+        if not self._apply_projects_folder():
+            return
         app = self.app_window
         app.set_rsz_json_path(new_json_path, save=False)
         self.settings["blender_path"] = self.blender_entry.text().strip()

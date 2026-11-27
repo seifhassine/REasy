@@ -51,12 +51,12 @@ lazy from .bookmarks import (
     resolve_filesystem_target,
 )
 lazy from .catalogue_panel import CataloguePanel
-lazy from .constants import PROJECTS_ROOT
 lazy from .delegate import _ActionsDelegate, _PakActionsDelegate
 lazy from .dock_chrome import DockTitleBar, SideTab
 lazy from .game_test import GameTestRun
 lazy from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
 lazy from .pak_status_dialog import run_with_progress
+lazy from .project_library import project_game
 lazy from .project_config import (
     load_project_config,
     project_config_path,
@@ -655,28 +655,7 @@ class ProjectManager(QDockWidget):
             self._layout_state = self.app_win.saveState()
 
     def infer_project_game(self, project_path: Path | str) -> str | None:
-        path = Path(project_path).resolve()
-
-        game_names = {game.upper(): game for game in GAMES}
-
-        candidate = load_project_config(path).get("game")
-        if isinstance(candidate, str) and candidate.upper() in game_names:
-            return game_names[candidate.upper()]
-
-        parent_name = path.parent.name.upper()
-        if parent_name in game_names:
-            return game_names[parent_name]
-
-        try:
-            rel_parts = path.relative_to(PROJECTS_ROOT).parts
-        except ValueError:
-            rel_parts = ()
-        if len(rel_parts) == 2:
-            candidate = rel_parts[0].upper()
-            if candidate in game_names:
-                return game_names[candidate]
-
-        return None
+        return project_game(project_path)
 
     def _update_project_cfg(self, updates: dict):
         if not self.project_dir or not updates:
@@ -1919,7 +1898,7 @@ class ProjectManager(QDockWidget):
     def _proj_settings(self):
         if not self.project_dir:
             return
-        dlg = ProjectSettingsDialog(Path(self.project_dir), self)
+        dlg = ProjectSettingsDialog(Path(self.project_dir), self.app_win.project_library, self)
         dlg.exec()
 
     def _play(self):

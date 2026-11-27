@@ -1,6 +1,7 @@
 import os
 import sys
 import weakref
+from pathlib import Path
 
 lazy from file_handlers.factory import get_handler_for_data, is_handler_type
 
@@ -66,9 +67,9 @@ lazy from tools.hash_calculator import HashCalculator
 
 lazy from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
 lazy from ui.project_manager.project_sessions import save_modified_tabs  # noqa: E402
-from ui.project_manager import (  # noqa: E402
-    ProjectManager, ProjectWorkspaceController, PROJECTS_ROOT, ensure_projects_root
-)
+from ui.project_manager import ProjectLibrary, ProjectManager, ProjectWorkspaceController  # noqa: E402
+lazy from ui.project_manager.project_config import project_config_path, update_project_config  # noqa: E402
+lazy from ui.project_manager.project_library import project_game  # noqa: E402
 lazy from ui.scene.scn_scene_workspace import ScnSceneController
 lazy from ui.pak_browser_dialog import PakBrowserDialog
 lazy from file_handlers.mesh.blender_ui import import_mesh_from_blender
@@ -116,7 +117,7 @@ class REasyEditorApp(QMainWindow):
             self.settings = normalize_settings()
             print(f"Error loading settings: {e}")
 
-        ensure_projects_root()
+        self.project_library = ProjectLibrary(self.settings)
         self.current_project = None
         self.proj_dock = ProjectManager(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.proj_dock)
@@ -441,10 +442,12 @@ class REasyEditorApp(QMainWindow):
 
         new_proj_act = create_action(self.tr("New Project (Create Mod)..."), self.new_project, icon="new_folder")
         open_proj_act = create_action(self.tr("Project Library..."), self.open_project, icon="folder")
+        import_proj_act = create_action(self.tr("Add Project Folder..."), self.import_project, icon="folder_open")
         close_proj_act = create_action(self.tr("Close Project"), self.close_project)
         file_menu.insertSeparator(open_act)
         file_menu.insertAction(open_act, new_proj_act)
         file_menu.insertAction(open_act, open_proj_act)
+        file_menu.insertAction(open_act, import_proj_act)
         file_menu.insertAction(open_act, close_proj_act)
 
         file_menu.addSeparator()
@@ -609,7 +612,7 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.warning(self, self.tr("Invalid game folder"), self.tr("No .pak files found in the selected directory."))
             return
 
-        mod_dir = os.path.join(PROJECTS_ROOT, game, name.strip())
+        mod_dir = self.project_library.root / game / name.strip()
         os.makedirs(mod_dir, exist_ok=True)
 
         self.project_workspace.activate(mod_dir, game)
@@ -618,17 +621,22 @@ class REasyEditorApp(QMainWindow):
 
     def open_project(self):
         dlg = ProjectPickerDialog(
-            PROJECTS_ROOT,
+            self.project_library,
             GAMES,
             current_project=self.current_project,
             on_project_delete=self.project_workspace.delete_project,
             parent=self,
         )
-        if dlg.exec() != QDialog.Accepted:
+        accepted = dlg.exec() == QDialog.Accepted
+        self.save_settings()
+        if not accepted:
             return
 
         if dlg.wants_new_project():
             self.new_project()
+            return
+        if dlg.wants_import():
+            self.import_project()
             return
 
         entry = dlg.selected_project()
@@ -636,6 +644,25 @@ class REasyEditorApp(QMainWindow):
             return
 
         self.project_workspace.open(entry.path, entry.game)
+
+    def import_project(self):
+        folder = QFileDialog.getExistingDirectory(
+            self, self.tr("Select the mod folder (contains natives)"), "", QFileDialog.ShowDirsOnly)
+        if not folder:
+            return
+        path = Path(folder)
+        if path.name.lower() == "natives":
+            path = path.parent
+        if not (path / "natives").is_dir() and not project_config_path(path).is_file():
+            QMessageBox.warning(
+                self, self.tr("Invalid selection"), self.tr("This folder does not contain a natives folder."))
+            return
+        game = project_game(path) or self.proj_dock._choose_game()
+        if not game:
+            return
+        update_project_config(path, {"game": game})
+        self.project_library.add(path)
+        self.project_workspace.activate(path, game)
 
     def close_project(self):
         self.project_workspace.close()

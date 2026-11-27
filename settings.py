@@ -45,6 +45,8 @@ DEFAULT_SETTINGS = {
     "tree_highlight_color": "#00aaff",
     "discord_presence": True,
     "blender_path": "",
+    "projects_dir": "",
+    "project_folders": [],
     "wwise_install_paths": {},
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",

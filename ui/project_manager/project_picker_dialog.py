@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import shutil
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -27,75 +25,16 @@ from PySide6.QtWidgets import (
 lazy from ui.editor_widgets import styled_label, tool_button
 lazy from ui.styles import current_colors, set_style_role
 
-lazy from .project_config import load_project_config, project_config_path
+lazy from .project_library import ProjectEntry, ProjectLibrary
 
 
 NO_PREVIEW_TEXT = QT_TRANSLATE_NOOP("ProjectPickerDialog", "No preview")
 
 
-@dataclass(frozen=True)
-class ProjectEntry:
-    path: Path
-    game: str
-    name: str
-    description: str
-    author: str
-    version: str
-    source: str
-    screenshot: str
-    modified: float
-
-    @property
-    def modified_label(self) -> str:
-        return datetime.fromtimestamp(self.modified).strftime("%Y-%m-%d")
-
-
-def discover_projects(projects_root: Path, games: Sequence[str]) -> list[ProjectEntry]:
-    projects_root.mkdir(parents=True, exist_ok=True)
-    known_games = list(dict.fromkeys(games))
-    for folder in sorted(projects_root.iterdir()):
-        if folder.is_dir() and folder.name not in known_games:
-            known_games.append(folder.name)
-
-    entries: list[ProjectEntry] = []
-    for game in known_games:
-        game_dir = projects_root / game
-        if not game_dir.is_dir():
-            continue
-
-        for project_dir in sorted(game_dir.iterdir(), key=lambda p: p.name.lower()):
-            if not project_dir.is_dir() or project_dir.name.startswith("."):
-                continue
-            entries.append(_entry_from_dir(project_dir, game))
-
-    return sorted(entries, key=lambda entry: (entry.game.upper(), entry.name.lower()))
-
-
-def _entry_from_dir(project_dir: Path, fallback_game: str) -> ProjectEntry:
-    cfg = load_project_config(project_dir)
-    cfg_game = cfg.get("game")
-    game = cfg_game if isinstance(cfg_game, str) and cfg_game.strip() else fallback_game
-    source = "PAKs" if cfg.get("pak_game_dir") else "Folder"
-
-    cfg_path = project_config_path(project_dir)
-    cfg_mtime = cfg_path.stat().st_mtime if cfg_path.exists() else 0
-    modified = max(project_dir.stat().st_mtime, cfg_mtime)
-    return ProjectEntry(
-        path=project_dir,
-        game=game,
-        name=str(cfg.get("name") or project_dir.name),
-        description=str(cfg.get("description") or ""),
-        author=str(cfg.get("author") or ""),
-        version=str(cfg.get("version") or ""),
-        source=source,
-        screenshot=str(cfg.get("screenshot") or ""),
-        modified=modified,
-    )
-
 class ProjectPickerDialog(QDialog):
     def __init__(
         self,
-        projects_root: Path,
+        library: ProjectLibrary,
         games: Sequence[str],
         *,
         current_project: str | None = None,
@@ -107,12 +46,13 @@ class ProjectPickerDialog(QDialog):
         self.setWindowTitle(self.tr("Project Library"))
         self.resize(860, 520)
 
-        self.projects_root = Path(projects_root)
+        self.library = library
         self.games = list(games)
         self.entries: list[ProjectEntry] = []
         self._entry_by_path: dict[str, ProjectEntry] = {}
         self._selected: ProjectEntry | None = None
         self._wants_new_project = False
+        self._wants_import = False
         self._preferred_path = Path(current_project).resolve() if current_project else None
         self._on_project_delete = on_project_delete
 
@@ -214,13 +154,17 @@ class ProjectPickerDialog(QDialog):
 
         buttons = QDialogButtonBox(QDialogButtonBox.Cancel, self)
         self.new_btn = buttons.addButton(self.tr("New Project..."), QDialogButtonBox.ActionRole)
+        self.import_btn = buttons.addButton(self.tr("Add Folder..."), QDialogButtonBox.ActionRole)
+        self.import_btn.setToolTip(self.tr("Add a mod folder (the one that contains natives) from anywhere"))
+        self.remove_btn = buttons.addButton(self.tr("Remove from Library"), QDialogButtonBox.ActionRole)
+        self.remove_btn.setToolTip(self.tr("Keeps the folder and its files"))
         self.delete_btn = buttons.addButton(self.tr("Delete"), QDialogButtonBox.ActionRole)
         self.open_btn = buttons.addButton(self.tr("Open"), QDialogButtonBox.AcceptRole)
         set_style_role(self.delete_btn, variant="danger")
         set_style_role(self.open_btn, variant="primary")
-        self.delete_btn.setEnabled(False)
-        self.open_btn.setEnabled(False)
         self.new_btn.clicked.connect(self._new_project)
+        self.import_btn.clicked.connect(self._import_folder)
+        self.remove_btn.clicked.connect(self._remove_selected)
         self.delete_btn.clicked.connect(self._delete_selected)
         self.open_btn.clicked.connect(self._open_selected)
         buttons.rejected.connect(self.reject)
@@ -233,6 +177,9 @@ class ProjectPickerDialog(QDialog):
 
     def wants_new_project(self) -> bool:
         return self._wants_new_project
+
+    def wants_import(self) -> bool:
+        return self._wants_import
 
     def eventFilter(self, watched, event):
         if (
@@ -247,7 +194,7 @@ class ProjectPickerDialog(QDialog):
         return super().eventFilter(watched, event)
 
     def refresh(self):
-        self.entries = discover_projects(self.projects_root, self.games)
+        self.entries = self.library.entries()
         self._populate()
 
     def _source_label(self, source: str) -> str:
@@ -334,6 +281,7 @@ class ProjectPickerDialog(QDialog):
         self._selected = entry
         self.open_btn.setEnabled(entry is not None)
         self.delete_btn.setEnabled(entry is not None)
+        self.remove_btn.setEnabled(entry is not None and entry.external)
 
         if entry is None:
             self.preview.clear()
@@ -389,17 +337,20 @@ class ProjectPickerDialog(QDialog):
         self._wants_new_project = True
         self.accept()
 
+    def _import_folder(self):
+        self._wants_import = True
+        self.accept()
+
+    def _remove_selected(self):
+        self.library.remove(self._selected.path)
+        self.refresh()
+
     def _delete_selected(self):
         entry = self._selected
         if entry is None:
             return
 
-        root = self.projects_root.resolve()
         path = entry.path.resolve()
-        if path == root or not path.is_relative_to(root):
-            QMessageBox.warning(self, self.tr("Delete project"), self.tr("Invalid project path."))
-            return
-
         answer = QMessageBox.question(
             self,
             self.tr("Delete project?"),
@@ -419,6 +370,7 @@ class ProjectPickerDialog(QDialog):
             except Exception as exc:
                 QMessageBox.critical(self, self.tr("Delete failed"), str(exc))
                 return
+        self.library.remove(path)
 
         if self._preferred_path and path == self._preferred_path:
             self._preferred_path = None

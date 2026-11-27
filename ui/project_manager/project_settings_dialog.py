@@ -14,15 +14,18 @@ lazy from ui.editor_widgets import set_invalid, styled_label
 lazy from ui.icons import line_icon
 
 lazy from .project_config import load_project_config, save_project_config
+lazy from .project_library import ProjectLibrary, project_game
 
 
 class ProjectSettingsDialog(QDialog):
-    def __init__(self, project_dir: Path, parent=None):
+    def __init__(self, project_dir: Path, library: ProjectLibrary, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Fluffy Settings"))
         self.setModal(True)
         self.setMinimumWidth(720)
         self.project_dir = project_dir
+        self.library = library
+        game = project_game(project_dir)
         self.cfg = cfg = load_project_config(project_dir)
 
         layout = QVBoxLayout(self)
@@ -46,17 +49,20 @@ class ProjectSettingsDialog(QDialog):
         self.preview.setFixedSize(160, 90)
 
         options = QListWidget()
-        for sibling in sorted(project_dir.parent.iterdir(), key=lambda path: path.name.lower()):
-            if sibling.is_dir() and sibling.name != project_dir.name and not sibling.name.startswith("."):
-                QListWidgetItem(sibling.name, options).setCheckState(
-                    Qt.Checked if sibling.name in cfg.get("option_projects", ()) else Qt.Unchecked)
+        for entry in library.entries():
+            if entry.game == game and entry.path != project_dir:
+                option = entry.path.name if entry.path.parent == project_dir.parent else str(entry.path)
+                item = QListWidgetItem(entry.path.name, options)
+                item.setData(Qt.UserRole, option)
+                item.setToolTip(str(entry.path))
+                item.setCheckState(Qt.Checked if option in cfg.get("option_projects", ()) else Qt.Unchecked)
         if not options.count():
             QListWidgetItem(self.tr("No other projects of this game"), options).setFlags(Qt.NoItemFlags)
         options.itemDoubleClicked.connect(self._edit_option)
 
         compression = QComboBox()
         labels = {"deflate": self.tr("Deflate"), "zstd": self.tr("Zstandard"), "none": self.tr("None")}
-        for name in pak_compressions(project_dir.parent.name):
+        for name in pak_compressions(game):
             compression.addItem(labels[name], name)
         compression.setCurrentIndex(max(0, compression.findData(cfg.get("pak_compression"))))
 
@@ -204,14 +210,14 @@ class ProjectSettingsDialog(QDialog):
                 values[key] = widget.currentData()
             elif isinstance(widget, QListWidget):
                 items = (widget.item(row) for row in range(widget.count()))
-                values[key] = [item.text() for item in items if item.checkState() == Qt.Checked]
+                values[key] = [item.data(Qt.UserRole) for item in items if item.checkState() == Qt.Checked]
             else:
                 values[key] = (widget.text() if isinstance(widget, QLineEdit) else widget.toPlainText()).strip()
         values["categories"] = [line.strip() for line in values["categories"].splitlines() if line.strip()]
         return self.cfg | values
 
     def _edit_option(self, item):
-        dialog = ProjectSettingsDialog(self.project_dir.parent / item.text(), self)
+        dialog = ProjectSettingsDialog(self.project_dir.parent / item.data(Qt.UserRole), self.library, self)
         dialog.setAttribute(Qt.WA_DeleteOnClose)
         dialog.exec()
 

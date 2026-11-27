@@ -189,6 +189,7 @@ class ProjectWorkspaceController:
         renamed = self.sessions.rename_project(old_key, new_path)
         if renamed is None:
             return False
+        self.host.project_library.add(renamed.path)
         self.activate(renamed.path, renamed.game)
         self.host.proj_dock.discard_project_state(str(old_path))
         self.host.status_bar.showMessage(
@@ -236,6 +237,7 @@ class ProjectWorkspaceController:
         except Exception as exc:
             QMessageBox.critical(self.host, self.tr("Delete failed"), str(exc))
             return False
+        self.host.project_library.remove(project_path)
         if session:
             self.close(key, confirm=False, record_history=False)
         return True

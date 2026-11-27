@@ -13,7 +13,6 @@ from typing import Any, Callable, Iterable
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QTimer, Qt
 
-lazy from app_config import GAMES
 lazy from services.ai.mdf_merge_planner import (
     MISSING as _MISSING,
     merge_equal as _merge_equal,
@@ -59,8 +58,6 @@ from ui.ai.rsz_tools import (
     rsz_prompt_matches,
     rsz_tool_definitions,
 )
-lazy from ui.project_manager.constants import PROJECTS_ROOT
-lazy from ui.project_manager.project_picker_dialog import discover_projects
 
 lazy from file_handlers.mdf.mdf_viewer import MdfViewer
 lazy from file_handlers.mdf.mdf_file import MatData, material_flag_layout
@@ -2607,7 +2604,7 @@ class ReasyAssistantTools(
 
     def _project_entries(self):
         try:
-            return discover_projects(Path(PROJECTS_ROOT), GAMES)
+            return self.app.project_library.entries()
         except OSError as exc:
             raise AssistantToolError(
                 _tr(
@@ -2638,7 +2635,7 @@ class ReasyAssistantTools(
                 self._project_payload(entry, self.app.current_project)
             )
         return {
-            "projects_root": str(Path(PROJECTS_ROOT).resolve()),
+            "projects_root": str(self.app.project_library.root.resolve()),
             "projects": matches[:200],
             "count": len(matches),
             "truncated": len(matches) > 200,
@@ -2668,7 +2665,7 @@ class ReasyAssistantTools(
                 str(entry.path),
             }
             try:
-                values.add(entry.path.relative_to(PROJECTS_ROOT).as_posix())
+                values.add(entry.path.relative_to(self.app.project_library.root).as_posix())
             except ValueError:
                 pass
             return {
